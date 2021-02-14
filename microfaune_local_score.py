@@ -149,7 +149,8 @@ def calc_local_scores(bird_dir,weight_path=None, Normalized_Sample_Rate = 44100)
         except:
             print("Error in isolating bird calls from", audio_file)
             continue
-
+    # Quick fix to indexing
+    annotations.reset_index(inplace = True, drop = True)
     return annotations
 
 # Function that produces graphs with the local score plot and spectrogram of an audio clip. Now integrated with Pandas so you can visualize human and automated annotations.
@@ -313,7 +314,7 @@ def bird_label_scores(automated_df,human_df,plot_fig = False, save_fig = False):
              'PRECISION' : precision,
              'RECALL' : recall,
              "F1" : f1,
-             'IoU' : IoU}
+             'Global IoU' : IoU}
     #print(entry)
     # Plotting the three arrays to visualize where
     if plot_fig == True:
@@ -393,5 +394,145 @@ def global_dataset_statistics(statistics_df):
     entry = {'PRECISION'  : round(precision,6),
              'RECALL'    : round(recall,6),
              'F1' : round(f1,6),
-             'IoU' : round(IoU,6)}
+             'Global IoU' : round(IoU,6)}
     return pd.DataFrame.from_dict([entry])
+
+# TODO rework this function to implement some linear algebra, right now the nested for loop won't handle larger loads well
+# To make a global matrix, find the clip with the most amount of automated labels and set that to the number of columns
+def clip_IoU(automated_df,manual_df):
+    automated_df.reset_index(inplace = True, drop = True)
+    manual_df.reset_index(inplace = True, drop = True)
+    # Determining the number of rows in the output numpy array
+    manual_row_count = manual_df.shape[0]
+    # Determining the number of columns in the output numpy array
+    automated_row_count = automated_df.shape[0]
+
+    # Determining the length of the input clip
+    duration = automated_df["CLIP LENGTH"].to_list()[0]
+    # Determining the sample rate of the input clip
+    SAMPLE_RATE = automated_df["SAMPLE RATE"].to_list()[0]
+
+    # Initializing the output array that will contain the clip-by-clip Intersection over Union percentages.
+    IoU_Matrix = np.zeros((manual_row_count,automated_row_count))
+    #print(IoU_Matrix.shape)
+
+    # Initializing arrays that will represent each of the human and automated labels
+    bot_arr = np.zeros((int(duration * SAMPLE_RATE)))
+    human_arr = np.zeros((int(duration * SAMPLE_RATE)))
+
+    # Looping through each human label
+    for row in manual_df.index:
+        #print(row)
+        # Determining the beginning of a human label
+        minval = int(round(manual_df["OFFSET"][row]*SAMPLE_RATE,0))
+        # Determining the end of a human label
+        maxval = int(round((manual_df["OFFSET"][row] + manual_df["DURATION"][row]) *SAMPLE_RATE,0))
+        # Placing the label relative to the clip
+        human_arr[minval:maxval] = 1
+        # Looping through each automated label
+        for column in automated_df.index:
+            # Determining the beginning of an automated label
+            minval = int(round(automated_df["OFFSET"][column]*SAMPLE_RATE,0))
+            # Determining the ending of an automated label
+            maxval = int(round((automated_df["OFFSET"][column] + automated_df["DURATION"][column]) *SAMPLE_RATE,0))
+            # Placing the label relative to the clip
+            bot_arr[minval:maxval] = 1
+            # Determining the overlap between the human label and the automated label
+            intersection = human_arr * bot_arr
+            # Determining the union between the human label and the automated label
+            union = human_arr + bot_arr
+            union[union == 2] = 1
+            # Determining how much of the human label and the automated label overlap with respect to time
+            intersection_count = np.count_nonzero(intersection == 1)/SAMPLE_RATE
+            # Determining the span of the human label and the automated label with respect to time.
+            union_count = np.count_nonzero(union == 1)/SAMPLE_RATE
+            # Placing the Intersection over Union Percentage into it's respective position in the array.
+            IoU_Matrix[row,column] = round(intersection_count/union_count,4)
+            # Resetting the automated label to zero
+            bot_arr[bot_arr == 1] = 0
+        # Resetting the human label to zero
+        human_arr[human_arr == 1] = 0
+
+    return IoU_Matrix
+# Function that can help us determine whether or not a call was detected.
+def clip_catch(automated_df,manual_df):
+    automated_df.reset_index(inplace = True, drop = True)
+    manual_df.reset_index(inplace = True, drop = True)
+    manual_row_count = manual_df.shape[0]
+    automated_row_count = automated_df.shape[0]
+    duration = automated_df["CLIP LENGTH"].to_list()[0]
+    SAMPLE_RATE = automated_df["SAMPLE RATE"].to_list()[0]
+    catch_matrix = np.zeros(manual_row_count)
+    bot_arr = np.zeros((int(duration * SAMPLE_RATE)))
+    human_arr = np.zeros((int(duration * SAMPLE_RATE)))
+
+    # Determining the automated labelled regions with respect to samples
+    for row in automated_df.index:
+        minval = int(round(automated_df["OFFSET"][row]*SAMPLE_RATE,0))
+        maxval = int(round((automated_df["OFFSET"][row] + automated_df["DURATION"][row]) *SAMPLE_RATE,0))
+        bot_arr[minval:maxval] = 1
+
+    # Looping through each human label and computing catch = (#intersections)/(#samples in label)
+    for row in manual_df.index:
+        # Determining the beginning of a human label
+        minval = int(round(manual_df["OFFSET"][row]*SAMPLE_RATE,0))
+        # Determining the end of a human label
+        maxval = int(round((manual_df["OFFSET"][row] + manual_df["DURATION"][row]) *SAMPLE_RATE,0))
+        # Placing the label relative to the clip
+        human_arr[minval:maxval] = 1
+        # Determining the length of a label with respect to samples
+        samples_in_label = maxval - minval
+        # Finding where the human label and all of the annotated labels overlap
+        intersection = human_arr * bot_arr
+        # Determining how many samples overlap.
+        intersection_count = np.count_nonzero(intersection == 1)
+        # Intersection/length of label
+        catch_matrix[row] = round(intersection_count/samples_in_label,4)
+        # resetting the human label
+        human_arr[human_arr == 1] = 0
+
+    return catch_matrix
+
+
+
+# Function that takes in two Pandas dataframes that represent human labels and automated labels.
+
+def dataset_IoU(automated_df,manual_df):
+    # Getting a list of clips
+    clips = automated_df["IN FILE"].to_list()
+    # Removing duplicates
+    clips = list(dict.fromkeys(clips))
+    # Initializing the ouput dataframe
+    manual_df_with_IoU = pd.DataFrame()
+    for clip in clips:
+        print(clip)
+        clip_automated_df = automated_df[automated_df["IN FILE"] == clip]
+        clip_manual_df = manual_df[manual_df["IN FILE"] == clip]
+        IoU_Matrix = clip_IoU(clip_automated_df,clip_manual_df)
+        automated_label_best_fits = np.max(IoU_Matrix,axis=1)
+        clip_manual_df["IoU"] = automated_label_best_fits
+        if manual_df_with_IoU.empty == True:
+            manual_df_with_IoU = clip_manual_df
+        else:
+            manual_df_with_IoU = manual_df_with_IoU.append(clip_manual_df)
+    manual_df_with_IoU.reset_index(inplace = True, drop = True)
+    return manual_df_with_IoU
+def dataset_Catch(automated_df,manual_df):
+    # Getting a list of clips
+    clips = automated_df["IN FILE"].to_list()
+    # Removing duplicates
+    clips = list(dict.fromkeys(clips))
+    # Initializing the ouput dataframe
+    manual_df_with_Catch = pd.DataFrame()
+    for clip in clips:
+        print(clip)
+        clip_automated_df = automated_df[automated_df["IN FILE"] == clip]
+        clip_manual_df = manual_df[manual_df["IN FILE"] == clip]
+        Catch_Array = clip_catch(clip_automated_df,clip_manual_df)
+        clip_manual_df["Catch"] = Catch_Array
+        if manual_df_with_Catch.empty == True:
+            manual_df_with_Catch = clip_manual_df
+        else:
+            manual_df_with_Catch = manual_df_with_Catch.append(clip_manual_df)
+    manual_df_with_Catch.reset_index(inplace = True, drop = True)
+    return manual_df_with_Catch
