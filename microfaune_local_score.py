@@ -378,6 +378,7 @@ def automated_labeling_statistics(automated_df,manual_df):
         #except:
         #    print("Something went wrong with: "+clip)
         #    continue
+        statistics_df.reset_index(inplace = True, drop = True)
     return statistics_df
 
 # Small function that takes in the statistics and outputs their global values
@@ -454,20 +455,63 @@ def clip_IoU(automated_df,manual_df):
         human_arr[human_arr == 1] = 0
 
     return IoU_Matrix
+# Function that takes in the IoU Matrix from the clip_IoU function and ouputs the number of true positives and false positives
+# It also calculates the precision.
+def matrix_IoU_Scores(IoU_Matrix,manual_df,threshold):
+
+    audio_dir = manual_df["FOLDER"][0]
+    filename = manual_df["IN FILE"][0]
+
+    # Determining which automated label has the highest IoU across each human label
+    automated_label_best_fits = np.max(IoU_Matrix,axis=1)
+    #human_label_count = automated_label_best_fits.shape[0]
+    # Calculating the number of true positives based off of the passed in thresholds.
+    tp_count = automated_label_best_fits[automated_label_best_fits >= threshold].shape[0]
+    # Calculating the number of false negatives from the number of human labels and true positives
+    #fn_count = human_label_count - tp_count
+
+    # Calculating the false positives
+    max_val_per_column = np.max(IoU_Matrix,axis=0)
+    fp_count = max_val_per_column[max_val_per_column < threshold].shape[0]
+
+    # Calculating the necessary statistics
+    try:
+        #recall = round(tp_count/(tp_count+fn_count),4)
+        precision = round(tp_count/(tp_count+fp_count),4)
+        #f1 = round(2*(recall*precision)/(recall+precision),4)
+    except:
+        print("Division by zero setting precision to zero")
+        #recall = 0
+        precision = 0
+        #f1 = 0
+
+    entry = {'FOLDER'  : audio_dir,
+             'IN FILE'    : filename,
+             'TRUE POSITIVE' : tp_count,
+             'FALSE POSITIVE': fp_count,
+             'PRECISION'  : precision}
+    return pd.DataFrame.from_dict([entry])
+
 # Function that can help us determine whether or not a call was detected.
 def clip_catch(automated_df,manual_df):
+    # resetting the indices to make this function work
     automated_df.reset_index(inplace = True, drop = True)
     manual_df.reset_index(inplace = True, drop = True)
+    # figuring out how many automated labels and human labels exist
     manual_row_count = manual_df.shape[0]
     automated_row_count = automated_df.shape[0]
+    # finding the length of the clip as well as the sampling frequency.
     duration = automated_df["CLIP LENGTH"].to_list()[0]
     SAMPLE_RATE = automated_df["SAMPLE RATE"].to_list()[0]
+    # initializing the output array, as well as the two arrays used to calculate catch scores
     catch_matrix = np.zeros(manual_row_count)
     bot_arr = np.zeros((int(duration * SAMPLE_RATE)))
     human_arr = np.zeros((int(duration * SAMPLE_RATE)))
 
     # Determining the automated labelled regions with respect to samples
+    # Looping through each human label
     for row in automated_df.index:
+        # converting each label into a "pulse" on an array that represents the labels as 0's and 1's on bot array.
         minval = int(round(automated_df["OFFSET"][row]*SAMPLE_RATE,0))
         maxval = int(round((automated_df["OFFSET"][row] + automated_df["DURATION"][row]) *SAMPLE_RATE,0))
         bot_arr[minval:maxval] = 1
@@ -496,7 +540,8 @@ def clip_catch(automated_df,manual_df):
 
 
 # Function that takes in two Pandas dataframes that represent human labels and automated labels.
-
+# It then runs the clip_IoU function across each clip and appends the best fit IoU score to each labels
+# on the manual dataframe as its output.
 def dataset_IoU(automated_df,manual_df):
     # Getting a list of clips
     clips = automated_df["IN FILE"].to_list()
@@ -506,17 +551,61 @@ def dataset_IoU(automated_df,manual_df):
     manual_df_with_IoU = pd.DataFrame()
     for clip in clips:
         print(clip)
+        # Isolating a clip from the human and automated dataframes
         clip_automated_df = automated_df[automated_df["IN FILE"] == clip]
         clip_manual_df = manual_df[manual_df["IN FILE"] == clip]
+        # Calculating the IoU scores of each human label.
         IoU_Matrix = clip_IoU(clip_automated_df,clip_manual_df)
+        # Finding the best automated IoU score with respect to each label
         automated_label_best_fits = np.max(IoU_Matrix,axis=1)
         clip_manual_df["IoU"] = automated_label_best_fits
+        # Appending on the best fit IoU score to each human label
         if manual_df_with_IoU.empty == True:
             manual_df_with_IoU = clip_manual_df
         else:
             manual_df_with_IoU = manual_df_with_IoU.append(clip_manual_df)
+    # Adjusting the indices.
     manual_df_with_IoU.reset_index(inplace = True, drop = True)
     return manual_df_with_IoU
+
+
+def dataset_IoU_Statistics(automated_df,manual_df,threshold = 0.5):
+    # isolating the names of the clips that have been labelled into an array.
+    clips = automated_df["IN FILE"].to_list()
+    clips = list(dict.fromkeys(clips))
+    # initializing the output Pandas dataframe
+    IoU_Statistics = pd.DataFrame()
+    # Looping through all of the clips
+    for clip in clips:
+        print(clip)
+        # isolating the clip into its own dataframe with respect to both the passed in human labels and automated labels.
+        clip_automated_df = automated_df[automated_df["IN FILE"] == clip]
+        clip_manual_df = manual_df[manual_df["IN FILE"] == clip]
+        # Computing the IoU Matrix across a specific clip
+        IoU_Matrix = clip_IoU(clip_automated_df,clip_manual_df)
+        # Calculating the best fit IoU to each label for the clip
+        clip_stats_df = matrix_IoU_Scores(IoU_Matrix,clip_manual_df,threshold)
+        # adding onto the output array.
+        if IoU_Statistics.empty == True:
+            IoU_Statistics = clip_stats_df
+        else:
+            IoU_Statistics = IoU_Statistics.append(clip_stats_df)
+    IoU_Statistics.reset_index(inplace = True, drop = True)
+    return IoU_Statistics
+# Function that takes the output of dataset_IoU_Statistics and computes a global precision score.
+def global_IoU_Statistics(statistics_df):
+    # taking the sum of the number of true positives and false positives.
+    tp_sum = statistics_df["TRUE POSITIVE"].sum()
+    fp_sum = statistics_df["FALSE POSITIVE"].sum()
+    # calculating the precision from the sums
+    precision = tp_sum/(tp_sum+fp_sum)
+    # building a dictionary of the above calculations
+    entry = {'TRUE POSITIVE' : tp_sum,
+        'FALSE POSITIVE' : fp_sum,
+        'PRECISION'  : round(precision,4)}
+    # returning the dictionary as a pandas dataframe
+    return pd.DataFrame.from_dict([entry])
+
 def dataset_Catch(automated_df,manual_df):
     # Getting a list of clips
     clips = automated_df["IN FILE"].to_list()
@@ -524,15 +613,20 @@ def dataset_Catch(automated_df,manual_df):
     clips = list(dict.fromkeys(clips))
     # Initializing the ouput dataframe
     manual_df_with_Catch = pd.DataFrame()
+    # Looping through all of the audio clips that have been labelled.
     for clip in clips:
         print(clip)
+        # Isolating the clips from both the automated and human dataframes
         clip_automated_df = automated_df[automated_df["IN FILE"] == clip]
         clip_manual_df = manual_df[manual_df["IN FILE"] == clip]
+        # Calling the function that calculates the catch over a specific clip
         Catch_Array = clip_catch(clip_automated_df,clip_manual_df)
+        # Appending the catch values per label onto the manual dataframe
         clip_manual_df["Catch"] = Catch_Array
         if manual_df_with_Catch.empty == True:
             manual_df_with_Catch = clip_manual_df
         else:
             manual_df_with_Catch = manual_df_with_Catch.append(clip_manual_df)
+    # Resetting the indices
     manual_df_with_Catch.reset_index(inplace = True, drop = True)
     return manual_df_with_Catch
