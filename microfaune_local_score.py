@@ -17,44 +17,53 @@ import pandas as pd
 
 # Gabriel's original moment-to-moment classification tool. Reworked to output
 # a Pandas DataFrame.
-def isolate(scores, samples, sample_rate, audio_dir, filename):
+# TODO rework isolate in a way that allows a user to input a dictionary that where they can modulate different
+# parameters involved in Gabriel's algorithm. We can set the default of this dict to be what he originally chose for now.
+# Some ideas for how to change the parameters are to allow for different modification of the threshold. We would want to be able
+# to modify the bird presence threshold to be a pure value. This will allow us to build ROC curves. Another would be to allow for a
+# selection of how many standard deviations away from the mean. Another would be, instead of a median, allow standard deviation and mean as
+# alternatives. Another option would be to allow for curve smoothing on the local score array that is being passed in. This could come in
+# the form of a high order polynomial fit or possibly testing out my curve smoothing algorithm that uses a bell-curved distribution to
+# loop around and average each sample with its surrounding samples over many iterations. We could also play around with filtering.
+
+def isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename):
     # calculate original duration
-    old_duration = len(samples) / sample_rate
+    old_duration = len(SIGNAL) / SAMPLE_RATE
 
     # create entry for audio clip
     entry = {'FOLDER'  : audio_dir,
              'IN FILE'    : filename,
              'CHANNEL' : 0,
              'CLIP LENGTH': old_duration,
-             'SAMPLE RATE': sample_rate,
+             'SAMPLE RATE': SAMPLE_RATE,
              'OFFSET'  : [],
              'MANUAL ID'  : []}
 
     # Variable to modulate when encapsulating this function.
     # treshold is 'thresh_mult' times above median score value
     thresh_mult = 2
-    thresh = np.median(scores) * thresh_mult
+    thresh = np.median(local_scores) * thresh_mult
 
 
     # how many samples one score represents
     # Scores meaning local scores
-    samples_per_score = len(samples) // len(scores)
+    samples_per_score = len(SIGNAL) // len(local_scores)
 
     # isolate samples that produce a score above thresh
     isolated_samples = np.empty(0, dtype=np.int16)
     prev_cap = 0        # sample idx of previously captured
-    for i in range(len(scores)):
+    for i in range(len(local_scores)):
         # if a score hits or surpasses thresh, capture 1s on both sides of it
-        if scores[i] >= thresh:
+        if local_scores[i] >= thresh:
             # score_pos is the sample index that the score corresponds to
             score_pos = i * samples_per_score
 
             # upper and lower bound of captured call
             # sample rate is # of samples in 1 second: +-1 second
-            lo_idx = max(0, score_pos - sample_rate)
-            hi_idx = min(len(samples), score_pos + sample_rate)
-            lo_time = lo_idx / sample_rate
-            hi_time = hi_idx / sample_rate
+            lo_idx = max(0, score_pos - SAMPLE_RATE)
+            hi_idx = min(len(SIGNAL), score_pos + SAMPLE_RATE)
+            lo_time = lo_idx / SAMPLE_RATE
+            hi_time = hi_idx / SAMPLE_RATE
 
             # calculate start and end stamps
             # create new sample if not overlapping or if first stamp
@@ -72,7 +81,7 @@ def isolate(scores, samples, sample_rate, audio_dir, filename):
 
             # add to isolated samples
             # sub-clip numpy array
-            isolated_samples = np.append(isolated_samples,samples[lo_idx:hi_idx])
+            isolated_samples = np.append(isolated_samples,SIGNAL[lo_idx:hi_idx])
 
 
     entry = pd.DataFrame.from_dict(entry)
