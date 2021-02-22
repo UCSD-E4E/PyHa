@@ -477,7 +477,7 @@ def matrix_IoU_Scores(IoU_Matrix,manual_df,threshold):
     # Calculating the number of true positives based off of the passed in thresholds.
     tp_count = automated_label_best_fits[automated_label_best_fits >= threshold].shape[0]
     # Calculating the number of false negatives from the number of human labels and true positives
-    #fn_count = human_label_count - tp_count
+    fn_count = automated_label_best_fits[automated_label_best_fits < threshold].shape[0]
 
     # Calculating the false positives
     max_val_per_column = np.max(IoU_Matrix,axis=0)
@@ -485,20 +485,24 @@ def matrix_IoU_Scores(IoU_Matrix,manual_df,threshold):
 
     # Calculating the necessary statistics
     try:
-        #recall = round(tp_count/(tp_count+fn_count),4)
+        recall = round(tp_count/(tp_count+fn_count),4)
         precision = round(tp_count/(tp_count+fp_count),4)
-        #f1 = round(2*(recall*precision)/(recall+precision),4)
+        f1 = round(2*(recall*precision)/(recall+precision),4)
     except:
-        print("Division by zero setting precision to zero")
-        #recall = 0
+        print("Division by zero setting precision, recall, and f1 to zero")
+        recall = 0
         precision = 0
-        #f1 = 0
+        f1 = 0
 
     entry = {'FOLDER'  : audio_dir,
              'IN FILE'    : filename,
              'TRUE POSITIVE' : tp_count,
+             'FALSE NEGATIVE' : fn_count,
              'FALSE POSITIVE': fp_count,
-             'PRECISION'  : precision}
+             'PRECISION'  : precision,
+             'RECALL' : recall,
+             'F1' : f1}
+
     return pd.DataFrame.from_dict([entry])
 
 # Function that can help us determine whether or not a call was detected.
@@ -605,13 +609,25 @@ def dataset_IoU_Statistics(automated_df,manual_df,threshold = 0.5):
 def global_IoU_Statistics(statistics_df):
     # taking the sum of the number of true positives and false positives.
     tp_sum = statistics_df["TRUE POSITIVE"].sum()
+    fn_sum = statistics_df["FALSE NEGATIVE"].sum()
     fp_sum = statistics_df["FALSE POSITIVE"].sum()
-    # calculating the precision from the sums
-    precision = tp_sum/(tp_sum+fp_sum)
+    # calculating the precision, recall, and f1
+    try:
+        precision = tp_sum/(tp_sum+fp_sum)
+        recall = tp_sum/(tp_sum+fn_sum)
+        f1 = 2*(precision*recall)/(precision+recall)
+    except:
+        print("Error in calculating Precision, Recall, and F1. Likely due to zero division, setting values to zero")
+        precision = 0
+        recall = 0
+        f1 = 0
     # building a dictionary of the above calculations
     entry = {'TRUE POSITIVE' : tp_sum,
+        'FALSE NEGATIVE' : fn_sum,
         'FALSE POSITIVE' : fp_sum,
-        'PRECISION'  : round(precision,4)}
+        'PRECISION'  : round(precision,4),
+        'RECALL' : round(recall,4),
+        'F1' : round(f1,4)}
     # returning the dictionary as a pandas dataframe
     return pd.DataFrame.from_dict([entry])
 
