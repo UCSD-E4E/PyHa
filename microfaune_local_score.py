@@ -14,6 +14,7 @@ import argparse
 from scipy.io import wavfile
 import scipy.signal as scipy_signal
 import pandas as pd
+import math
 
 # Gabriel's original moment-to-moment classification tool. Reworked to output
 # a Pandas DataFrame.
@@ -278,7 +279,7 @@ def calc_local_scores_simpler(bird_dir,weight_path=None, Normalized_Sample_Rate 
     return annotations
 
 # Function that produces graphs with the local score plot and spectrogram of an audio clip. Now integrated with Pandas so you can visualize human and automated annotations.
-def local_line_graph(local_scores,clip_name, sample_rate,samples, automated_df=None, human_df=None, save_fig = False):
+def local_line_graph(local_scores,clip_name, sample_rate,samples, automated_df=None, human_df=None,log_scale = False, save_fig = False):
     # Calculating the length of the audio clip
     duration = samples.shape[0]/sample_rate
     # Calculating the number of local scores outputted by Microfaune
@@ -299,7 +300,10 @@ def local_line_graph(local_scores,clip_name, sample_rate,samples, automated_df=N
     # score line plot - top plot
     axs[0].plot(time_stamps, local_scores)
     axs[0].set_xlim(0,duration)
-    axs[0].set_ylim(0,1)
+    if log_scale:
+        axs[0].set_yscale('log')
+    else:
+        axs[0].set_ylim(0,1)
     axs[0].grid(which='major', linestyle='-')
     # Adding in the optional automated labels from a Pandas DataFrame
     if automated_df.empty == False:
@@ -335,7 +339,7 @@ def local_line_graph(local_scores,clip_name, sample_rate,samples, automated_df=N
 # Wrapper function for the local_line_graph function for ease of use.
 # TODO rework function so that instead of generating the automated labels, it takes the automated_df as input
 # same as it does with the manual dataframe.
-def local_score_visualization(clip_path,weight_path = None, human_df = None,automated_df = False, save_fig = False):
+def local_score_visualization(clip_path,weight_path = None, human_df = None,automated_df = False,log_scale = False, save_fig = False):
 
     # Loading in the clip with Microfaune's built-in loading function
     SAMPLE_RATE, SIGNAL = audio.load_wav(clip_path)
@@ -372,7 +376,7 @@ def local_score_visualization(clip_path,weight_path = None, human_df = None,auto
     else:
         automated_df = pd.DataFrame()
 
-    local_line_graph(local_score[0].tolist(),clip_path,SAMPLE_RATE,SIGNAL,automated_df,human_df, save_fig = save_fig)
+    local_line_graph(local_score[0].tolist(),clip_path,SAMPLE_RATE,SIGNAL,automated_df,human_df,log_scale = log_scale, save_fig = save_fig)
 ## TODO: figure out why the local score plot is having the thresholded values set to 1 propagate to this function
 def local_score_visualization2(clip_path,weight_path = None, human_df = None,automated_df = False, save_fig = False):
 
