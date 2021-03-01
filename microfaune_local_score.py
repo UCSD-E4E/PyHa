@@ -18,6 +18,20 @@ import pandas as pd
 # Gabriel's original moment-to-moment classification tool. Reworked to output
 # a Pandas DataFrame.
 def isolate(scores, samples, sample_rate, audio_dir, filename):
+    """
+    Returns a dataframe of automated labels for the given audio clip. The automated labels determine intervals of bird noise as
+    determined by the local scores given by an RNNDetector.
+
+    Args:
+        scores: Local scores of the audio clip as determined by RNNDetector.
+        samples: Number of samples from the audio clip.
+        sample_rate: Sampling rate of the audio clip, usually 44100.
+        audio_dir: Directory of the audio clip.
+        filename: 
+
+    Returns:
+        Dataframe of automated labels for the audio clip.
+    """
     # calculate original duration
     old_duration = len(samples) / sample_rate
 
@@ -90,9 +104,18 @@ def isolate(scores, samples, sample_rate, audio_dir, filename):
     entry["OFFSET"] = OFFSET
     return entry
 
-
-## Function that applies the moment to moment labeling system to a directory full of wav files.
 def calc_local_scores(bird_dir,weight_path=None, Normalized_Sample_Rate = 44100):
+    """
+    Function that applies the moment to moment labeling system to a directory full of wav files.
+
+    Args:
+        bird_dir: Directory with wav audio files.
+        weight_path: Weights to be used by the RNNDetector for determining presence of bird sounds.
+        Normalized_Sample_Rate: Sampling rate that the audio files should all be normalized to.
+
+    Returns:
+        Dataframe of automated labels for the audio clips in bird_dir.
+    """
     # init detector
     # Use Default Microfaune Detector
     if weight_path is None:
@@ -152,8 +175,22 @@ def calc_local_scores(bird_dir,weight_path=None, Normalized_Sample_Rate = 44100)
 
     return annotations
 
-# Function that produces graphs with the local score plot and spectrogram of an audio clip. Now integrated with Pandas so you can visualize human and automated annotations.
 def local_line_graph(local_scores,clip_name, sample_rate,samples, automated_df=None, human_df=None, save_fig = False):
+    """
+    Function that produces graphs with the local score plot and spectrogram of an audio clip. Now integrated with Pandas so you can visualize human and automated annotations.
+
+    Args:
+        local_scores: Local scores for the clip determined by the RNN.
+        clip_name: Directory of the clip.
+        sample_rate: Sample rate of the audio clip, usually 44100.
+        samples: Each of the samples from the audio clip.
+        automated_df: Dataframe of automated labelling of the clip.
+        human_df: Dataframe of human labelling of the clip.
+        save_fig: Whether the clip should be saved in a directory as a png file.
+
+    Returns:
+        None
+    """
     # Calculating the length of the audio clip
     duration = samples.shape[0]/sample_rate
     # Calculating the number of local scores outputted by Microfaune
@@ -207,9 +244,21 @@ def local_line_graph(local_scores,clip_name, sample_rate,samples, automated_df=N
     if save_fig:
         plt.savefig(clip_name + "_Local_Score_Graph.png")
 
-# Wrapper function for the local_line_graph function for ease of use.
 def local_score_visualization(clip_path,weight_path = None, human_df = None,automated_df = False, save_fig = False):
+    """
+    Wrapper function for the local_line_graph function for ease of use. Processes clip for local scores to be used for
+    the local_line_graph function.
 
+    Args:
+        clip_path: Directory of the clip.
+        weight_path: Weights to be used for RNNDetector.
+        human_df: Dataframe of human labels for the audio clip.
+        automated_df: Whether the audio clip should be labelled by the isolate function and subsequently plotted.
+        save_fig: Whether the plots should be saved in a directory as a png file.
+
+    Returns:
+        None
+    """
     # Loading in the clip with Microfaune's built-in loading function
     SAMPLE_RATE, SIGNAL = audio.load_wav(clip_path)
     # downsample the audio if the sample rate > 44.1 kHz
@@ -244,8 +293,21 @@ def local_score_visualization(clip_path,weight_path = None, human_df = None,auto
         automated_df = pd.DataFrame()
 
     local_line_graph(local_score[0].tolist(),clip_path,SAMPLE_RATE,SIGNAL,automated_df,human_df, save_fig = save_fig)
-def bird_label_scores(automated_df,human_df,plot_fig = False, save_fig = False):
 
+def bird_label_scores(automated_df,human_df,plot_fig = False, save_fig = False):
+    """
+    Function to generate a dataframe with statistics relating to the efficiency of the automated label compared to the human label.
+    These statistics include true positive, false positive, false negative, true negative, union, precision, recall, F1, and Global IoU.
+
+    Args:
+        automated_df: Dataframe of automated labels for one clip
+        human_df: Dataframe of human labels for one clip.
+        plot_fig: Whether or not the efficiency statistics should be displayed.
+        save_fig: Whether or not the plot should be saved within a file.
+
+    Returns:
+        Dataframe with statistics comparing the automated and human labeling.
+    """
     duration = automated_df["CLIP LENGTH"].to_list()[0]
     SAMPLE_RATE = automated_df["SAMPLE RATE"].to_list()[0]
     # Initializing two arrays that will represent the human labels and automated labels with respect to
@@ -355,9 +417,23 @@ def bird_label_scores(automated_df,human_df,plot_fig = False, save_fig = False):
 
     return pd.DataFrame(entry,index=[0])
 
-# Function that will allow users to easily pass in two dataframes, and it will output statistics on them
 # Will have to adjust the isolate function so that it adds a sampling rate onto the dataframes.
 def automated_labeling_statistics(automated_df,manual_df):
+    """
+    Function that will allow users to easily pass in two dataframes of manual labels and automated labels, 
+    and a dataframe is returned with statistics examining the efficiency of the automated labelling system compared
+    to the human labels for multiple clips.
+
+    Calls bird_local_scores on corresponding audio clips to generate the efficiency statistics for one specific clip which is then all put into one
+    dataframe of statistics for multiple audio clips.
+
+    Args:
+        automated_df: Dataframe of automated labels of multiple clips.
+        manual_df: Dataframe of human labels of multiple clips.
+
+    Returns:
+        Dataframe of statistics comparing automated labels and human labels for multiple clips.
+    """
     # Getting a list of clips
     clips = automated_df["IN FILE"].to_list()
     # Removing duplicates
@@ -379,8 +455,16 @@ def automated_labeling_statistics(automated_df,manual_df):
         #    continue
     return statistics_df
 
-# Small function that takes in the statistics and outputs their global values
 def global_dataset_statistics(statistics_df):
+    """
+    Function that takes in a dataframe of efficiency statistics for multiple clips and outputs their global values.
+
+    Args:
+        statistics_df: Dataframe of statistics value for multiple audio clips as returned by the function automated_labelling_statistics.
+
+    Returns:
+        Dataframe of global statistics for the multiple audio clips' labelling.
+    """
     tp_sum = statistics_df["TRUE POSITIVE"].sum()
     fp_sum = statistics_df["FALSE POSITIVE"].sum()
     fn_sum = statistics_df["FALSE NEGATIVE"].sum()
