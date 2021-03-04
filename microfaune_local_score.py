@@ -12,6 +12,7 @@ import pdb
 import csv
 import argparse
 from scipy.io import wavfile
+from scipy import stats
 import scipy.signal as scipy_signal
 import pandas as pd
 import math
@@ -237,6 +238,26 @@ def calc_local_scores(bird_dir,weight_path=None, Normalized_Sample_Rate = 44100)
     # Quick fix to indexing
     annotations.reset_index(inplace = True, drop = True)
     return annotations
+
+# Function that takes in a pandas dataframe of annotations and outputs a dataframe of the
+# mean, median, mode, quartiles, and standard deviation of the annotation durations.
+def annotation_duration_statistics(df):
+    # Reading in the Duration column of the passed in dataframe as a Python list
+    annotation_lengths = df["DURATION"].to_list()
+    # Converting the Python list to a numpy array
+    annotation_lengths = np.asarray(annotation_lengths)
+    entry = {'COUNT' : np.shape(annotation_lengths)[0],
+             'MODE'  : stats.mode(np.round(annotation_lengths,2))[0][0],
+             'MEAN'    : np.mean(annotation_lengths),
+             'STANDARD DEVIATION' : np.std(annotation_lengths),
+             'MIN': np.amin(annotation_lengths),
+             'Q1': np.percentile(annotation_lengths,25),
+             'MEDIAN'  : np.median(annotation_lengths),
+             'Q3' : np.percentile(annotation_lengths,75),
+             'MAX'  : np.amax(annotation_lengths)}
+    # returning the dictionary as a pandas dataframe
+    return pd.DataFrame.from_dict([entry])
+
 
 def calc_local_scores_simpler(bird_dir,weight_path=None, Normalized_Sample_Rate = 44100):
     # init detector
