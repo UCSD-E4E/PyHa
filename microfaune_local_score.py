@@ -17,8 +17,6 @@ import scipy.signal as scipy_signal
 import pandas as pd
 import math
 
-# Gabriel's original moment-to-moment classification tool. Reworked to output
-# a Pandas DataFrame.
 # TODO rework isolate in a way that allows a user to input a dictionary that where they can modulate different
 # parameters involved in Gabriel's algorithm. We can set the default of this dict to be what he originally chose for now.
 # Some ideas for how to change the parameters are to allow for different modification of the threshold. We would want to be able
@@ -29,6 +27,20 @@ import math
 # loop around and average each sample with its surrounding samples over many iterations. We could also play around with filtering.
 
 def isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename):
+    """
+    Returns a dataframe of automated labels for the given audio clip. The automated labels determine intervals of bird noise as
+    determined by the local scores given by an RNNDetector.
+
+    Args:
+        scores (list of floats) - Local scores of the audio clip as determined by RNNDetector.
+        SIGNAL (list of ints) - Samples from the audio clip.
+        SAMPLE_RATE (int) - Sampling rate of the audio clip, usually 44100.
+        audio_dir (string) - Directory of the audio clip.
+        filename (string) - Name of the audio clip file.
+
+    Returns:
+        Dataframe of automated labels for the audio clip.
+    """
     # calculate original duration
     old_duration = len(SIGNAL) / SAMPLE_RATE
 
@@ -155,9 +167,18 @@ def simple_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename):
             continue
     return pd.DataFrame.from_dict(entry)
 
-
-## Function that applies the moment to moment labeling system to a directory full of wav files.
 def calc_local_scores(bird_dir,weight_path=None, Normalized_Sample_Rate = 44100):
+    """
+    Function that applies the moment to moment labeling system to a directory full of wav files.
+
+    Args:
+        bird_dir (string) - Directory with wav audio files.
+        weight_path (string) - File path of weights to be used by the RNNDetector for determining presence of bird sounds.
+        Normalized_Sample_Rate (int) - Sampling rate that the audio files should all be normalized to.
+
+    Returns:
+        Dataframe of automated labels for the audio clips in bird_dir.
+    """
     # init detector
     # Use Default Microfaune Detector
     if weight_path is None:
@@ -299,8 +320,23 @@ def calc_local_scores_simpler(bird_dir,weight_path=None, Normalized_Sample_Rate 
     annotations.reset_index(inplace = True, drop = True)
     return annotations
 
-# Function that produces graphs with the local score plot and spectrogram of an audio clip. Now integrated with Pandas so you can visualize human and automated annotations.
 def local_line_graph(local_scores,clip_name, sample_rate,samples, automated_df=None, human_df=None,log_scale = False, save_fig = False):
+    """
+    Function that produces graphs with the local score plot and spectrogram of an audio clip. Now integrated with Pandas so you can visualize human and automated annotations.
+
+    Args:
+        local_scores (list of floats) - Local scores for the clip determined by the RNN.
+        clip_name (string) - Directory of the clip.
+        sample_rate (int) - Sample rate of the audio clip, usually 44100.
+        samples (list of ints) - Each of the samples from the audio clip.
+        automated_df (Dataframe) - Dataframe of automated labelling of the clip.
+        human_df (Dataframe) - Dataframe of human labelling of the clip.
+        log_scale (boolean) - Whether the axis for local scores should be logarithmically scaled on the plot.
+        save_fig (boolean) - Whether the clip should be saved in a directory as a png file.
+
+    Returns:
+        None
+    """
     # Calculating the length of the audio clip
     duration = samples.shape[0]/sample_rate
     # Calculating the number of local scores outputted by Microfaune
@@ -356,12 +392,25 @@ def local_line_graph(local_scores,clip_name, sample_rate,samples, automated_df=N
     # save graph
     if save_fig:
         plt.savefig(clip_name + "_Local_Score_Graph.png")
-
-# Wrapper function for the local_line_graph function for ease of use.
+        
 # TODO rework function so that instead of generating the automated labels, it takes the automated_df as input
 # same as it does with the manual dataframe.
 def local_score_visualization(clip_path,weight_path = None, human_df = None,automated_df = False,log_scale = False, save_fig = False):
+    """
+    Wrapper function for the local_line_graph function for ease of use. Processes clip for local scores to be used for
+    the local_line_graph function.
 
+    Args:
+        clip_path (string) - Directory of the clip.
+        weight_path (string) - Weights to be used for RNNDetector.
+        human_df (Dataframe) - Dataframe of human labels for the audio clip.
+        automated_df (Dataframe) - Whether the audio clip should be labelled by the isolate function and subsequently plotted.
+        log_scale (boolean) - Whether the axis for local scores should be logarithmically scaled on the plot.
+        save_fig (boolean) - Whether the plots should be saved in a directory as a png file.
+
+    Returns:
+        None
+    """
     # Loading in the clip with Microfaune's built-in loading function
     SAMPLE_RATE, SIGNAL = audio.load_wav(clip_path)
     # downsample the audio if the sample rate > 44.1 kHz
@@ -440,7 +489,19 @@ def local_score_visualization2(clip_path,weight_path = None, human_df = None,aut
     local_line_graph(local_score[0].tolist(),clip_path,SAMPLE_RATE,SIGNAL,automated_df,human_df, save_fig = save_fig)
 
 def bird_label_scores(automated_df,human_df,plot_fig = False, save_fig = False):
+    """
+    Function to generate a dataframe with statistics relating to the efficiency of the automated label compared to the human label.
+    These statistics include true positive, false positive, false negative, true negative, union, precision, recall, F1, and Global IoU.
 
+    Args:
+        automated_df (Dataframe) - Dataframe of automated labels for one clip
+        human_df (Dataframe) - Dataframe of human labels for one clip.
+        plot_fig (boolean) - Whether or not the efficiency statistics should be displayed.
+        save_fig (boolean) - Whether or not the plot should be saved within a file.
+
+    Returns:
+        Dataframe with statistics comparing the automated and human labeling.
+    """
     duration = automated_df["CLIP LENGTH"].to_list()[0]
     SAMPLE_RATE = automated_df["SAMPLE RATE"].to_list()[0]
     # Initializing two arrays that will represent the human labels and automated labels with respect to
@@ -550,9 +611,23 @@ def bird_label_scores(automated_df,human_df,plot_fig = False, save_fig = False):
 
     return pd.DataFrame(entry,index=[0])
 
-# Function that will allow users to easily pass in two dataframes, and it will output statistics on them
 # Will have to adjust the isolate function so that it adds a sampling rate onto the dataframes.
 def automated_labeling_statistics(automated_df,manual_df):
+    """
+    Function that will allow users to easily pass in two dataframes of manual labels and automated labels, 
+    and a dataframe is returned with statistics examining the efficiency of the automated labelling system compared
+    to the human labels for multiple clips.
+
+    Calls bird_local_scores on corresponding audio clips to generate the efficiency statistics for one specific clip which is then all put into one
+    dataframe of statistics for multiple audio clips.
+
+    Args:
+        automated_df (Dataframe) - Dataframe of automated labels of multiple clips.
+        manual_df (Dataframe) - Dataframe of human labels of multiple clips.
+
+    Returns:
+        Dataframe of statistics comparing automated labels and human labels for multiple clips.
+    """
     # Getting a list of clips
     clips = automated_df["IN FILE"].to_list()
     # Removing duplicates
@@ -575,8 +650,16 @@ def automated_labeling_statistics(automated_df,manual_df):
         statistics_df.reset_index(inplace = True, drop = True)
     return statistics_df
 
-# Small function that takes in the statistics and outputs their global values
 def global_dataset_statistics(statistics_df):
+    """
+    Function that takes in a dataframe of efficiency statistics for multiple clips and outputs their global values.
+
+    Args:
+        statistics_df (Dataframe) - Dataframe of statistics value for multiple audio clips as returned by the function automated_labelling_statistics.
+
+    Returns:
+        Dataframe of global statistics for the multiple audio clips' labelling.
+    """
     tp_sum = statistics_df["TRUE POSITIVE"].sum()
     fp_sum = statistics_df["FALSE POSITIVE"].sum()
     fn_sum = statistics_df["FALSE NEGATIVE"].sum()
@@ -595,6 +678,17 @@ def global_dataset_statistics(statistics_df):
 # TODO rework this function to implement some linear algebra, right now the nested for loop won't handle larger loads well
 # To make a global matrix, find the clip with the most amount of automated labels and set that to the number of columns
 def clip_IoU(automated_df,manual_df):
+    """
+    Function that takes in the manual and automated labels for a clip and outputs human label-by-label IoU Scores.
+
+    Args:
+        automated_df (Dataframe) - Dataframe of automated labels for an audio clip.
+        manual_df (Dataframe) - Dataframe of human labels for an audio clip.
+    
+    Returns:
+        Numpy Array of human label IoU scores.
+    """
+
     automated_df.reset_index(inplace = True, drop = True)
     manual_df.reset_index(inplace = True, drop = True)
     # Determining the number of rows in the output numpy array
@@ -649,9 +743,20 @@ def clip_IoU(automated_df,manual_df):
         human_arr[human_arr == 1] = 0
 
     return IoU_Matrix
-# Function that takes in the IoU Matrix from the clip_IoU function and ouputs the number of true positives and false positives
-# It also calculates the precision.
+
 def matrix_IoU_Scores(IoU_Matrix,manual_df,threshold):
+    """
+    Function that takes in the IoU Matrix from the clip_IoU function and ouputs the number of true positives and false positives, 
+    as well as calculating the precision.
+
+    Args:
+        IoU_Matrix (Numpy Array) - Matrix of human label IoU scores.
+        manual_df (Dataframe) - Dataframe of human labels for an audio clip.
+        threshold (float) - Threshold for determining true positives and false negatives.
+    
+    Returns:
+        Dataframe of clip statistics such as True Positive, False Negative, Precision, Recall, and F1 value.
+    """
 
     audio_dir = manual_df["FOLDER"][0]
     filename = manual_df["IN FILE"][0]
@@ -690,8 +795,18 @@ def matrix_IoU_Scores(IoU_Matrix,manual_df,threshold):
 
     return pd.DataFrame.from_dict([entry])
 
-# Function that can help us determine whether or not a call was detected.
 def clip_catch(automated_df,manual_df):
+    """
+    Function that determines the overlap between human and automated labels with respect to the number of samples in the human label.
+
+    Args:
+        automated_df (Dataframe) - Dataframe of automated labels for an audio clip.
+        manual_df (Dataframe) - Dataframe of human labels for an audio clip.
+    
+    Returns:
+        Numpy Array of statistics regarding the amount of overlap between the manual and automated labels relative to the number of
+        samples.
+    """
     # resetting the indices to make this function work
     automated_df.reset_index(inplace = True, drop = True)
     manual_df.reset_index(inplace = True, drop = True)
@@ -737,10 +852,18 @@ def clip_catch(automated_df,manual_df):
 
 
 
-# Function that takes in two Pandas dataframes that represent human labels and automated labels.
-# It then runs the clip_IoU function across each clip and appends the best fit IoU score to each labels
-# on the manual dataframe as its output.
 def dataset_IoU(automated_df,manual_df):
+    """
+    Function that takes in two Pandas dataframes that represent human labels and automated labels. 
+    It then runs the clip_IoU function across each clip and appends the best fit IoU score to each labels on the manual dataframe as its output.
+
+    Args:
+        automated_df (Dataframe) - Dataframe of automated labels for multiple audio clips.
+        manual_df (Dataframe) - Dataframe of human labels for multiple audio clips.
+    
+    Returns:
+        Dataframe of manual labels with the best fit IoU score as a column.
+    """
     # Getting a list of clips
     clips = automated_df["IN FILE"].to_list()
     # Removing duplicates
@@ -768,6 +891,18 @@ def dataset_IoU(automated_df,manual_df):
 
 
 def dataset_IoU_Statistics(automated_df,manual_df,threshold = 0.5):
+    """
+    Wrapper function that takes matrix_IoU_Scores across multiple clips. 
+    Allows user to modify the threshold that determines whether or not a label is a true positive.
+
+    Args:
+        automated_df (Dataframe) - Dataframe of automated labels for multiple audio clips.
+        manual_df (Dataframe) - Dataframe of human labels for multiple audio clips.
+        threshold (float) - Threshold for determining true positives.
+    
+    Returns:
+        Dataframe of IoU statistics for multiple audio clips.
+    """
     # isolating the names of the clips that have been labelled into an array.
     clips = automated_df["IN FILE"].to_list()
     clips = list(dict.fromkeys(clips))
@@ -790,8 +925,18 @@ def dataset_IoU_Statistics(automated_df,manual_df,threshold = 0.5):
             IoU_Statistics = IoU_Statistics.append(clip_stats_df)
     IoU_Statistics.reset_index(inplace = True, drop = True)
     return IoU_Statistics
-# Function that takes the output of dataset_IoU_Statistics and computes a global precision score.
+
 def global_IoU_Statistics(statistics_df):
+    """
+    Function that takes the output of dataset_IoU Statistics and outputs a global count of true positives and false positives, 
+    as well as computing the precision across the dataset.
+
+    Args:
+        statistics_df (Dataframe) - Dataframe of matrix IoU scores for multiple clips.
+    
+    Returns:
+        Dataframe of global IoU statistics.
+    """
     # taking the sum of the number of true positives and false positives.
     tp_sum = statistics_df["TRUE POSITIVE"].sum()
     fn_sum = statistics_df["FALSE NEGATIVE"].sum()
@@ -817,6 +962,16 @@ def global_IoU_Statistics(statistics_df):
     return pd.DataFrame.from_dict([entry])
 
 def dataset_Catch(automated_df,manual_df):
+    """
+    Function that determines the label-by-label "Catch" across multiple clips.
+
+    Args:
+        automated_df (Dataframe) - Dataframe of automated labels for multiple audio clips.
+        manual_df (Dataframe) - Dataframe of human labels for multiple audio clips.
+    
+    Returns:
+        Dataframe of human labels with a column for the catch values of each label.
+    """
     # Getting a list of clips
     clips = automated_df["IN FILE"].to_list()
     # Removing duplicates
