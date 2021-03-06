@@ -995,3 +995,26 @@ def dataset_Catch(automated_df,manual_df):
     # Resetting the indices
     manual_df_with_Catch.reset_index(inplace = True, drop = True)
     return manual_df_with_Catch
+
+kaleidoscope_columns = ['INDIR', 'FOLDER',, 'IN FILE', 'DURATION', 'DATE', 'TIME', 'HOUR', 'DATE-12', 'TIME-12', 'HOUR-12', 'LATITUDE', 'LONGITUDE', 
+'MODEL', 'SERIAL NO', 'FIRMWARE', 'PREFIX', 'NOTES', 'PULSES', 'MATCHING', 'MATCH RATIO', 'ORGID', 'USERID', 'REVIEW ORIGID', 'REVIEW USERID', 'INPATHMD5']
+
+def make_kaleidoscope_compatible(df, save_csv=False):
+    """
+    Function to make a dataframe compatible with Kaleidoscope csv files. 
+
+    Args:
+        df (Dataframe) - Dataframe of labels with columns containing different areas of information of the audio clip and label.
+        save_csv (boolean) - Whether the modified dataframe should be stored as a csv file.
+    
+    Returns:
+        Dataframe of the given labels but with some columns removed that are not compatible with Kaleidoscope.
+    """
+    drop_columns = []
+    for col in df.columns:
+        if col not in kaleidoscope_columns:
+            drop_columns.append(col)
+    df.drop(columns=drop_columns)
+    if save_csv:
+        df.to_csv('./csv_files/kaleidoscope_compatible_file.csv')
+    return df
