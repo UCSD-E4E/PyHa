@@ -17,14 +17,8 @@ import scipy.signal as scipy_signal
 import pandas as pd
 import math
 
-# Gabriel's original moment-to-moment classification tool. Reworked to output
-# a Pandas DataFrame.
-# TODO rework isolate in a way that allows a user to input a dictionary that where they can modulate different
-# parameters involved in Gabriel's algorithm. We can set the default of this dict to be what he originally chose for now.
-# Some ideas for how to change the parameters are to allow for different modification of the threshold. We would want to be able
-# to modify the bird presence threshold to be a pure value. This will allow us to build ROC curves. Another would be to allow for a
-# selection of how many standard deviations away from the mean. Another would be, instead of a median, allow standard deviation and mean as
-# alternatives. Another option would be to allow for curve smoothing on the local score array that is being passed in. This could come in
+
+# Another option would be to allow for curve smoothing on the local score array that is being passed in. This could come in
 # the form of a high order polynomial fit or possibly testing out my curve smoothing algorithm that uses a bell-curved distribution to
 # loop around and average each sample with its surrounding samples over many iterations. We could also play around with filtering.
 
@@ -36,10 +30,13 @@ def isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename,isolation_par
 
     # deciding which isolation technique to deploy for a given clip
     if isolation_parameters["technique"] == "simple":
-        isolation_df = simple_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename, isolation_parameters,manual_id = "bird")
+        isolation_df = simple_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename, isolation_parameters, manual_id = "bird")
     elif isolation_parameters["technique"] == "steinberg":
-        isolation_df = steinberg_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename,isolation_parameters,manual_id = "bird")
-#    elif isolation_parameters["technique"] == "stack"
+        isolation_df = steinberg_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename,isolation_parameters, manual_id = "bird")
+    elif isolation_parameters["technique"] == "stack":
+        isolation_df = stack_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename, isolation_parameters, manual_id = "bird")
+        # stack_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename, isolation_parameters, manual_id = "bird"):
+
     return isolation_df
 
 
@@ -128,6 +125,7 @@ def steinberg_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename,iso
     return entry
 
 def simple_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename, isolation_parameters, manual_id = "bird"):
+
     #local_scores2 = local_scores
     #threshold = 2*np.median(local_scores)
     if isolation_parameters["threshold_type"] == "median":
@@ -160,25 +158,22 @@ def simple_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename, isola
     # local_score * samples_per_score / sample_rate
     time_per_score = samples_per_score / SAMPLE_RATE
 
-    # setting scores above the threshold equal to one
-    #local_scores2[local_scores2 >= threshold] = 1
-
-    consecutive_samples = 0
+    annotation_start = 0
     call_start = 0
     call_stop = 0
     # looping through all of the local scores
     for ndx in range(len(local_scores)):
         current_score = local_scores[ndx]
         # Start of a new sequence.
-        if current_score >= thresh and consecutive_samples == 0:
+        if current_score >= thresh and annotation_start == 0:
             # signal a start of a new sequence.
-            consecutive_samples = 1
+            annotation_start = 1
             call_start = float(ndx*time_per_score)
             #print("Call Start",call_start)
         # End of a sequence
-        elif current_score < thresh and consecutive_samples == 1:
+        elif current_score < thresh and annotation_start == 1:
             # signal the end of a sequence
-            consecutive_samples = 0
+            annotation_start = 0
             #
             call_end = float(ndx*time_per_score)
             #print("Call End",call_end)
@@ -190,11 +185,90 @@ def simple_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename, isola
         else:
             continue
     return pd.DataFrame.from_dict(entry)
-    # implement this function after
-#    def stack_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename, threshold_type = "median", threshold_const = 2.0):
 
 
 
+def stack_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename, isolation_parameters, manual_id = "bird"):
+
+    # configuring the threshold based on isolation parameters
+    if isolation_parameters["threshold_type"] == "median":
+        thresh = np.median(local_scores) * isolation_parameters["threshold_const"]
+    elif isolation_parameters["threshold_type"] == "mean" or isolation_parameters["threshold_type"] == "average":
+        thresh = np.mean(local_scores) * isolation_parameters["threshold_const"]
+    elif isolation_parameters["threshold_type"] == "standard deviation":
+        thresh = np.std(local_scores) * isolation_parameters["threshold_const"]
+    elif isolation_parameters["threshold_type"] == "pure" and (isolation_parameters["threshold_const"] < 0 or isolation_parameters["threshold_const"] > 1):
+        print("A pure threshold must be between [0,1], exiting function")
+        return
+    elif isolation_parameters["threshold_type"] == "pure":
+        thresh = isolation_parameters["threshold_const"]
+
+    # calculate original duration
+    old_duration = len(SIGNAL) / SAMPLE_RATE
+
+    # initializing a dictionary that will be used to construct the output pandas dataframe.
+    entry = {'FOLDER'  : audio_dir,
+             'IN FILE'    : filename,
+             'CHANNEL' : 0,
+             'CLIP LENGTH': old_duration,
+             'SAMPLE RATE': SAMPLE_RATE,
+             'OFFSET'  : [],
+             'DURATION' : [],
+             'MANUAL ID'  : []}
+
+    # how many samples one score represents
+    # Scores meaning local scores
+    samples_per_score = len(SIGNAL) // len(local_scores)
+    # local_score * samples_per_score / sample_rate
+    # constant that will be used to convert from local score indices to annotation start/stop values.
+    time_per_score = samples_per_score / SAMPLE_RATE
+
+    # initializing variables used in master loop
+    stack_counter = 0
+    annotation_start = 0
+    call_start = 0
+    call_stop = 0
+    # looping through every local score array value
+    for ndx in range(len(local_scores)):
+        # the case for the end of the local score array and the stack isn't empty.
+        if ndx == (len(local_scores) - 1) and stack_counter > 0:
+            call_end = float(ndx*time_per_score)
+            entry['OFFSET'].append(call_start)
+            entry['DURATION'].append(call_end - call_start)
+            entry['MANUAL ID'].append(manual_id)
+        # pushing onto the stack whenever a sample is above the threshold
+        if local_scores[ndx] >= thresh:
+            # in case this is the start of a new annotation
+            if stack_counter == 0:
+                call_start = float(ndx*time_per_score)
+                annotation_start = 1
+            # increasing this stack counter will be referred to as "pushing"
+            stack_counter = stack_counter + 1
+
+        # when a score is below the treshold
+        else:
+            # the case where it is the end of an annotation
+            if stack_counter == 0 and annotation_start == 1:
+                # marking the end of a clip
+                call_end = float(ndx*time_per_score)
+
+                # adding annotation to dictionary containing all annotations
+                entry['OFFSET'].append(call_start)
+                entry['DURATION'].append(call_end - call_start)
+                entry['MANUAL ID'].append(manual_id)
+
+                # resetting for the next annotation
+                call_start = 0
+                call_end = 0
+                annotation_start = 0
+            # the case where the stack is empty and a new annotation hasn't started, you just want to increment the index
+            elif stack_counter == 0 and annotation_start == 0:
+                continue
+            # the case where we are below the threshold and the stack isn't empty. Pop from the stack, which in this case means just subtracting from the counter.
+            else:
+                stack_counter = stack_counter - 1
+    # returning pandas dataframe from dictionary constructed with all of the annotations
+    return pd.DataFrame.from_dict(entry)
 
 ## Function that applies the moment to moment labeling system to a directory full of wav files.
 def generate_automated_labels(bird_dir, isolation_parameters, weight_path=None, Normalized_Sample_Rate = 44100):
@@ -243,6 +317,7 @@ def generate_automated_labels(bird_dir, isolation_parameters, weight_path=None, 
 
         # get duration of clip
         duration = len(SIGNAL) / SAMPLE_RATE
+
         try:
             # Running moment to moment algorithm and appending to a master dataframe.
             new_entry = isolate(local_scores[0], SIGNAL, SAMPLE_RATE, bird_dir, audio_file, isolation_parameters, manual_id = "bird")
@@ -592,7 +667,8 @@ def clip_IoU(automated_df,manual_df):
 # Function that takes in the IoU Matrix from the clip_IoU function and ouputs the number of true positives and false positives
 # It also calculates the precision.
 def matrix_IoU_Scores(IoU_Matrix,manual_df,threshold):
-
+    # This might not work in a situation where there is only one human label and multiple automated labels.
+    #IoU_Matrix_size = IoU_Matrix.shape[0] * IoU_Matrix.shape[1]
     audio_dir = manual_df["FOLDER"][0]
     filename = manual_df["IN FILE"][0]
 
@@ -607,6 +683,7 @@ def matrix_IoU_Scores(IoU_Matrix,manual_df,threshold):
     # Calculating the false positives
     max_val_per_column = np.max(IoU_Matrix,axis=0)
     fp_count = max_val_per_column[max_val_per_column < threshold].shape[0]
+    tn_count = max_val_per_column[max_val_per_column >= threshold].shape[0]
 
     # Calculating the necessary statistics
     try:
@@ -624,6 +701,7 @@ def matrix_IoU_Scores(IoU_Matrix,manual_df,threshold):
              'TRUE POSITIVE' : tp_count,
              'FALSE NEGATIVE' : fn_count,
              'FALSE POSITIVE': fp_count,
+             'TRUE NEGATIVE' : tn_count,
              'PRECISION'  : precision,
              'RECALL' : recall,
              'F1' : f1}
@@ -736,6 +814,7 @@ def global_IoU_Statistics(statistics_df):
     tp_sum = statistics_df["TRUE POSITIVE"].sum()
     fn_sum = statistics_df["FALSE NEGATIVE"].sum()
     fp_sum = statistics_df["FALSE POSITIVE"].sum()
+    tn_sum = statistics_df["TRUE NEGATIVE"].sum()
     # calculating the precision, recall, and f1
     try:
         precision = tp_sum/(tp_sum+fp_sum)
@@ -750,6 +829,7 @@ def global_IoU_Statistics(statistics_df):
     entry = {'TRUE POSITIVE' : tp_sum,
         'FALSE NEGATIVE' : fn_sum,
         'FALSE POSITIVE' : fp_sum,
+        'TRUE NEGATIVE'  : tn_sum,
         'PRECISION'  : round(precision,4),
         'RECALL' : round(recall,4),
         'F1' : round(f1,4)}
