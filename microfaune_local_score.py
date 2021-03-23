@@ -26,7 +26,24 @@ import math
 # the form of a high order polynomial fit or possibly testing out my curve smoothing algorithm that uses a bell-curved distribution to
 # loop around and average each sample with its surrounding samples over many iterations. We could also play around with filtering.
 
-def isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename):
+
+# function that encapsulates many different isolation techniques to the dictionary isolation_parameters
+def isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename,isolation_parameters,manual_id = "bird"):
+
+    # initializing the output dataframe that will contain labels across a single clip
+    isolation_df = pd.DataFrame()
+
+    # deciding which isolation technique to deploy for a given clip
+    if isolation_parameters["technique"] == "simple":
+        isolation_df = simple_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename, isolation_parameters,manual_id = "bird")
+    elif isolation_parameters["technique"] == "steinberg":
+        isolation_df = steinberg_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename,isolation_parameters,manual_id = "bird")
+#    elif isolation_parameters["technique"] == "stack"
+    return isolation_df
+
+
+def steinberg_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename,isolation_parameters,manual_id = "bird"):
+=======
     """
     Returns a dataframe of automated labels for the given audio clip. The automated labels determine intervals of bird noise as
     determined by the local scores given by an RNNDetector.
@@ -55,9 +72,18 @@ def isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename):
 
     # Variable to modulate when encapsulating this function.
     # treshold is 'thresh_mult' times above median score value
-    thresh_mult = 2
-    thresh = np.median(local_scores) * thresh_mult
-
+    # thresh_mult = 2
+    if isolation_parameters["threshold_type"] == "median":
+        thresh = np.median(local_scores) * isolation_parameters["threshold_const"]
+    elif isolation_parameters["threshold_type"] == "mean" or isolation_parameters["threshold_type"] == "average":
+        thresh = np.mean(local_scores) * isolation_parameters["threshold_const"]
+    elif isolation_parameters["threshold_type"] == "standard deviation":
+        thresh = np.std(local_scores) * isolation_parameters["threshold_const"]
+    elif isolation_parameters["threshold_type"] == "pure" and (isolation_parameters["threshold_const"] < 0 or isolation_parameters["threshold_const"] > 1):
+        print("A pure threshold must be between [0,1]")
+        return
+    elif isolation_parameters["threshold_type"] == "pure":
+        thresh = isolation_parameters["threshold_const"]
 
     # how many samples one score represents
     # Scores meaning local scores
@@ -74,8 +100,8 @@ def isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename):
 
             # upper and lower bound of captured call
             # sample rate is # of samples in 1 second: +-1 second
-            lo_idx = max(0, score_pos - SAMPLE_RATE)
-            hi_idx = min(len(SIGNAL), score_pos + SAMPLE_RATE)
+            lo_idx = max(0, score_pos - int(isolation_parameters["bi_directional_jump"]*SAMPLE_RATE))
+            hi_idx = min(len(SIGNAL), score_pos + int(isolation_parameters["bi_directional_jump"]*SAMPLE_RATE))
             lo_time = lo_idx / SAMPLE_RATE
             hi_time = hi_idx / SAMPLE_RATE
 
@@ -86,7 +112,7 @@ def isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename):
                 new_stamp = [lo_time, hi_time]
                 # TODO make it so that here we get the duration
                 entry['OFFSET'].append(new_stamp)
-                entry['MANUAL ID'].append(1)
+                entry['MANUAL ID'].append(manual_id)
             # extend same stamp if still overlapping
             else:
                 entry['OFFSET'][-1][1] = hi_time
@@ -115,9 +141,21 @@ def isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename):
     entry["OFFSET"] = OFFSET
     return entry
 
-def simple_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename):
+def simple_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename, isolation_parameters, manual_id = "bird"):
     #local_scores2 = local_scores
-    threshold = 2*np.median(local_scores)
+    #threshold = 2*np.median(local_scores)
+    if isolation_parameters["threshold_type"] == "median":
+        thresh = np.median(local_scores) * isolation_parameters["threshold_const"]
+    elif isolation_parameters["threshold_type"] == "mean" or isolation_parameters["threshold_type"] == "average":
+        thresh = np.mean(local_scores) * isolation_parameters["threshold_const"]
+    elif isolation_parameters["threshold_type"] == "standard deviation":
+        thresh = np.std(local_scores) * isolation_parameters["threshold_const"]
+    elif isolation_parameters["threshold_type"] == "pure" and (isolation_parameters["threshold_const"] < 0 or isolation_parameters["threshold_const"] > 1):
+        print("A pure threshold must be between [0,1]")
+        return
+    elif isolation_parameters["threshold_type"] == "pure":
+        thresh = isolation_parameters["threshold_const"]
+
     # calculate original duration
     old_duration = len(SIGNAL) / SAMPLE_RATE
 
@@ -146,13 +184,13 @@ def simple_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename):
     for ndx in range(len(local_scores)):
         current_score = local_scores[ndx]
         # Start of a new sequence.
-        if current_score >= threshold and consecutive_samples == 0:
+        if current_score >= thresh and consecutive_samples == 0:
             # signal a start of a new sequence.
             consecutive_samples = 1
             call_start = float(ndx*time_per_score)
             #print("Call Start",call_start)
         # End of a sequence
-        elif current_score < threshold and consecutive_samples == 1:
+        elif current_score < thresh and consecutive_samples == 1:
             # signal the end of a sequence
             consecutive_samples = 0
             #
@@ -160,14 +198,22 @@ def simple_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename):
             #print("Call End",call_end)
             entry['OFFSET'].append(call_start)
             entry['DURATION'].append(call_end - call_start)
-            entry['MANUAL ID'].append(1)
+            entry['MANUAL ID'].append(manual_id)
             call_start = 0
             call_end = 0
         else:
             continue
     return pd.DataFrame.from_dict(entry)
+    # implement this function after
+#    def stack_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename, threshold_type = "median", threshold_const = 2.0):
 
-def calc_local_scores(bird_dir,weight_path=None, Normalized_Sample_Rate = 44100):
+
+
+
+
+## Function that applies the moment to moment labeling system to a directory full of wav files.
+def generate_automated_labels(bird_dir, isolation_parameters, weight_path=None, Normalized_Sample_Rate = 44100):
+=======
     """
     Function that applies the moment to moment labeling system to a directory full of wav files.
 
@@ -179,6 +225,7 @@ def calc_local_scores(bird_dir,weight_path=None, Normalized_Sample_Rate = 44100)
     Returns:
         Dataframe of automated labels for the audio clips in bird_dir.
     """
+
     # init detector
     # Use Default Microfaune Detector
     if weight_path is None:
@@ -226,7 +273,7 @@ def calc_local_scores(bird_dir,weight_path=None, Normalized_Sample_Rate = 44100)
         duration = len(SIGNAL) / SAMPLE_RATE
         try:
             # Running moment to moment algorithm and appending to a master dataframe.
-            new_entry = isolate(local_scores[0], SIGNAL, SAMPLE_RATE, bird_dir, audio_file)
+            new_entry = isolate(local_scores[0], SIGNAL, SAMPLE_RATE, bird_dir, audio_file, isolation_parameters, manual_id = "bird")
             #print(new_entry)
             if annotations.empty == True:
                 annotations = new_entry
@@ -258,67 +305,6 @@ def annotation_duration_statistics(df):
     # returning the dictionary as a pandas dataframe
     return pd.DataFrame.from_dict([entry])
 
-
-def calc_local_scores_simpler(bird_dir,weight_path=None, Normalized_Sample_Rate = 44100):
-    # init detector
-    # Use Default Microfaune Detector
-    if weight_path is None:
-        detector = RNNDetector()
-    # Use Custom weights for Microfaune Detector
-    else:
-        detector = RNNDetector(weight_path)
-
-    # init labels dataframe
-    annotations = pd.DataFrame()
-    # generate local scores for every bird file in chosen directory
-    for audio_file in os.listdir(bird_dir):
-        # skip directories
-        if os.path.isdir(bird_dir+audio_file): continue
-
-        # read file
-        SAMPLE_RATE, SIGNAL = audio.load_wav(bird_dir + audio_file)
-
-        # downsample the audio if the sample rate > 44.1 kHz
-        # Force everything into the human hearing range.
-        # May consider reworking this function so that it upsamples as well
-        if SAMPLE_RATE > Normalized_Sample_Rate:
-            rate_ratio = Normalized_Sample_Rate / SAMPLE_RATE
-            SIGNAL = scipy_signal.resample(
-                    SIGNAL, int(len(SIGNAL)*rate_ratio))
-            SAMPLE_RATE = Normalized_Sample_Rate
-            # resample produces unreadable float32 array so convert back
-            #SIGNAL = np.asarray(SIGNAL, dtype=np.int16)
-
-        #print(SIGNAL.shape)
-        # convert stereo to mono if needed
-        # Might want to compare to just taking the first set of data.
-        if len(SIGNAL.shape) == 2:
-            SIGNAL = SIGNAL.sum(axis=1) / 2
-
-        # detection
-        try:
-            microfaune_features = detector.compute_features([SIGNAL])
-            global_score,local_scores = detector.predict(microfaune_features)
-        except:
-            print("Error in detection, skipping", audio_file)
-            continue
-
-        # get duration of clip
-        duration = len(SIGNAL) / SAMPLE_RATE
-        try:
-            # Running moment to moment algorithm and appending to a master dataframe.
-            new_entry = simple_isolate(local_scores[0], SIGNAL, SAMPLE_RATE, bird_dir, audio_file)
-            #print(new_entry)
-            if annotations.empty == True:
-                annotations = new_entry
-            else:
-                annotations = annotations.append(new_entry)
-        except:
-            print("Error in isolating bird calls from", audio_file)
-            continue
-    # Quick fix to indexing
-    annotations.reset_index(inplace = True, drop = True)
-    return annotations
 
 def local_line_graph(local_scores,clip_name, sample_rate,samples, automated_df=None, human_df=None,log_scale = False, save_fig = False):
     """
@@ -363,6 +349,7 @@ def local_line_graph(local_scores,clip_name, sample_rate,samples, automated_df=N
         axs[0].set_ylim(0,1)
     axs[0].grid(which='major', linestyle='-')
     # Adding in the optional automated labels from a Pandas DataFrame
+    #if automated_df is not None:
     if automated_df.empty == False:
         ndx = 0
         for row in automated_df.index:
@@ -371,6 +358,7 @@ def local_line_graph(local_scores,clip_name, sample_rate,samples, automated_df=N
             axs[0].axvspan(xmin=minval,xmax=maxval,facecolor="yellow",alpha=0.4, label = "_"*ndx + "Automated Labels")
             ndx += 1
     # Adding in the optional human labels from a Pandas DataFrame
+    #if human_df is not None:
     if human_df.empty == False:
         ndx = 0
         for row in human_df.index:
@@ -395,7 +383,10 @@ def local_line_graph(local_scores,clip_name, sample_rate,samples, automated_df=N
         
 # TODO rework function so that instead of generating the automated labels, it takes the automated_df as input
 # same as it does with the manual dataframe.
-def local_score_visualization(clip_path,weight_path = None, human_df = None,automated_df = False,log_scale = False, save_fig = False):
+
+def local_score_visualization(clip_path,weight_path = None, human_df = None,automated_df = False, isolation_parameters = None,log_scale = False, save_fig = False):
+
+=======
     """
     Wrapper function for the local_line_graph function for ease of use. Processes clip for local scores to be used for
     the local_line_graph function.
@@ -411,6 +402,7 @@ def local_score_visualization(clip_path,weight_path = None, human_df = None,auto
     Returns:
         None
     """
+
     # Loading in the clip with Microfaune's built-in loading function
     SAMPLE_RATE, SIGNAL = audio.load_wav(clip_path)
     # downsample the audio if the sample rate > 44.1 kHz
@@ -440,53 +432,13 @@ def local_score_visualization(clip_path,weight_path = None, human_df = None,auto
     if human_df is None:
         human_df = pd.DataFrame
     if automated_df == True:
-        automated_df = isolate(local_score[0],SIGNAL, SAMPLE_RATE,"Doesn't","Matter")
-        #test = local_score[0]
-        #automated_df = simple_isolater(test,SIGNAL, SAMPLE_RATE,"Doesn't","Matter")
+        automated_df = isolate(local_score[0],SIGNAL, SAMPLE_RATE,"Doesn't","Matter",isolation_parameters)
     else:
         automated_df = pd.DataFrame()
 
     local_line_graph(local_score[0].tolist(),clip_path,SAMPLE_RATE,SIGNAL,automated_df,human_df,log_scale = log_scale, save_fig = save_fig)
-## TODO: figure out why the local score plot is having the thresholded values set to 1 propagate to this function
-def local_score_visualization2(clip_path,weight_path = None, human_df = None,automated_df = False, save_fig = False):
 
-    # Loading in the clip with Microfaune's built-in loading function
-    SAMPLE_RATE, SIGNAL = audio.load_wav(clip_path)
-    # downsample the audio if the sample rate > 44.1 kHz
-    # Force everything into the human hearing range.
-    if SAMPLE_RATE > 44100:
-        rate_ratio = 44100 / SAMPLE_RATE
-        SIGNAL = scipy_signal.resample(SIGNAL, int(len(SIGNAL)*rate_ratio))
-        SAMPLE_RATE = 44100
-        # Converting to Mono if Necessary
-    if len(SIGNAL.shape) == 2:
-        SIGNAL = SIGNAL.sum(axis=1) / 2
 
-    # Initializing the detector to baseline or with retrained weights
-    if weight_path is None:
-        detector = RNNDetector()
-    else:
-        detector = RNNDetector(weight_path)
-    try:
-        # Computing Mel Spectrogram of the audio clip
-        microfaune_features = detector.compute_features([SIGNAL])
-        # Running the Mel Spectrogram through the RNN
-        global_score,local_score = detector.predict(microfaune_features)
-    except:
-        print("Error in " + clip_path + " Skipping.")
-
-    # In the case where the user wants to look at automated bird labels
-    if human_df is None:
-        human_df = pd.DataFrame
-    if automated_df == True:
-        #automated_df = isolate(local_score[0],SIGNAL, SAMPLE_RATE,"Doesn't","Matter")
-        #test = local_score[0]
-        automated_df = simple_isolate(local_score[0],SIGNAL, SAMPLE_RATE,"Doesn't","Matter")
-        #plt.plot(local_score)
-    else:
-        automated_df = pd.DataFrame()
-
-    local_line_graph(local_score[0].tolist(),clip_path,SAMPLE_RATE,SIGNAL,automated_df,human_df, save_fig = save_fig)
 
 def bird_label_scores(automated_df,human_df,plot_fig = False, save_fig = False):
     """
