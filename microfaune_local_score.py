@@ -70,7 +70,7 @@ def steinberg_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename,iso
     elif isolation_parameters["threshold_type"] == "mean" or isolation_parameters["threshold_type"] == "average":
         thresh = np.mean(local_scores) * isolation_parameters["threshold_const"]
     elif isolation_parameters["threshold_type"] == "standard deviation":
-        thresh = np.std(local_scores) * isolation_parameters["threshold_const"]
+        thresh = np.mean(local_scores) + (np.std(local_scores) * isolation_parameters["threshold_const"])
     elif isolation_parameters["threshold_type"] == "pure" and (isolation_parameters["threshold_const"] < 0 or isolation_parameters["threshold_const"] > 1):
         print("A pure threshold must be between [0,1]")
         return
@@ -142,7 +142,7 @@ def simple_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename, isola
     elif isolation_parameters["threshold_type"] == "mean" or isolation_parameters["threshold_type"] == "average":
         thresh = np.mean(local_scores) * isolation_parameters["threshold_const"]
     elif isolation_parameters["threshold_type"] == "standard deviation":
-        thresh = np.std(local_scores) * isolation_parameters["threshold_const"]
+        thresh = np.mean(local_scores) + (np.std(local_scores) * isolation_parameters["threshold_const"])
     elif isolation_parameters["threshold_type"] == "pure" and (isolation_parameters["threshold_const"] < 0 or isolation_parameters["threshold_const"] > 1):
         print("A pure threshold must be between [0,1]")
         return
@@ -205,7 +205,7 @@ def stack_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename, isolat
     elif isolation_parameters["threshold_type"] == "mean" or isolation_parameters["threshold_type"] == "average":
         thresh = np.mean(local_scores) * isolation_parameters["threshold_const"]
     elif isolation_parameters["threshold_type"] == "standard deviation":
-        thresh = np.std(local_scores) * isolation_parameters["threshold_const"]
+        thresh = np.mean(local_scores) + (np.std(local_scores) * isolation_parameters["threshold_const"])
     elif isolation_parameters["threshold_type"] == "pure" and (isolation_parameters["threshold_const"] < 0 or isolation_parameters["threshold_const"] > 1):
         print("A pure threshold must be between [0,1], exiting function")
         return
