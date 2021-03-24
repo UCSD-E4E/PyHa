@@ -19,8 +19,13 @@ import math
 
 
 # function that encapsulates many different isolation techniques to the dictionary isolation_parameters
-def isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename,isolation_parameters,manual_id = "bird"):
+def isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename,isolation_parameters,manual_id = "bird", normalize_local_scores = False):
 
+    # normalize the local scores so that the max value is 1.
+    if normalize_local_scores == True:
+        local_scores_max = max(local_scores)
+        for ndx in range(len(local_scores)):
+            local_scores[ndx] = local_scores[ndx]/local_scores_max
     # initializing the output dataframe that will contain labels across a single clip
     isolation_df = pd.DataFrame()
 
@@ -71,11 +76,14 @@ def steinberg_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename,iso
         thresh = np.mean(local_scores) * isolation_parameters["threshold_const"]
     elif isolation_parameters["threshold_type"] == "standard deviation":
         thresh = np.mean(local_scores) + (np.std(local_scores) * isolation_parameters["threshold_const"])
-    elif isolation_parameters["threshold_type"] == "pure" and (isolation_parameters["threshold_const"] < 0 or isolation_parameters["threshold_const"] > 1):
-        print("A pure threshold must be between [0,1]")
-        return
     elif isolation_parameters["threshold_type"] == "pure":
         thresh = isolation_parameters["threshold_const"]
+        if thresh < 0:
+            print("Threshold is less than zero, setting to zero")
+            thresh = 0
+        elif thresh > 1:
+            print("Threshold is greater than one, setting to one.")
+            thresh = 1
 
     # how many samples one score represents
     # Scores meaning local scores
@@ -143,11 +151,14 @@ def simple_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename, isola
         thresh = np.mean(local_scores) * isolation_parameters["threshold_const"]
     elif isolation_parameters["threshold_type"] == "standard deviation":
         thresh = np.mean(local_scores) + (np.std(local_scores) * isolation_parameters["threshold_const"])
-    elif isolation_parameters["threshold_type"] == "pure" and (isolation_parameters["threshold_const"] < 0 or isolation_parameters["threshold_const"] > 1):
-        print("A pure threshold must be between [0,1]")
-        return
     elif isolation_parameters["threshold_type"] == "pure":
         thresh = isolation_parameters["threshold_const"]
+        if thresh < 0:
+            print("Threshold is less than zero, setting to zero")
+            thresh = 0
+        elif thresh > 1:
+            print("Threshold is greater than one, setting to one.")
+            thresh = 1
 
     # calculate original duration
     old_duration = len(SIGNAL) / SAMPLE_RATE
@@ -206,11 +217,14 @@ def stack_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename, isolat
         thresh = np.mean(local_scores) * isolation_parameters["threshold_const"]
     elif isolation_parameters["threshold_type"] == "standard deviation":
         thresh = np.mean(local_scores) + (np.std(local_scores) * isolation_parameters["threshold_const"])
-    elif isolation_parameters["threshold_type"] == "pure" and (isolation_parameters["threshold_const"] < 0 or isolation_parameters["threshold_const"] > 1):
-        print("A pure threshold must be between [0,1], exiting function")
-        return
     elif isolation_parameters["threshold_type"] == "pure":
         thresh = isolation_parameters["threshold_const"]
+        if thresh < 0:
+            print("Threshold is less than zero, setting to zero")
+            thresh = 0
+        elif thresh > 1:
+            print("Threshold is greater than one, setting to one.")
+            thresh = 1
 
     # calculate original duration
     old_duration = len(SIGNAL) / SAMPLE_RATE
@@ -281,7 +295,7 @@ def stack_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename, isolat
 
 
 ## Function that applies the moment to moment labeling system to a directory full of wav files.
-def generate_automated_labels(bird_dir, isolation_parameters, weight_path=None, Normalized_Sample_Rate = 44100):
+def generate_automated_labels(bird_dir, isolation_parameters, weight_path=None, Normalized_Sample_Rate = 44100, normalize_local_scores = False):
     """
     Function that applies the moment to moment labeling system to a directory full of wav files.
 
@@ -342,7 +356,7 @@ def generate_automated_labels(bird_dir, isolation_parameters, weight_path=None, 
 
         try:
             # Running moment to moment algorithm and appending to a master dataframe.
-            new_entry = isolate(local_scores[0], SIGNAL, SAMPLE_RATE, bird_dir, audio_file, isolation_parameters, manual_id = "bird")
+            new_entry = isolate(local_scores[0], SIGNAL, SAMPLE_RATE, bird_dir, audio_file, isolation_parameters, manual_id = "bird", normalize_local_scores=normalize_local_scores)
             #print(new_entry)
             if annotations.empty == True:
                 annotations = new_entry
@@ -360,8 +374,9 @@ def generate_automated_labels(bird_dir, isolation_parameters, weight_path=None, 
 def annotation_duration_statistics(df):
     # Reading in the Duration column of the passed in dataframe as a Python list
     annotation_lengths = df["DURATION"].to_list()
-    # Converting the Python list to a numpy array
+    # converting to numpy array which has more readily available statistics functions
     annotation_lengths = np.asarray(annotation_lengths)
+    # Converting the Python list to a numpy array
     entry = {'COUNT' : np.shape(annotation_lengths)[0],
              'MODE'  : stats.mode(np.round(annotation_lengths,2))[0][0],
              'MEAN'    : np.mean(annotation_lengths),
@@ -375,7 +390,7 @@ def annotation_duration_statistics(df):
     return pd.DataFrame.from_dict([entry])
 
 
-def local_line_graph(local_scores,clip_name, sample_rate,samples, automated_df=None, human_df=None,log_scale = False, save_fig = False):
+def local_line_graph(local_scores,clip_name, sample_rate,samples, automated_df=None, human_df=None,log_scale = False, save_fig = False, normalize_local_scores = False):
     """
     Function that produces graphs with the local score plot and spectrogram of an audio clip. Now integrated with Pandas so you can visualize human and automated annotations.
 
@@ -396,7 +411,11 @@ def local_line_graph(local_scores,clip_name, sample_rate,samples, automated_df=N
     duration = samples.shape[0]/sample_rate
     # Calculating the number of local scores outputted by Microfaune
     num_scores = len(local_scores)
-
+    # the case for normalizing the local scores between [0,1]
+    if normalize_local_scores == True:
+        local_scores_max = max(local_scores)
+        for ndx in range(num_scores):
+            local_scores[ndx] = local_scores[ndx]/local_scores_max
     ## Making sure that the local score of the x-axis are the same across the spectrogram and the local score plot
     step = duration / num_scores
     time_stamps = np.arange(0, duration, step)
@@ -453,7 +472,7 @@ def local_line_graph(local_scores,clip_name, sample_rate,samples, automated_df=N
 # TODO rework function so that instead of generating the automated labels, it takes the automated_df as input
 # same as it does with the manual dataframe.
 
-def local_score_visualization(clip_path,weight_path = None, human_df = None,automated_df = False, isolation_parameters = None,log_scale = False, save_fig = False):
+def local_score_visualization(clip_path,weight_path = None, human_df = None,automated_df = False, isolation_parameters = None,log_scale = False, save_fig = False, normalize_local_scores = False):
 
     """
     Wrapper function for the local_line_graph function for ease of use. Processes clip for local scores to be used for
@@ -500,11 +519,11 @@ def local_score_visualization(clip_path,weight_path = None, human_df = None,auto
     if human_df is None:
         human_df = pd.DataFrame
     if automated_df == True:
-        automated_df = isolate(local_score[0],SIGNAL, SAMPLE_RATE,"Doesn't","Matter",isolation_parameters)
+        automated_df = isolate(local_score[0],SIGNAL, SAMPLE_RATE,"Doesn't","Matter",isolation_parameters, normalize_local_scores = normalize_local_scores)
     else:
         automated_df = pd.DataFrame()
 
-    local_line_graph(local_score[0].tolist(),clip_path,SAMPLE_RATE,SIGNAL,automated_df,human_df,log_scale = log_scale, save_fig = save_fig)
+    local_line_graph(local_score[0].tolist(),clip_path,SAMPLE_RATE,SIGNAL,automated_df,human_df,log_scale = log_scale, save_fig = save_fig, normalize_local_scores = normalize_local_scores)
 
 
 
