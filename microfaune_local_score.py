@@ -36,6 +36,8 @@ def isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename,isolation_par
         isolation_df = steinberg_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename,isolation_parameters, manual_id = "bird")
     elif isolation_parameters["technique"] == "stack":
         isolation_df = stack_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename, isolation_parameters, manual_id = "bird")
+    elif isolation_parameters["technique"] == "chunk":
+        isolation_df = chunk_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename, isolation_parameters, manual_id = "bird")
 
     return isolation_df
 
@@ -293,6 +295,67 @@ def stack_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename, isolat
     # returning pandas dataframe from dictionary constructed with all of the annotations
     return pd.DataFrame.from_dict(entry)
 
+# Isolation technique that breaks down an audio clip into chunks based on a user-defined duration. It then goes through and finds the max local score
+# in those chunks to decide whether or not a chunk contains the vocalization of interest.
+# TODO
+# Make it so that a user has the option of an overlap between the chunks.
+# Make it so that a user can choose how many samples have to be above the threshold in order to consider a chunk to be good or not.
+# Give the option to combine annotations that follow one-another.
+def chunk_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename, isolation_parameters, manual_id = "bird"):
+    # configuring the threshold based on isolation parameters
+    if isolation_parameters["threshold_type"] == "median":
+        thresh = np.median(local_scores) * isolation_parameters["threshold_const"]
+    elif isolation_parameters["threshold_type"] == "mean" or isolation_parameters["threshold_type"] == "average":
+        thresh = np.mean(local_scores) * isolation_parameters["threshold_const"]
+    elif isolation_parameters["threshold_type"] == "standard deviation":
+        thresh = np.mean(local_scores) + (np.std(local_scores) * isolation_parameters["threshold_const"])
+    elif isolation_parameters["threshold_type"] == "pure":
+        thresh = isolation_parameters["threshold_const"]
+        if thresh < 0:
+            print("Threshold is less than zero, setting to zero")
+            thresh = 0
+        elif thresh > 1:
+            print("Threshold is greater than one, setting to one.")
+            thresh = 1
+
+    # calculate original duration
+    old_duration = len(SIGNAL) / SAMPLE_RATE
+
+    # initializing the dictionary for the output pandas dataframe
+    entry = {'FOLDER'  : audio_dir,
+             'IN FILE'    : filename,
+             'CHANNEL' : 0,
+             'CLIP LENGTH': old_duration,
+             'SAMPLE RATE': SAMPLE_RATE,
+             'OFFSET'  : [],
+             'DURATION' : [],
+             'MANUAL ID'  : manual_id}
+
+    # calculating the number of chunks that define an audio clip
+    chunk_count = math.ceil(len(SIGNAL)/(isolation_parameters["chunk_size"]*SAMPLE_RATE))
+    # calculating the number of local scores per second
+    scores_per_second = len(local_scores)/old_duration
+    # calculating the chunk size with respect to the local score array
+    local_scores_per_chunk = scores_per_second * isolation_parameters["chunk_size"]
+    # looping through each chunk
+    for ndx in range(chunk_count):
+        # finding the start of a chunk
+        chunk_start = ndx*local_scores_per_chunk
+        # finding the end of a chunk
+        chunk_end = min((ndx+1)*local_scores_per_chunk,len(local_scores))
+        # breaking up the local_score array into a chunk.
+        chunk = local_scores[int(chunk_start):int(chunk_end)]
+        # comparing the largest local score value to the treshold.
+        # the case for if we label the chunk as an annotation
+        if max(chunk) >= thresh:
+            annotation_start = chunk_start/scores_per_second
+            annotation_end = chunk_end/scores_per_second
+            entry["OFFSET"].append(annotation_start)
+            entry["DURATION"].append(annotation_end - annotation_start)
+
+    return pd.DataFrame.from_dict(entry)
+
+
 
 ## Function that applies the moment to moment labeling system to a directory full of wav files.
 def generate_automated_labels(bird_dir, isolation_parameters, weight_path=None, Normalized_Sample_Rate = 44100, normalize_local_scores = False):
@@ -310,6 +373,8 @@ def generate_automated_labels(bird_dir, isolation_parameters, weight_path=None, 
 
     # init detector
     # Use Default Microfaune Detector
+    # TODO
+    # Expand to neural networks beyond just microfaune
     if weight_path is None:
         detector = RNNDetector()
     # Use Custom weights for Microfaune Detector
@@ -596,6 +661,7 @@ def bird_label_scores(automated_df,human_df,plot_fig = False, save_fig = False):
         f1 = 0
         precision = 0
         recall = 0
+        IoU = 0
 
     # Creating a Dictionary which will be turned into a Pandas Dataframe
     entry = {'FOLDER'  : folder_name,
