@@ -649,7 +649,7 @@ def bird_label_scores(automated_df,human_df,plot_fig = False, save_fig = False):
         precision = true_positive_count/(true_positive_count + false_positive_count)
 
 
-    # Recall = TP/(TP+FP)
+    # Recall = TP/(TP+FN)
         recall = true_positive_count/(true_positive_count + false_negative_count)
 
     # F1 = 2*(Recall*Precision)/(Recall + Precision)
@@ -860,12 +860,12 @@ def matrix_IoU_Scores(IoU_Matrix,manual_df,threshold):
         threshold (float) - Threshold for determining true positives and false negatives.
 
     Returns:
-        Dataframe of clip statistics such as True Positive, False Negative, Precision, Recall, and F1 value.
+        Dataframe of clip statistics such as True Positive, False Negative, False Positive, Precision, Recall, and F1 values.
     """
 
     audio_dir = manual_df["FOLDER"][0]
     filename = manual_df["IN FILE"][0]
-
+    # TODO make sure that all of these calculations are correct. It is confusing to me that the Precision and Recall scores have a positive correlation.
     # Determining which automated label has the highest IoU across each human label
     automated_label_best_fits = np.max(IoU_Matrix,axis=1)
     #human_label_count = automated_label_best_fits.shape[0]
@@ -877,14 +877,13 @@ def matrix_IoU_Scores(IoU_Matrix,manual_df,threshold):
     # Calculating the false positives
     max_val_per_column = np.max(IoU_Matrix,axis=0)
     fp_count = max_val_per_column[max_val_per_column < threshold].shape[0]
-    tn_count = max_val_per_column[max_val_per_column >= threshold].shape[0]
 
     # Calculating the necessary statistics
     try:
         recall = round(tp_count/(tp_count+fn_count),4)
         precision = round(tp_count/(tp_count+fp_count),4)
         f1 = round(2*(recall*precision)/(recall+precision),4)
-    except:
+    except ZeroDivisionError:
         print("Division by zero setting precision, recall, and f1 to zero")
         recall = 0
         precision = 0
@@ -895,7 +894,6 @@ def matrix_IoU_Scores(IoU_Matrix,manual_df,threshold):
              'TRUE POSITIVE' : tp_count,
              'FALSE NEGATIVE' : fn_count,
              'FALSE POSITIVE': fp_count,
-             'TRUE NEGATIVE' : tn_count,
              'PRECISION'  : precision,
              'RECALL' : recall,
              'F1' : f1}
@@ -1048,13 +1046,12 @@ def global_IoU_Statistics(statistics_df):
     tp_sum = statistics_df["TRUE POSITIVE"].sum()
     fn_sum = statistics_df["FALSE NEGATIVE"].sum()
     fp_sum = statistics_df["FALSE POSITIVE"].sum()
-    tn_sum = statistics_df["TRUE NEGATIVE"].sum()
     # calculating the precision, recall, and f1
     try:
         precision = tp_sum/(tp_sum+fp_sum)
         recall = tp_sum/(tp_sum+fn_sum)
         f1 = 2*(precision*recall)/(precision+recall)
-    except:
+    except ZeroDivisionError:
         print("Error in calculating Precision, Recall, and F1. Likely due to zero division, setting values to zero")
         precision = 0
         recall = 0
@@ -1063,7 +1060,6 @@ def global_IoU_Statistics(statistics_df):
     entry = {'TRUE POSITIVE' : tp_sum,
         'FALSE NEGATIVE' : fn_sum,
         'FALSE POSITIVE' : fp_sum,
-        'TRUE NEGATIVE'  : tn_sum,
         'PRECISION'  : round(precision,4),
         'RECALL' : round(recall,4),
         'F1' : round(f1,4)}
