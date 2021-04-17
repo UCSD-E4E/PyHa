@@ -1,5 +1,5 @@
-from microfaune_package.microfaune.detection import RNNDetector
-from microfaune_package.microfaune import audio
+from .microfaune_package.microfaune.detection import RNNDetector
+from .microfaune_package.microfaune import audio
 import pandas as pd
 import scipy.signal as scipy_signal
 import numpy as np
