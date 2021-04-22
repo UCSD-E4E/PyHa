@@ -421,3 +421,12 @@ def generate_automated_labels(bird_dir, isolation_parameters, weight_path=None, 
     # Quick fix to indexing
     annotations.reset_index(inplace = True, drop = True)
     return annotations
+
+
+def kaleidoscope_conversion(df):
+    kaleidoscope_df = [df["FOLDER"], df["IN FILE"], df["CHANNEL"], df["OFFSET"], df["DURATION"], df["MANUAL ID"]]
+    headers = ["FOLDER", "IN FILE", "CHANNEL", "OFFSET", "DURATION", "MANUAL ID"]
+
+
+    kaleidoscope_df = pd.concat(kaleidoscope_df, axis=1, keys=headers)
+    return kaleidoscope_df
