@@ -30,6 +30,23 @@ def isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename,isolation_par
 
     return isolation_df
 
+def threshold(local_scores, isolation_parameters):
+    if isolation_parameters["threshold_type"] == "median":
+        thresh = np.median(local_scores) * isolation_parameters["threshold_const"]
+    elif isolation_parameters["threshold_type"] == "mean" or isolation_parameters["threshold_type"] == "average":
+        thresh = np.mean(local_scores) * isolation_parameters["threshold_const"]
+    elif isolation_parameters["threshold_type"] == "standard deviation":
+        thresh = np.mean(local_scores) + (np.std(local_scores) * isolation_parameters["threshold_const"])
+    elif isolation_parameters["threshold_type"] == "pure":
+        thresh = isolation_parameters["threshold_const"]
+        if thresh < 0:
+            print("Threshold is less than zero, setting to zero")
+            thresh = 0
+        elif thresh > 1:
+            print("Threshold is greater than one, setting to one.")
+            thresh = 1
+    return thresh
+
 def steinberg_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename,isolation_parameters,manual_id = "bird"):
     """
     Returns a dataframe of automated labels for the given audio clip. The automated labels determine intervals of bird noise as
@@ -60,20 +77,7 @@ def steinberg_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename,iso
     # Variable to modulate when encapsulating this function.
     # treshold is 'thresh_mult' times above median score value
     # thresh_mult = 2
-    if isolation_parameters["threshold_type"] == "median":
-        thresh = np.median(local_scores) * isolation_parameters["threshold_const"]
-    elif isolation_parameters["threshold_type"] == "mean" or isolation_parameters["threshold_type"] == "average":
-        thresh = np.mean(local_scores) * isolation_parameters["threshold_const"]
-    elif isolation_parameters["threshold_type"] == "standard deviation":
-        thresh = np.mean(local_scores) + (np.std(local_scores) * isolation_parameters["threshold_const"])
-    elif isolation_parameters["threshold_type"] == "pure":
-        thresh = isolation_parameters["threshold_const"]
-        if thresh < 0:
-            print("Threshold is less than zero, setting to zero")
-            thresh = 0
-        elif thresh > 1:
-            print("Threshold is greater than one, setting to one.")
-            thresh = 1
+    thresh = threshold(local_scores,isolation_parameters)
 
     # how many samples one score represents
     # Scores meaning local scores
@@ -84,7 +88,7 @@ def steinberg_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename,iso
     prev_cap = 0        # sample idx of previously captured
     for i in range(len(local_scores)):
         # if a score hits or surpasses thresh, capture 1s on both sides of it
-        if local_scores[i] >= thresh:
+        if local_scores[i] >= thresh and local_scores[i] >= isolation_parameters["threshold_min"]:
             # score_pos is the sample index that the score corresponds to
             score_pos = i * samples_per_score
 
@@ -135,20 +139,7 @@ def simple_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename, isola
 
     #local_scores2 = local_scores
     #threshold = 2*np.median(local_scores)
-    if isolation_parameters["threshold_type"] == "median":
-        thresh = np.median(local_scores) * isolation_parameters["threshold_const"]
-    elif isolation_parameters["threshold_type"] == "mean" or isolation_parameters["threshold_type"] == "average":
-        thresh = np.mean(local_scores) * isolation_parameters["threshold_const"]
-    elif isolation_parameters["threshold_type"] == "standard deviation":
-        thresh = np.mean(local_scores) + (np.std(local_scores) * isolation_parameters["threshold_const"])
-    elif isolation_parameters["threshold_type"] == "pure":
-        thresh = isolation_parameters["threshold_const"]
-        if thresh < 0:
-            print("Threshold is less than zero, setting to zero")
-            thresh = 0
-        elif thresh > 1:
-            print("Threshold is greater than one, setting to one.")
-            thresh = 1
+    thresh = threshold(local_scores,isolation_parameters)
 
     # calculate original duration
     old_duration = len(SIGNAL) / SAMPLE_RATE
@@ -175,7 +166,7 @@ def simple_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename, isola
     for ndx in range(len(local_scores)):
         current_score = local_scores[ndx]
         # Start of a new sequence.
-        if current_score >= thresh and annotation_start == 0:
+        if current_score >= thresh and annotation_start == 0 and current_score >= isolation_parameters["threshold_min"]:
             # signal a start of a new sequence.
             annotation_start = 1
             call_start = float(ndx*time_per_score)
@@ -201,20 +192,7 @@ def simple_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename, isola
 def stack_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename, isolation_parameters, manual_id = "bird"):
 
     # configuring the threshold based on isolation parameters
-    if isolation_parameters["threshold_type"] == "median":
-        thresh = np.median(local_scores) * isolation_parameters["threshold_const"]
-    elif isolation_parameters["threshold_type"] == "mean" or isolation_parameters["threshold_type"] == "average":
-        thresh = np.mean(local_scores) * isolation_parameters["threshold_const"]
-    elif isolation_parameters["threshold_type"] == "standard deviation":
-        thresh = np.mean(local_scores) + (np.std(local_scores) * isolation_parameters["threshold_const"])
-    elif isolation_parameters["threshold_type"] == "pure":
-        thresh = isolation_parameters["threshold_const"]
-        if thresh < 0:
-            print("Threshold is less than zero, setting to zero")
-            thresh = 0
-        elif thresh > 1:
-            print("Threshold is greater than one, setting to one.")
-            thresh = 1
+    thresh = threshold(local_scores,isolation_parameters)
 
     # calculate original duration
     old_duration = len(SIGNAL) / SAMPLE_RATE
@@ -250,7 +228,7 @@ def stack_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename, isolat
             entry['DURATION'].append(call_end - call_start)
             entry['MANUAL ID'].append(manual_id)
         # pushing onto the stack whenever a sample is above the threshold
-        if local_scores[ndx] >= thresh:
+        if local_scores[ndx] >= thresh and local_scores[ndx] >= isolation_parameters["threshold_min"]:
             # in case this is the start of a new annotation
             if stack_counter == 0:
                 call_start = float(ndx*time_per_score)
@@ -291,20 +269,7 @@ def stack_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename, isolat
 # Give the option to combine annotations that follow one-another.
 def chunk_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename, isolation_parameters, manual_id = "bird"):
     # configuring the threshold based on isolation parameters
-    if isolation_parameters["threshold_type"] == "median":
-        thresh = np.median(local_scores) * isolation_parameters["threshold_const"]
-    elif isolation_parameters["threshold_type"] == "mean" or isolation_parameters["threshold_type"] == "average":
-        thresh = np.mean(local_scores) * isolation_parameters["threshold_const"]
-    elif isolation_parameters["threshold_type"] == "standard deviation":
-        thresh = np.mean(local_scores) + (np.std(local_scores) * isolation_parameters["threshold_const"])
-    elif isolation_parameters["threshold_type"] == "pure":
-        thresh = isolation_parameters["threshold_const"]
-        if thresh < 0:
-            print("Threshold is less than zero, setting to zero")
-            thresh = 0
-        elif thresh > 1:
-            print("Threshold is greater than one, setting to one.")
-            thresh = 1
+    thresh = threshold(local_scores,isolation_parameters)
 
     # calculate original duration
     old_duration = len(SIGNAL) / SAMPLE_RATE
@@ -335,7 +300,9 @@ def chunk_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename, isolat
         chunk = local_scores[int(chunk_start):int(chunk_end)]
         # comparing the largest local score value to the treshold.
         # the case for if we label the chunk as an annotation
-        if max(chunk) >= thresh:
+        if max(chunk) >= thresh and max(chunk) >= isolation_parameters["threshold_min"]:
+            # Creating the time stamps for the annotation.
+            # Requires converting from local score index to time in seconds.
             annotation_start = chunk_start/scores_per_second
             annotation_end = chunk_end/scores_per_second
             entry["OFFSET"].append(annotation_start)
