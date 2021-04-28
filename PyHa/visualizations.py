@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import scipy.signal as scipy_signal
 import numpy as np
-from .isolation import *
+from .IsoAutio import *
 
 
 

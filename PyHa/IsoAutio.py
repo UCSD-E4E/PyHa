@@ -18,7 +18,7 @@ def isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename,isolation_par
     # initializing the output dataframe that will contain labels across a single clip
     isolation_df = pd.DataFrame()
 
-    # deciding which isolation technique to deploy for a given clip
+    # deciding which isolation technique to deploy for a given clip based on the technique isolation parameter
     if isolation_parameters["technique"] == "simple":
         isolation_df = simple_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename, isolation_parameters, manual_id = "bird")
     elif isolation_parameters["technique"] == "steinberg":
