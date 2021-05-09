@@ -6,9 +6,33 @@ import numpy as np
 import math
 import os
 
+#def build_isolation_parameters(technique, threshold_type, threshold_const, threshold_min = 0, bi_directional_jump = 1.0, chunk_size = 2.0):
+#    isolation_parameters = {
+#        "technique" : technique,
+#        "treshold_type" : threshold_type,
+#        "threshold_const" : threshold_const,
+#        "threshold_min" : threshold_min,
+#        "bi_directional_jump" : bi_directional_jump,
+#        "chunk_size" : chunk_size
+#    }
+#    return isolation_parameters
 
-# function that encapsulates many different isolation techniques to the dictionary isolation_parameters
-def isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename,isolation_parameters,manual_id = "bird", normalize_local_scores = False):
+def isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename, isolation_parameters, manual_id = "bird", normalize_local_scores = False):
+    """
+    Wrapper function for all of the audio isolation techniques (Steinberg, Simple, Stack, Chunk). Will call the respective function of
+    each technique based on isolation_parameters "technique" key.
+
+    Args:
+        local_scores (list of floats) - Local scores of the audio clip as determined by Microfaune Recurrent Neural Network.
+        SIGNAL (list of ints) - Samples that make up the audio signal.
+        SAMPLE_RATE (int) - Sampling rate of the audio clip, usually 44100.
+        audio_dir (string) - Directory of the audio clip.
+        filename (string) - Name of the audio clip file.
+        isolation_parameters (dict) - Python Dictionary that controls the various label creation techniques.
+
+    Returns:
+        Dataframe of automated labels for the audio clip based on passed in isolation technique.
+    """
 
     # normalize the local scores so that the max value is 1.
     if normalize_local_scores == True:
@@ -31,6 +55,18 @@ def isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename,isolation_par
     return isolation_df
 
 def threshold(local_scores, isolation_parameters):
+    """
+    Takes in the local score array output from a neural network and determines the threshold at which we determine a local score to be a positive
+    ID of a class of interest. Most proof of concept work is dedicated to bird presence. Threshold is determined by "threshold_type" and "threshold_const"
+    from the isolation_parameters dictionary.
+
+    Args:
+        local_scores (list of floats) - Local scores of the audio clip as determined by Microfaune Recurrent Neural Network.
+        isolation_parameters (dict) - Python Dictionary that controls the various label creation techniques.
+
+    Returns:
+        thresh (float) - threshold at which the local scores in the local score array of an audio clip will be viewed as a positive ID.
+    """
     if isolation_parameters["threshold_type"] == "median":
         thresh = np.median(local_scores) * isolation_parameters["threshold_const"]
     elif isolation_parameters["threshold_type"] == "mean" or isolation_parameters["threshold_type"] == "average":
@@ -49,18 +85,29 @@ def threshold(local_scores, isolation_parameters):
 
 def steinberg_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename,isolation_parameters,manual_id = "bird"):
     """
-    Returns a dataframe of automated labels for the given audio clip. The automated labels determine intervals of bird noise as
-    determined by the local scores given by an RNNDetector.
+    Technique developed by Gabriel Steinberg that attempts to take the local score array output of a neural network and lump local scores
+    together in a way to produce automated labels based on a class across an audio clip.
+
+    Technique Pseudocode:
+
+    Loop through local score array:
+        if current local score > (threshold and threshold_min):
+            build an annotation with current local score at the center with +- "bi_directional_jump" seconds around current local score.
+        else:
+            continue
+    extra logic handles overlap if a local score meets the criteria within the "bi_directional_jump" from a prior local score
 
     Args:
-        scores (list of floats) - Local scores of the audio clip as determined by RNNDetector.
+        local_scores (list of floats) - Local scores of the audio clip as determined by RNNDetector.
         SIGNAL (list of ints) - Samples from the audio clip.
         SAMPLE_RATE (int) - Sampling rate of the audio clip, usually 44100.
         audio_dir (string) - Directory of the audio clip.
         filename (string) - Name of the audio clip file.
+        isolation_parameters (dict) - Python Dictionary that controls the various label creation techniques.
+        manual_id (string) - controls the name of the class written to the pandas dataframe
 
     Returns:
-        Dataframe of automated labels for the audio clip.
+        Pandas Dataframe of automated labels for the audio clip.
     """
     # calculate original duration
     old_duration = len(SIGNAL) / SAMPLE_RATE
@@ -74,13 +121,10 @@ def steinberg_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename,iso
              'OFFSET'  : [],
              'MANUAL ID'  : []}
 
-    # Variable to modulate when encapsulating this function.
-    # treshold is 'thresh_mult' times above median score value
-    # thresh_mult = 2
+    # calculating threshold that will define how labels are created in current audio clip
     thresh = threshold(local_scores,isolation_parameters)
 
-    # how many samples one score represents
-    # Scores meaning local scores
+    # how many samples one local score represents
     samples_per_score = len(SIGNAL) // len(local_scores)
 
     # isolate samples that produce a score above thresh
@@ -121,11 +165,8 @@ def steinberg_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename,iso
 
 
     entry = pd.DataFrame.from_dict(entry)
-    # Making the necessary adjustments to the Pandas Dataframe so that it is compatible with Kaleidoscope.
     ## TODO, when you go through the process of rebuilding this isolate function as a potential optimization problem
     ## rework the algorithm so that it builds the dataframe correctly to save time.
-    #print(entry["OFFSET"].tolist())
-    # This solution is not system agnostic. The problem is that Gabriel stored the start and stop times as a list under the OFFSET column.
     OFFSET = entry['OFFSET'].str[0]
     DURATION = entry['OFFSET'].str[1]
     DURATION = DURATION - OFFSET
@@ -136,9 +177,33 @@ def steinberg_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename,iso
     return entry
 
 def simple_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename, isolation_parameters, manual_id = "bird"):
+    """
+    Technique suggested by Irina Tolkova and implemented by Jacob Ayers. Attempts to produce automated annotations of an audio clip based
+    on local score array outputs from a neural network.
 
-    #local_scores2 = local_scores
-    #threshold = 2*np.median(local_scores)
+    Technique Pseudocode:
+
+    Loop through local score array:
+        if current local score > (threshold and threshold_min) and annotation start = 0:
+            start annotation
+        else if current local score < thresh and annotation start = 1:
+            end annotation
+        else:
+            continue
+
+    Args:
+        local_scores (list of floats) - Local scores of the audio clip as determined by RNNDetector.
+        SIGNAL (list of ints) - Samples from the audio clip.
+        SAMPLE_RATE (int) - Sampling rate of the audio clip, usually 44100.
+        audio_dir (string) - Directory of the audio clip.
+        filename (string) - Name of the audio clip file.
+        isolation_parameters (dict) - Python Dictionary that controls the various label creation techniques.
+        manual_id (string) - controls the name of the class written to the pandas dataframe
+
+    Returns:
+        Pandas Dataframe of automated labels for the audio clip.
+    """
+    # Calculating threshold that defines the creation of the automated labels for an audio clip
     thresh = threshold(local_scores,isolation_parameters)
 
     # calculate original duration
@@ -187,10 +252,37 @@ def simple_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename, isola
             continue
     return pd.DataFrame.from_dict(entry)
 
-
-
 def stack_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename, isolation_parameters, manual_id = "bird"):
+    """
+    Technique created by Jacob Ayers. Attempts to produce automated annotations of an audio clip based
+    on local score array outputs from a neural network.
 
+    Technique Pseudocode:
+
+    Loop through local score array:
+        if current local score > (threshold and threshold_min):
+            if annotation start false:
+                set annotation start true
+            push to stack counter
+        else if current local score < thresh and annotation start true:
+            pop from stack counter
+            if stack counter = 0:
+                end annotation
+        else:
+            continue
+
+    Args:
+        local_scores (list of floats) - Local scores of the audio clip as determined by RNNDetector.
+        SIGNAL (list of ints) - Samples from the audio clip.
+        SAMPLE_RATE (int) - Sampling rate of the audio clip, usually 44100.
+        audio_dir (string) - Directory of the audio clip.
+        filename (string) - Name of the audio clip file.
+        isolation_parameters (dict) - Python Dictionary that controls the various label creation techniques.
+        manual_id (string) - controls the name of the class written to the pandas dataframe
+
+    Returns:
+        Pandas Dataframe of automated labels for the audio clip.
+    """
     # configuring the threshold based on isolation parameters
     thresh = threshold(local_scores,isolation_parameters)
 
@@ -261,13 +353,36 @@ def stack_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename, isolat
     # returning pandas dataframe from dictionary constructed with all of the annotations
     return pd.DataFrame.from_dict(entry)
 
-# Isolation technique that breaks down an audio clip into chunks based on a user-defined duration. It then goes through and finds the max local score
-# in those chunks to decide whether or not a chunk contains the vocalization of interest.
 # TODO
 # Make it so that a user has the option of an overlap between the chunks.
 # Make it so that a user can choose how many samples have to be above the threshold in order to consider a chunk to be good or not.
 # Give the option to combine annotations that follow one-another.
 def chunk_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename, isolation_parameters, manual_id = "bird"):
+    """
+    Technique created by Jacob Ayers. Attempts to produce automated annotations of an audio clip based
+    on local score array outputs from a neural network.
+
+    Technique Pseudocode:
+
+    number of chunks = clip length / "chunk_size"
+    Loop through number of chunks:
+        if max(local score chunk) > (threshold and "threshold_min"):
+            set the chunk as an annotation
+        else:
+            continue
+
+    Args:
+        local_scores (list of floats) - Local scores of the audio clip as determined by RNNDetector.
+        SIGNAL (list of ints) - Samples from the audio clip.
+        SAMPLE_RATE (int) - Sampling rate of the audio clip, usually 44100.
+        audio_dir (string) - Directory of the audio clip.
+        filename (string) - Name of the audio clip file.
+        isolation_parameters (dict) - Python Dictionary that controls the various label creation techniques.
+        manual_id (string) - controls the name of the class written to the pandas dataframe
+
+    Returns:
+        Pandas Dataframe of automated labels for the audio clip.
+    """
     # configuring the threshold based on isolation parameters
     thresh = threshold(local_scores,isolation_parameters)
 
@@ -311,14 +426,14 @@ def chunk_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename, isolat
     return pd.DataFrame.from_dict(entry)
 
 
-
-## Function that applies the moment to moment labeling system to a directory full of wav files.
-def generate_automated_labels(bird_dir, isolation_parameters, weight_path=None, Normalized_Sample_Rate = 44100, normalize_local_scores = False):
+def generate_automated_labels(bird_dir, isolation_parameters, manual_id = "bird", weight_path=None, Normalized_Sample_Rate = 44100, normalize_local_scores = False):
     """
-    Function that applies the moment to moment labeling system to a directory full of wav files.
+    Function that applies isolation technique determined by isolation_parameters dictionary across a folder of audio clips.
 
     Args:
         bird_dir (string) - Directory with wav audio files.
+        isolation_parameters (dict) - Python Dictionary that controls the various label creation techniques.
+        manual_id (string) - controls the name of the class written to the pandas dataframe
         weight_path (string) - File path of weights to be used by the RNNDetector for determining presence of bird sounds.
         Normalized_Sample_Rate (int) - Sampling rate that the audio files should all be normalized to.
 
@@ -376,7 +491,7 @@ def generate_automated_labels(bird_dir, isolation_parameters, weight_path=None, 
 
         try:
             # Running moment to moment algorithm and appending to a master dataframe.
-            new_entry = isolate(local_scores[0], SIGNAL, SAMPLE_RATE, bird_dir, audio_file, isolation_parameters, manual_id = "bird", normalize_local_scores=normalize_local_scores)
+            new_entry = isolate(local_scores[0], SIGNAL, SAMPLE_RATE, bird_dir, audio_file, isolation_parameters, manual_id = manual_id, normalize_local_scores=normalize_local_scores)
             #print(new_entry)
             if annotations.empty == True:
                 annotations = new_entry
@@ -391,6 +506,15 @@ def generate_automated_labels(bird_dir, isolation_parameters, weight_path=None, 
 
 
 def kaleidoscope_conversion(df):
+    """
+    Function that strips away Pandas Dataframe columns necessary for PyHa package that aren't compatible with Kaleidoscope software
+
+    Args:
+        df (Pandas Dataframe) - Dataframe compatible with PyHa package whether it be human labels or automated labels.
+
+    Returns:
+        Pandas Dataframe compatible with Kaleidoscope.
+    """
     kaleidoscope_df = [df["FOLDER"], df["IN FILE"], df["CHANNEL"], df["OFFSET"], df["DURATION"], df["MANUAL ID"]]
     headers = ["FOLDER", "IN FILE", "CHANNEL", "OFFSET", "DURATION", "MANUAL ID"]
 
