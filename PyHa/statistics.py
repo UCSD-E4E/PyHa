@@ -45,6 +45,8 @@ def bird_label_scores(automated_df,human_df):
     Returns:
         Dataframe with general clip overlap statistics comparing the automated and human labeling.
     """
+    clip_class = human_df["MANUAL ID"]
+    clip_class = list(dict.fromkeys(clip_class))[0]
     duration = automated_df["CLIP LENGTH"].to_list()[0]
     SAMPLE_RATE = automated_df["SAMPLE RATE"].to_list()[0]
     # Initializing two arrays that will represent the human labels and automated labels with respect to
@@ -105,6 +107,7 @@ def bird_label_scores(automated_df,human_df):
     # Creating a Dictionary which will be turned into a Pandas Dataframe
     entry = {'FOLDER'  : folder_name,
              'IN FILE'    : clip_name,
+             'MANUAL ID' : clip_class,
              'TRUE POSITIVE' : true_positive_count,
              'FALSE POSITIVE': false_positive_count,
              'FALSE NEGATIVE'  : false_negative_count,
@@ -119,7 +122,7 @@ def bird_label_scores(automated_df,human_df):
 
 
 # Will have to adjust the isolate function so that it adds a sampling rate onto the dataframes.
-def automated_labeling_statistics(automated_df,manual_df):
+def automated_labeling_statistics(automated_df,manual_df,stats_type = "IoU", threshold = 0.5):
     """
     Function that will allow users to easily pass in two dataframes of manual labels and automated labels,
     and a dataframe is returned with statistics examining the efficiency of the automated labelling system compared
@@ -131,6 +134,8 @@ def automated_labeling_statistics(automated_df,manual_df):
     Args:
         automated_df (Dataframe) - Dataframe of automated labels of multiple clips.
         manual_df (Dataframe) - Dataframe of human labels of multiple clips.
+        stats_type (String) - String that determines which type of statistics are of interest
+        threshold (Float) - Defines a threshold for certain types of statistics such as
 
     Returns:
         Dataframe of statistics comparing automated labels and human labels for multiple clips.
@@ -145,16 +150,25 @@ def automated_labeling_statistics(automated_df,manual_df):
     for clip in clips:
         clip_automated_df = automated_df[automated_df["IN FILE"] == clip]
         clip_manual_df = manual_df[manual_df["IN FILE"] == clip]
-        #try:
-        clip_stats_df = bird_label_scores(clip_automated_df,clip_manual_df)
-        if statistics_df.empty:
-            statistics_df = clip_stats_df
-        else:
-            statistics_df = statistics_df.append(clip_stats_df)
-        #except:
-        #    print("Something went wrong with: "+clip)
-        #    continue
-        statistics_df.reset_index(inplace = True, drop = True)
+        try:
+            if stats_type == "general":
+                clip_stats_df = bird_label_scores(clip_automated_df,clip_manual_df)
+                if statistics_df.empty:
+                    statistics_df = clip_stats_df
+                else:
+                    statistics_df = statistics_df.append(clip_stats_df)
+            elif stats_type == "IoU":
+                IoU_Matrix = clip_IoU(clip_automated_df,clip_manual_df)
+                clip_stats_df = matrix_IoU_Scores(IoU_Matrix,clip_manual_df,threshold)
+                if statistics_df.empty == True:
+                    statistics_df = clip_stats_df
+                else:
+                    statistics_df = statistics_df.append(clip_stats_df)
+
+        except:
+            print("Something went wrong with: "+clip)
+            continue
+    statistics_df.reset_index(inplace = True, drop = True)
     return statistics_df
 
 
@@ -168,6 +182,7 @@ def global_dataset_statistics(statistics_df):
     Returns:
         Dataframe of global statistics for the multiple audio clips' labelling.
     """
+    class_id = statistics_df["MANUAL ID"][0]
     tp_sum = statistics_df["TRUE POSITIVE"].sum()
     fp_sum = statistics_df["FALSE POSITIVE"].sum()
     fn_sum = statistics_df["FALSE NEGATIVE"].sum()
@@ -177,7 +192,8 @@ def global_dataset_statistics(statistics_df):
     recall = tp_sum/(tp_sum + fn_sum)
     f1 = 2*(precision*recall)/(precision+recall)
     IoU = tp_sum/union_sum
-    entry = {'PRECISION'  : round(precision,6),
+    entry = {'MANUAL ID' : class_id,
+             'PRECISION'  : round(precision,6),
              'RECALL'    : round(recall,6),
              'F1' : round(f1,6),
              'Global IoU' : round(IoU,6)}
@@ -269,7 +285,7 @@ def matrix_IoU_Scores(IoU_Matrix,manual_df,threshold):
     Returns:
         Dataframe of clip statistics such as True Positive, False Negative, False Positive, Precision, Recall, and F1 values for an audio clip.
     """
-
+    clip_class = manual_df["MANUAL ID"][0]
     audio_dir = manual_df["FOLDER"][0]
     filename = manual_df["IN FILE"][0]
     # TODO make sure that all of these calculations are correct. It is confusing to me that the Precision and Recall scores have a positive correlation.
@@ -298,6 +314,7 @@ def matrix_IoU_Scores(IoU_Matrix,manual_df,threshold):
 
     entry = {'FOLDER'  : audio_dir,
              'IN FILE'    : filename,
+             'MANUAL ID' : clip_class,
              'TRUE POSITIVE' : tp_count,
              'FALSE NEGATIVE' : fn_count,
              'FALSE POSITIVE': fp_count,
@@ -364,79 +381,77 @@ def clip_catch(automated_df,manual_df):
 
 
 
-def dataset_IoU(automated_df,manual_df):
-    """
-    Function that takes in two Pandas dataframes that represent human labels and automated labels.
-    It then runs the clip_IoU function across each clip and appends the best fit IoU score to each labels on the manual dataframe as its output.
+#def dataset_IoU(automated_df,manual_df):
+#    """
+#    Function that takes in two Pandas dataframes that represent human labels and automated labels.
+#    It then runs the clip_IoU function across each clip and appends the best fit IoU score to each labels on the manual dataframe as its output.
+#
+#    Args:
+#        automated_df (Dataframe) - Dataframe of automated labels for multiple audio clips.
+#        manual_df (Dataframe) - Dataframe of human labels for multiple audio clips.
+#
+#    Returns:
+#        Dataframe of manual labels with the best fit IoU score as a column.
+#    """
+#    # Getting a list of clips
+#    clips = automated_df["IN FILE"].to_list()
+#    # Removing duplicates
+#    clips = list(dict.fromkeys(clips))
+#    # Initializing the ouput dataframe
+#    manual_df_with_IoU = pd.DataFrame()
+#    for clip in clips:
+#        print(clip)
+#        # Isolating a clip from the human and automated dataframes
+#        clip_automated_df = automated_df[automated_df["IN FILE"] == clip]
+#        clip_manual_df = manual_df[manual_df["IN FILE"] == clip]
+#        # Calculating the IoU scores of each human label.
+#        IoU_Matrix = clip_IoU(clip_automated_df,clip_manual_df)
+#        # Finding the best automated IoU score with respect to each label
+#        automated_label_best_fits = np.max(IoU_Matrix,axis=1)
+#        clip_manual_df["IoU"] = automated_label_best_fits
+#        # Appending on the best fit IoU score to each human label
+#        if manual_df_with_IoU.empty == True:
+#            manual_df_with_IoU = clip_manual_df
+#        else:
+#            manual_df_with_IoU = manual_df_with_IoU.append(clip_manual_df)
+#    # Adjusting the indices.
+#    manual_df_with_IoU.reset_index(inplace = True, drop = True)
+#    return manual_df_with_IoU
 
-    Args:
-        automated_df (Dataframe) - Dataframe of automated labels for multiple audio clips.
-        manual_df (Dataframe) - Dataframe of human labels for multiple audio clips.
 
-    Returns:
-        Dataframe of manual labels with the best fit IoU score as a column.
-    """
-    # Getting a list of clips
-    clips = automated_df["IN FILE"].to_list()
-    # Removing duplicates
-    clips = list(dict.fromkeys(clips))
-    # Initializing the ouput dataframe
-    manual_df_with_IoU = pd.DataFrame()
-    for clip in clips:
-        print(clip)
-        # Isolating a clip from the human and automated dataframes
-        clip_automated_df = automated_df[automated_df["IN FILE"] == clip]
-        clip_manual_df = manual_df[manual_df["IN FILE"] == clip]
-        # Calculating the IoU scores of each human label.
-        IoU_Matrix = clip_IoU(clip_automated_df,clip_manual_df)
-        # Finding the best automated IoU score with respect to each label
-        automated_label_best_fits = np.max(IoU_Matrix,axis=1)
-        clip_manual_df["IoU"] = automated_label_best_fits
-        # Appending on the best fit IoU score to each human label
-        if manual_df_with_IoU.empty == True:
-            manual_df_with_IoU = clip_manual_df
-        else:
-            manual_df_with_IoU = manual_df_with_IoU.append(clip_manual_df)
-    # Adjusting the indices.
-    manual_df_with_IoU.reset_index(inplace = True, drop = True)
-    return manual_df_with_IoU
-
-
-def dataset_IoU_Statistics(automated_df,manual_df,threshold = 0.5):
-    """
-    Wrapper function that takes matrix_IoU_Scores across multiple clips.
-    Allows user to modify the threshold that determines whether or not a label is a true positive.
-
-    Args:
-        automated_df (Dataframe) - Dataframe of automated labels for multiple audio clips.
-        manual_df (Dataframe) - Dataframe of human labels for multiple audio clips.
-        threshold (float) - IoU threshold for determining true positives, false positives, and false negatives.
-
-    Returns:
-        Dataframe of IoU statistics for multiple audio clips.
-    """
-    # isolating the names of the clips that have been labelled into an array.
-    clips = automated_df["IN FILE"].to_list()
-    clips = list(dict.fromkeys(clips))
-    # initializing the output Pandas dataframe
-    IoU_Statistics = pd.DataFrame()
-    # Looping through all of the clips
-    for clip in clips:
-        print(clip)
-        # isolating the clip into its own dataframe with respect to both the passed in human labels and automated labels.
-        clip_automated_df = automated_df[automated_df["IN FILE"] == clip]
-        clip_manual_df = manual_df[manual_df["IN FILE"] == clip]
-        # Computing the IoU Matrix across a specific clip
-        IoU_Matrix = clip_IoU(clip_automated_df,clip_manual_df)
-        # Calculating the best fit IoU to each label for the clip
-        clip_stats_df = matrix_IoU_Scores(IoU_Matrix,clip_manual_df,threshold)
-        # adding onto the output array.
-        if IoU_Statistics.empty == True:
-            IoU_Statistics = clip_stats_df
-        else:
-            IoU_Statistics = IoU_Statistics.append(clip_stats_df)
-    IoU_Statistics.reset_index(inplace = True, drop = True)
-    return IoU_Statistics
+#def class_IoU_Statistics(automated_df,manual_df,threshold = 0.5):
+#    """
+#    Wrapper function that takes matrix_IoU_Scores across multiple clips from a class.
+#    Allows user to modify the threshold that determines whether or not a label is a true positive.
+#
+#    Args:
+#        automated_df (Dataframe) - Dataframe of automated labels for multiple audio clips.
+#        manual_df (Dataframe) - Dataframe of human labels for multiple audio clips.
+#        threshold (float) - IoU threshold for determining true positives, false positives, and false negatives.
+#
+#    Returns:
+#        Dataframe of IoU statistics for multiple audio clips.
+#    """
+#    # isolating the names of the clips that have been labelled into an array.
+#    clips = automated_df["IN FILE"].to_list()
+#    clips = list(dict.fromkeys(clips))
+#    # initializing the output Pandas dataframe
+#    # Looping through all of the clips
+#    for clip in clips:
+#        print(clip)
+#        clip_automated_df = automated_df[automated_df["IN FILE"] == clip]
+#        clip_manual_df = manual_df[manual_df["IN FILE"] == clip]
+#        # Computing the IoU Matrix across a specific clip
+#        IoU_Matrix = clip_IoU(clip_automated_df,clip_manual_df)
+#        # Calculating the best fit IoU to each label for the clip
+#        clip_stats_df = matrix_IoU_Scores(IoU_Matrix,clip_manual_df,threshold)
+#        # adding onto the output array.
+#        if IoU_Statistics.empty == True:
+#            IoU_Statistics = clip_stats_df
+#        else:
+#            IoU_Statistics = IoU_Statistics.append(clip_stats_df)
+#    IoU_Statistics.reset_index(inplace = True, drop = True)
+#    return IoU_Statistics
 
 def global_IoU_Statistics(statistics_df):
     """
@@ -450,6 +465,8 @@ def global_IoU_Statistics(statistics_df):
         Dataframe of global IoU statistics which include the number of true positives, false positives, and false negatives.
         Contains Precision, Recall, and F1 metrics as well
     """
+
+    data_class = statistics_df["MANUAL ID"][0]
     # taking the sum of the number of true positives and false positives.
     tp_sum = statistics_df["TRUE POSITIVE"].sum()
     fn_sum = statistics_df["FALSE NEGATIVE"].sum()
@@ -465,7 +482,8 @@ def global_IoU_Statistics(statistics_df):
         recall = 0
         f1 = 0
     # building a dictionary of the above calculations
-    entry = {'TRUE POSITIVE' : tp_sum,
+    entry = {'MANUAL ID' : data_class,
+        'TRUE POSITIVE' : tp_sum,
         'FALSE NEGATIVE' : fn_sum,
         'FALSE POSITIVE' : fp_sum,
         'PRECISION'  : round(precision,4),
@@ -508,3 +526,31 @@ def dataset_Catch(automated_df,manual_df):
     # Resetting the indices
     manual_df_with_Catch.reset_index(inplace = True, drop = True)
     return manual_df_with_Catch
+
+
+# I am going to wait on showing off this function since we don't have any multi-class classifiers yet.
+def dataset_IoU_Statistics(automated_df, manual_df, threshold = 0.5):
+
+    # finding the number of unique classes.
+    class_list = manual_df["MANUAL ID"].to_list()
+    class_list = list(dict.fromkeys(class_list))
+
+    # initializing the output dataframes
+    master_clip_stats_df = pd.DataFrame()
+    master_global_stats_df = pd.DataFrame()
+
+    # Looping through each class
+    for class_id in class_list:
+        # Isolating the class from the
+        class_automated_df = automated_df[automated_df["MANUAL_ID"] == class_id]
+        class_manual_df = manual_df[manual_df["MANUAL ID"] == class_id]
+        class_stats_df = class_IoU_Statistics(class_automated_df,class_manual_df, threshold = threshold)
+        class_global_stats_df = global_IoU_Statistics(class_stats_df)
+        if master_clip_stats_df.empty:
+            master_clips_stats_df = class_stats_df
+        if master_global_stats_df.empty:
+            master_global_stats_df = class_global_stats_df
+        else:
+            master_clip_stats_df = master_clip_stats_df.append(class_stats_df)
+            master_global_stats_df = master_global_stats_df.append(class_global_stats_df)
+    return master_clip_stats_df, master_global_stats_df
