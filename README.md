@@ -8,7 +8,7 @@ PyHa = Python + Piha (referring to a bird species of our interest known as the s
 
 ## Functions
 
-`isolate` 
+### `isolate` 
 
 This function is the wrapper function for all the audio isolation techniques, and will call the respective function based on its parameters. 
 
