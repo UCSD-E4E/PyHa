@@ -19,7 +19,7 @@ Many of the functions take in the `isolation_parameters` argument, and as such i
 
 The `isolation_parameters` dictionary is as follows: 
 
-```
+``` python
 isolation_parameters = {
     "technique" : "",
     "threshold_type" : "",
@@ -67,3 +67,8 @@ This function takes in the local score array output from a neural network and de
 This function returns a float representing the threshold at which the local scores in the local score array of an audio clip will be viewed as a positive ID.
 
 Usage: `threshold(local_scores, isolation_parameters)`
+
+### [`steinberg_isolate`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)
+*Found in [`IsoAutio.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)*
+
+This function uses the technique developed by Gabriel Steinberg that attempts to take the local score array output of a neural network and lump local scores together in a way to produce automated labels based on a class across an audio clip. It is called by the `isolate` function when `isolation_parameters['technique'] == steinberg`. 
