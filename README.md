@@ -23,10 +23,10 @@ The `isolation_parameters` dictionary is as follows:
 isolation_parameters = {
     "technique" : "",
     "threshold_type" : "",
-    "threshold_const" : ,
-    "threshold_min" : ,
-    "bi_directional_jump" : ,
-    "chunk_size" : 
+    "threshold_const" : 0.0,
+    "threshold_min" : 0.0,
+    "bi_directional_jump" : 0.0,
+    "chunk_size" : 0.0,
 } 
 ```
 The `technique` parameter can be: Simple, Stack, Steinberg, and Chunk. This input must be a string in all lowercase.  
