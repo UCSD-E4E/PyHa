@@ -57,3 +57,5 @@ This function takes in the local score array output from a neural network and de
 | `isolation parameters` | dict | Python Dictionary that controls the various label creation techniques. | 
 
 This function returns a float representing the threshold at which the local scores in the local score array of an audio clip will be viewed as a positive ID.
+
+Usage: `threshold(local_scores, isolation_parameters)`
