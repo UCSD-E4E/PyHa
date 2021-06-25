@@ -53,4 +53,4 @@ This function takes in the local score array output from a neural network and de
 | `local_scores` | list of floats | Local scores of the audio clip as determined by Microfaune Recurrent Neural Network. | 
 | `isolation parameters` | dict | Python Dictionary that controls the various label creation techniques. | 
 
-This function returns a float representing the threshold at which the local scores in the local score array of an audio clip will be viewed as a positive ID
+This function returns a float representing the threshold at which the local scores in the local score array of an audio clip will be viewed as a positive ID.
