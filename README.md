@@ -44,6 +44,9 @@ This function is the wrapper function for all the audio isolation techniques, an
 
 This function returns a dataframe of automated labels for the audio clip based on the passed in isolation technique. 
 
+Usage: 
+`isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename, isolation_parameters)`
+
 ### `threshold`
 
 This function takes in the local score array output from a neural network and determines the threshold at which we determine a local score to be a positive ID of a class of interest. Most proof of concept work is dedicated to bird presence. Threshold is determined by "threshold_type" and "threshold_const" from the isolation_parameters dictionary.
