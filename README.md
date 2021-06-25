@@ -42,5 +42,12 @@ This function is the wrapper function for all the audio isolation techniques, an
 | `filename` | string | Name of the audio clip file. |
 | `isolation_parameters` | dict | Python Dictionary that controls the various label creation techniques. |
 
+### `threshold`
 
+This function takes in the local score array output from a neural network and determines the threshold at which we determine a local score to be a positive ID of a class of interest. Most proof of concept work is dedicated to bird presence. Threshold is determined by "threshold_type" and "threshold_const" from the isolation_parameters dictionary.
+
+| Parameter | Type | Description | 
+| --- | --- | --- | 
+| `local_scores` | list of floats | Local scores of the audio clip as determined by Microfaune Recurrent Neural Network. | 
+| `isolation parameters` | dict | Python Dictionary that controls the various label creation techniques. | 
 
