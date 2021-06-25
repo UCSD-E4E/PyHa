@@ -29,7 +29,7 @@ The `threshold_type` parameter can be: median, mean, average, standard deviation
 The remaining parameters are floats representing their respective values. 
 
 
-### `isolate` 
+### [`isolate`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)
 
 This function is the wrapper function for all the audio isolation techniques, and will call the respective function based on its parameters. 
 
@@ -47,7 +47,7 @@ This function returns a dataframe of automated labels for the audio clip based o
 Usage: 
 `isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename, isolation_parameters)`
 
-### `threshold`
+### [`threshold`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)
 
 This function takes in the local score array output from a neural network and determines the threshold at which we determine a local score to be a positive ID of a class of interest. Most proof of concept work is dedicated to bird presence. Threshold is determined by "threshold_type" and "threshold_const" from the isolation_parameters dictionary.
 
