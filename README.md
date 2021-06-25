@@ -8,6 +8,11 @@ PyHa = Python + Piha (referring to a bird species of our interest known as the s
 
 ## Functions
 
+![image](https://user-images.githubusercontent.com/44332326/123478194-f74fda80-d5b3-11eb-81e4-86add2a8c0f0.png)
+*This image shows the design of the automated audio labeling system.
+
+
+
 ### `isolation_parameters`
 
 Many of the functions take in the `isolation_parameters` argument, and as such it will be defined globally here. 
