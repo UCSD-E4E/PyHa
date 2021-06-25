@@ -24,8 +24,8 @@ isolation_parameters = {
     "chunk_size" : 
 } 
 ```
-The `technique` parameter can be: Simple, Stack, Steinberg, and Chunk. 
-The `threshold_type` parameter can be: median, mean, average, standard deviation, or pure.
+The `technique` parameter can be: Simple, Stack, Steinberg, and Chunk. This input must be a string in all lowercase.  
+The `threshold_type` parameter can be: median, mean, average, standard deviation, or pure. This input must be a string in all lowercase.
 The remaining parameters are floats representing their respective values. 
 
 
