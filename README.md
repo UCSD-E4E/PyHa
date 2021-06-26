@@ -82,3 +82,16 @@ Usage: `threshold(local_scores, isolation_parameters)`
 *Found in [`IsoAutio.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)*
 
 This function uses the technique developed by Gabriel Steinberg that attempts to take the local score array output of a neural network and lump local scores together in a way to produce automated labels based on a class across an audio clip. It is called by the `isolate` function when `isolation_parameters['technique'] == steinberg`. 
+
+| Parameter | Type |  Description |
+| --- | --- | --- |
+| `local_scores` | list of floats | Local scores of the audio clip as determined by Microfaune Recurrent Neural Network. |
+| `SIGNAL` | list of ints | Samples that make up the audio signal. |
+| `SAMPLE_RATE` | int | Sampling rate of the audio clip, usually 44100. |
+| `audio_dir` | string | Directory of the audio clip. |
+| `filename` | string | Name of the audio clip file. |
+| `isolation_parameters` | dict | Python Dictionary that controls the various label creation techniques. |
+| `manual_id` | string | controls the name of the class written to the pandas dataframe |
+
+This function returns a dataframe of automated labels for the audio clip. 
+Usage: `steinberg_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename,isolation_parameters, manual_id)`
