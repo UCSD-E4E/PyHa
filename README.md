@@ -92,4 +92,5 @@ This function uses the technique developed by Gabriel Steinberg that attempts to
 | `manual_id` | string | controls the name of the class written to the pandas dataframe |
 
 This function returns a dataframe of automated labels for the audio clip. 
+
 Usage: `steinberg_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename,isolation_parameters, manual_id)`
