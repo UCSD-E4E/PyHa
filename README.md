@@ -94,3 +94,61 @@ This function uses the technique developed by Gabriel Steinberg that attempts to
 This function returns a dataframe of automated labels for the audio clip. 
 
 Usage: `steinberg_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename,isolation_parameters, manual_id)`
+
+### [`simple_isolate`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)
+*Found in [`IsoAutio.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)*
+
+This function uses the technique suggested by Irina Tolkova and implemented by Jacob Ayers. Attempts to produce automated annotations of an audio clip based on local score array outputs from a neural network. It is called by the `isolate` function when `isolation_parameters['technique'] == simple`. 
+
+| Parameter | Type |  Description |
+| --- | --- | --- |
+| `local_scores` | list of floats | Local scores of the audio clip as determined by Microfaune Recurrent Neural Network. |
+| `SIGNAL` | list of ints | Samples that make up the audio signal. |
+| `SAMPLE_RATE` | int | Sampling rate of the audio clip, usually 44100. |
+| `audio_dir` | string | Directory of the audio clip. |
+| `filename` | string | Name of the audio clip file. |
+| `isolation_parameters` | dict | Python Dictionary that controls the various label creation techniques. |
+| `manual_id` | string | controls the name of the class written to the pandas dataframe |
+
+This function returns a dataframe of automated labels for the audio clip. 
+
+Usage: `simple_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename,isolation_parameters, manual_id)`
+
+### [`stack_isolate`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)
+*Found in [`IsoAutio.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)*
+
+This function uses a technique created by Jacob Ayers. Attempts to produce automated annotations of an audio clip baseon local score array outputs from a neural network. It is called by the `isolate` function when `isolation_parameters['technique'] == stack`. 
+
+| Parameter | Type |  Description |
+| --- | --- | --- |
+| `local_scores` | list of floats | Local scores of the audio clip as determined by Microfaune Recurrent Neural Network. |
+| `SIGNAL` | list of ints | Samples that make up the audio signal. |
+| `SAMPLE_RATE` | int | Sampling rate of the audio clip, usually 44100. |
+| `audio_dir` | string | Directory of the audio clip. |
+| `filename` | string | Name of the audio clip file. |
+| `isolation_parameters` | dict | Python Dictionary that controls the various label creation techniques. |
+| `manual_id` | string | controls the name of the class written to the pandas dataframe |
+
+This function returns a dataframe of automated labels for the audio clip. 
+
+Usage: `stack_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename,isolation_parameters, manual_id)`
+
+### [`chunk_isolate`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)
+*Found in [`IsoAutio.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)*
+
+This function uses a technique created by Jacob Ayers. Attempts to produce automated annotations of an audio clip baseon local score array outputs from a neural network. It is called by the `isolate` function when `isolation_parameters['technique'] == chunk`. 
+
+| Parameter | Type |  Description |
+| --- | --- | --- |
+| `local_scores` | list of floats | Local scores of the audio clip as determined by Microfaune Recurrent Neural Network. |
+| `SIGNAL` | list of ints | Samples that make up the audio signal. |
+| `SAMPLE_RATE` | int | Sampling rate of the audio clip, usually 44100. |
+| `audio_dir` | string | Directory of the audio clip. |
+| `filename` | string | Name of the audio clip file. |
+| `isolation_parameters` | dict | Python Dictionary that controls the various label creation techniques. |
+| `manual_id` | string | controls the name of the class written to the pandas dataframe |
+
+This function returns a dataframe of automated labels for the audio clip. 
+
+Usage: `chunk_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename,isolation_parameters, manual_id)`
+
