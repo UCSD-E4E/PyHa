@@ -6,16 +6,40 @@ import numpy as np
 import math
 import os
 
-#def build_isolation_parameters(technique, threshold_type, threshold_const, threshold_min = 0, bi_directional_jump = 1.0, chunk_size = 2.0):
-#    isolation_parameters = {
-#        "technique" : technique,
-#        "treshold_type" : threshold_type,
-#        "threshold_const" : threshold_const,
-#        "threshold_min" : threshold_min,
-#        "bi_directional_jump" : bi_directional_jump,
-#        "chunk_size" : chunk_size
-#    }
-#    return isolation_parameters
+def build_isolation_parameters(technique, threshold_type, threshold_const, threshold_min = 0, bi_directional_jump = 1.0, chunk_size = 2.0):
+    """
+    Wrapper function for all of the audio isolation techniques (Steinberg, Simple, Stack, Chunk). Will call the respective function of
+    each technique based on isolation_parameters "technique" key.
+
+    Args:
+        technique (string) - Chooses which of the four isolation techniques to deploy
+                            options: "steinberg", "chunk", "stack", "simple"
+        threshold_type (string) - Chooses how to derive a threshold from local score arrays
+                            options: "mean", "median", "standard deviation", "pure"
+        threshold_const (float) - Multiplier for "mean", "median", and "standard deviation". Acts as threshold for "pure"
+        threshold_min (float) - Serves as a minimum barrier of entry for a local score to be considered a positive ID of a class.
+                            default: 0
+        bi_directional_jump (float) - determines how many seconds around a positive ID local score to build an annotation.
+        chunk_size (float) - determines the length of annotation when using "chunk" isolation technique
+
+    Returns:
+        isolation_parameters (dict) - Python dictionary that controls how to go about isolating automated labels from audio.
+    """
+    isolation_parameters = {
+        "technique" : technique,
+        "treshold_type" : threshold_type,
+        "threshold_const" : threshold_const,
+        "threshold_min" : threshold_min,
+        "bi_directional_jump" : bi_directional_jump,
+        "chunk_size" : chunk_size
+    }
+
+    if bi_directional_jump != 1.0 and technique != "steinberg":
+        print("Warning: bi_directional_jump is dedicated to the steinberg isolation technique. Won't affect current technique.")
+    if chunk_size != 2.0 and technique != "chunk":
+        print("Warning: chunk_size is dedicated to the chunk technique. Won't affect current technique.")
+
+    return isolation_parameters
 
 def isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename, isolation_parameters, manual_id = "bird", normalize_local_scores = False):
     """
@@ -458,8 +482,15 @@ def generate_automated_labels(bird_dir, isolation_parameters, manual_id = "bird"
         # skip directories
         if os.path.isdir(bird_dir+audio_file): continue
 
-        # read file
-        SAMPLE_RATE, SIGNAL = audio.load_wav(bird_dir + audio_file)
+        # It is a bit awkward here to be relying on Microfaune's wave file reading when we want to expand to other frameworks,
+        # Likely want to change that in the future. Librosa had some troubles.
+
+        # Reading in the wave audio files
+        try:
+            SAMPLE_RATE, SIGNAL = audio.load_wav(bird_dir + audio_file)
+        except:
+            print("Failed to load",audio_file)
+            continue
 
         # downsample the audio if the sample rate > 44.1 kHz
         # Force everything into the human hearing range.
@@ -521,3 +552,32 @@ def kaleidoscope_conversion(df):
 
     kaleidoscope_df = pd.concat(kaleidoscope_df, axis=1, keys=headers)
     return kaleidoscope_df
+
+#def annotation_combiner(df):
+#    # Initializing the output Pandas dataframe
+#    combined_annotation_df = pd.DataFrame()
+    # looping through each annotation in the passed in dataframe
+#    for annotation in df.index:
+        # the case for the first iteration.
+#        if combined_annotation_df.empty:
+#            combined_annotation_df = df.loc[annotation,:]
+#        else:
+#            combined_annotation_df = combined_annotation_df.append()
+        # keeps track of how many annotations have been added to the current annotation.
+#        annotation_chain_count = 0
+        # Boolean to keep track whether or not an annotation should be combined with the current annotation
+#        chain_break = False
+        # keeping track of where the current annotation starts
+#        cur_offset = df.loc[annotation,"OFFSET"]
+#        cur_duration = df.loc[annotation,"DURATION"]
+#        start_offset = cur_offset+cur_duration
+#        while chain_break == False:
+#            annotation_chain_count = annotation_chain_count + 1
+#            next_offset = df.loc[annotation+annotation_chain_count,"OFFSET"]
+#            next_duration df.loc[annotation+annotation_chain_count,"DURATION"]
+            # case in which an annotation overlaps
+#            if next_offset <= start_offset:
+
+
+
+#        annotation = annotation + annotation_chain_count - 1
