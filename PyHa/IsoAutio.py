@@ -490,6 +490,7 @@ def generate_automated_labels(bird_dir, isolation_parameters, manual_id = "bird"
             SAMPLE_RATE, SIGNAL = audio.load_wav(bird_dir + audio_file)
         except:
             print("Failed to load",audio_file)
+            continue
 
         # downsample the audio if the sample rate > 44.1 kHz
         # Force everything into the human hearing range.
