@@ -6,7 +6,7 @@ import numpy as np
 import math
 import os
 
-def build_isolation_parameters(technique, threshold_type, threshold_const, threshold_min = 0, bi_directional_jump = 1.0, chunk_size = 2.0):
+def build_isolation_parameters(technique, threshold_type, threshold_const, threshold_min = 0, window_size = 1.0, chunk_size = 2.0):
     """
     Wrapper function for all of the audio isolation techniques (Steinberg, Simple, Stack, Chunk). Will call the respective function of
     each technique based on isolation_parameters "technique" key.
@@ -19,7 +19,7 @@ def build_isolation_parameters(technique, threshold_type, threshold_const, thres
         threshold_const (float) - Multiplier for "mean", "median", and "standard deviation". Acts as threshold for "pure"
         threshold_min (float) - Serves as a minimum barrier of entry for a local score to be considered a positive ID of a class.
                             default: 0
-        bi_directional_jump (float) - determines how many seconds around a positive ID local score to build an annotation.
+        window_size (float) - determines how many seconds around a positive ID local score to build an annotation.
         chunk_size (float) - determines the length of annotation when using "chunk" isolation technique
 
     Returns:
@@ -30,12 +30,12 @@ def build_isolation_parameters(technique, threshold_type, threshold_const, thres
         "treshold_type" : threshold_type,
         "threshold_const" : threshold_const,
         "threshold_min" : threshold_min,
-        "bi_directional_jump" : bi_directional_jump,
+        "window_size" : window_size,
         "chunk_size" : chunk_size
     }
 
-    if bi_directional_jump != 1.0 and technique != "steinberg":
-        print("Warning: bi_directional_jump is dedicated to the steinberg isolation technique. Won't affect current technique.")
+    if window_size != 1.0 and technique != "steinberg":
+        print("Warning: window_size is dedicated to the steinberg isolation technique. Won't affect current technique.")
     if chunk_size != 2.0 and technique != "chunk":
         print("Warning: chunk_size is dedicated to the chunk technique. Won't affect current technique.")
 
@@ -116,10 +116,10 @@ def steinberg_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename,iso
 
     Loop through local score array:
         if current local score > (threshold and threshold_min):
-            build an annotation with current local score at the center with +- "bi_directional_jump" seconds around current local score.
+            build an annotation with current local score at the center with +- window_size/2 seconds around current local score.
         else:
             continue
-    extra logic handles overlap if a local score meets the criteria within the "bi_directional_jump" from a prior local score
+    extra logic handles overlap if a local score meets the criteria within the "window_size" from a prior local score
 
     Args:
         local_scores (list of floats) - Local scores of the audio clip as determined by RNNDetector.
@@ -162,8 +162,8 @@ def steinberg_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename,iso
 
             # upper and lower bound of captured call
             # sample rate is # of samples in 1 second: +-1 second
-            lo_idx = max(0, score_pos - int(isolation_parameters["bi_directional_jump"]*SAMPLE_RATE))
-            hi_idx = min(len(SIGNAL), score_pos + int(isolation_parameters["bi_directional_jump"]*SAMPLE_RATE))
+            lo_idx = max(0, score_pos - int(isolation_parameters["window_size"]/2*SAMPLE_RATE))
+            hi_idx = min(len(SIGNAL), score_pos + int(isolation_parameters["window_size"]/2*SAMPLE_RATE))
             lo_time = lo_idx / SAMPLE_RATE
             hi_time = hi_idx / SAMPLE_RATE
 
@@ -450,19 +450,19 @@ def chunk_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename, isolat
     return pd.DataFrame.from_dict(entry)
 
 
-def generate_automated_labels(bird_dir, isolation_parameters, manual_id = "bird", weight_path=None, Normalized_Sample_Rate = 44100, normalize_local_scores = False):
+def generate_automated_labels(audio_dir, isolation_parameters, manual_id = "bird", weight_path=None, Normalized_Sample_Rate = 44100, normalize_local_scores = False):
     """
     Function that applies isolation technique determined by isolation_parameters dictionary across a folder of audio clips.
 
     Args:
-        bird_dir (string) - Directory with wav audio files.
+        audio_dir (string) - Directory with wav audio files.
         isolation_parameters (dict) - Python Dictionary that controls the various label creation techniques.
         manual_id (string) - controls the name of the class written to the pandas dataframe
         weight_path (string) - File path of weights to be used by the RNNDetector for determining presence of bird sounds.
         Normalized_Sample_Rate (int) - Sampling rate that the audio files should all be normalized to.
 
     Returns:
-        Dataframe of automated labels for the audio clips in bird_dir.
+        Dataframe of automated labels for the audio clips in audio_dir.
     """
 
     # init detector
@@ -478,16 +478,16 @@ def generate_automated_labels(bird_dir, isolation_parameters, manual_id = "bird"
     # init labels dataframe
     annotations = pd.DataFrame()
     # generate local scores for every bird file in chosen directory
-    for audio_file in os.listdir(bird_dir):
+    for audio_file in os.listdir(audio_dir):
         # skip directories
-        if os.path.isdir(bird_dir+audio_file): continue
+        if os.path.isdir(audio_dir+audio_file): continue
 
         # It is a bit awkward here to be relying on Microfaune's wave file reading when we want to expand to other frameworks,
         # Likely want to change that in the future. Librosa had some troubles.
 
         # Reading in the wave audio files
         try:
-            SAMPLE_RATE, SIGNAL = audio.load_wav(bird_dir + audio_file)
+            SAMPLE_RATE, SIGNAL = audio.load_wav(audio_dir + audio_file)
         except:
             print("Failed to load",audio_file)
             continue
@@ -522,7 +522,7 @@ def generate_automated_labels(bird_dir, isolation_parameters, manual_id = "bird"
 
         try:
             # Running moment to moment algorithm and appending to a master dataframe.
-            new_entry = isolate(local_scores[0], SIGNAL, SAMPLE_RATE, bird_dir, audio_file, isolation_parameters, manual_id = manual_id, normalize_local_scores=normalize_local_scores)
+            new_entry = isolate(local_scores[0], SIGNAL, SAMPLE_RATE, audio_dir, audio_file, isolation_parameters, manual_id = manual_id, normalize_local_scores=normalize_local_scores)
             #print(new_entry)
             if annotations.empty == True:
                 annotations = new_entry

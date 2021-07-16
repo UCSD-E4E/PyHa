@@ -307,7 +307,7 @@ def matrix_IoU_Scores(IoU_Matrix,manual_df,threshold):
         precision = round(tp_count/(tp_count+fp_count),4)
         f1 = round(2*(recall*precision)/(recall+precision),4)
     except ZeroDivisionError:
-        print("Division by zero setting precision, recall, and f1 to zero")
+        print("Division by zero setting precision, recall, and f1 to zero on " + filename)
         recall = 0
         precision = 0
         f1 = 0
