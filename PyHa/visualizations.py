@@ -90,7 +90,7 @@ def local_line_graph(local_scores,clip_name, sample_rate,samples, automated_df=N
 # TODO rework function so that instead of generating the automated labels, it takes the automated_df as input
 # same as it does with the manual dataframe.
 
-def local_score_visualization(clip_path,weight_path = None, human_df = None,automated_df = False, isolation_parameters = None,log_scale = False, save_fig = False, normalize_local_scores = False):
+def local_score_visualization(clip_path, weight_path = None, human_df = None,automated_df = False, isolation_parameters = None,log_scale = False, save_fig = False, normalize_local_scores = False):
 
     """
     Wrapper function for the local_line_graph function for ease of use. Processes clip for local scores to be used for
@@ -131,7 +131,7 @@ def local_score_visualization(clip_path,weight_path = None, human_df = None,auto
         # Running the Mel Spectrogram through the RNN
         global_score,local_score = detector.predict(microfaune_features)
     except:
-        print("Error in " + clip_path + " Skipping.")
+        print("Skipping " + clip_path + " due to error in Microfaune Prediction")
 
     # In the case where the user wants to look at automated bird labels
     if human_df is None:
