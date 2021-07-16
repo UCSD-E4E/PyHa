@@ -8,7 +8,7 @@ from .IsoAutio import *
 
 
 
-def local_line_graph(local_scores,clip_name, sample_rate,samples, automated_df=None, human_df=None,log_scale = False, save_fig = False, normalize_local_scores = False):
+def local_line_graph(local_scores,clip_name, sample_rate,samples, automated_df=None, premade_annotations_df=None, premade_annotations_label = "Human Labels", log_scale = False, save_fig = False, normalize_local_scores = False):
     """
     Function that produces graphs with the local score plot and spectrogram of an audio clip. Now integrated with Pandas so you can visualize human and automated annotations.
 
@@ -18,7 +18,8 @@ def local_line_graph(local_scores,clip_name, sample_rate,samples, automated_df=N
         sample_rate (int) - Sample rate of the audio clip, usually 44100.
         samples (list of ints) - Each of the samples from the audio clip.
         automated_df (Dataframe) - Dataframe of automated labelling of the clip.
-        human_df (Dataframe) - Dataframe of human labelling of the clip.
+        premade_annotations_df (Dataframe) - Dataframe labels that have been made outside of the scope of this function.
+        premade_annotations_label (string) - Descriptor of premade_annotations_df
         log_scale (boolean) - Whether the axis for local scores should be logarithmically scaled on the plot.
         save_fig (boolean) - Whether the clip should be saved in a directory as a png file.
 
@@ -63,14 +64,13 @@ def local_line_graph(local_scores,clip_name, sample_rate,samples, automated_df=N
             maxval = automated_df["OFFSET"][row] + automated_df["DURATION"][row]
             axs[0].axvspan(xmin=minval,xmax=maxval,facecolor="yellow",alpha=0.4, label = "_"*ndx + "Automated Labels")
             ndx += 1
-    # Adding in the optional human labels from a Pandas DataFrame
-    #if human_df is not None:
-    if human_df.empty == False:
+    # Adding in the optional premade annotations from a Pandas DataFrame
+    if premade_annotations_df.empty == False:
         ndx = 0
-        for row in human_df.index:
-            minval = human_df["OFFSET"][row]
-            maxval = human_df["OFFSET"][row] + human_df["DURATION"][row]
-            axs[0].axvspan(xmin=minval,xmax=maxval,facecolor="red",alpha=0.4, label = "_"*ndx + "Human Labels")
+        for row in premade_annotations_df.index:
+            minval = premade_annotations_df["OFFSET"][row]
+            maxval = premade_annotations_df["OFFSET"][row] + premade_annotations_df["DURATION"][row]
+            axs[0].axvspan(xmin=minval,xmax=maxval,facecolor="red",alpha=0.4, label = "_"*ndx + premade_annotations_label)
             ndx += 1
     axs[0].legend()
 
@@ -90,16 +90,17 @@ def local_line_graph(local_scores,clip_name, sample_rate,samples, automated_df=N
 # TODO rework function so that instead of generating the automated labels, it takes the automated_df as input
 # same as it does with the manual dataframe.
 
-def local_score_visualization(clip_path, weight_path = None, human_df = None,automated_df = False, isolation_parameters = None,log_scale = False, save_fig = False, normalize_local_scores = False):
+def local_score_visualization(clip_path, weight_path = None, premade_annotations_df = None,premade_annotations_label = "Human Labels",automated_df = False, isolation_parameters = None,log_scale = False, save_fig = False, normalize_local_scores = False):
 
     """
     Wrapper function for the local_line_graph function for ease of use. Processes clip for local scores to be used for
     the local_line_graph function.
 
     Args:
-        clip_path (string) - Directory of the clip.
+        clip_path (string) - Path to an audio clip.
         weight_path (string) - Weights to be used for RNNDetector.
-        human_df (Dataframe) - Dataframe of human labels for the audio clip.
+        premade_annotations_df (Dataframe) - Dataframe of annotations to be displayed that have been created outside of the function.
+        premade_annotations_label (string) - String that serves as the descriptor for the premade_annotations dataframe.
         automated_df (Dataframe) - Whether the audio clip should be labelled by the isolate function and subsequently plotted.
         log_scale (boolean) - Whether the axis for local scores should be logarithmically scaled on the plot.
         save_fig (boolean) - Whether the plots should be saved in a directory as a png file.
@@ -109,22 +110,38 @@ def local_score_visualization(clip_path, weight_path = None, human_df = None,aut
     """
 
     # Loading in the clip with Microfaune's built-in loading function
-    SAMPLE_RATE, SIGNAL = audio.load_wav(clip_path)
+    try:
+        SAMPLE_RATE, SIGNAL = audio.load_wav(clip_path)
+    except:
+        print("Failure in loading",clip_path)
+        return
     # downsample the audio if the sample rate > 44.1 kHz
     # Force everything into the human hearing range.
-    if SAMPLE_RATE > 44100:
-        rate_ratio = 44100 / SAMPLE_RATE
-        SIGNAL = scipy_signal.resample(SIGNAL, int(len(SIGNAL)*rate_ratio))
-        SAMPLE_RATE = 44100
-        # Converting to Mono if Necessary
+    try:
+        if SAMPLE_RATE > 44100:
+            rate_ratio = 44100 / SAMPLE_RATE
+            SIGNAL = scipy_signal.resample(SIGNAL, int(len(SIGNAL)*rate_ratio))
+            SAMPLE_RATE = 44100
+    except:
+        print("Failure in downsampling",clip_path)
+        return
+
+    # Converting to Mono if Necessary
     if len(SIGNAL.shape) == 2:
+        # averaging the two channels together
         SIGNAL = SIGNAL.sum(axis=1) / 2
 
     # Initializing the detector to baseline or with retrained weights
     if weight_path is None:
+        # Microfaune RNNDetector class
         detector = RNNDetector()
     else:
-        detector = RNNDetector(weight_path)
+        try:
+            # Initializing Microfaune hybrid CNN-RNN with new weights
+            detector = RNNDetector(weight_path)
+        except:
+            print("Error in weight path:",weight_path)
+            return
     try:
         # Computing Mel Spectrogram of the audio clip
         microfaune_features = detector.compute_features([SIGNAL])
@@ -134,14 +151,14 @@ def local_score_visualization(clip_path, weight_path = None, human_df = None,aut
         print("Skipping " + clip_path + " due to error in Microfaune Prediction")
 
     # In the case where the user wants to look at automated bird labels
-    if human_df is None:
-        human_df = pd.DataFrame
+    if premade_annotations_df is None:
+        premade_annotations_df = pd.DataFrame()
     if automated_df == True:
         automated_df = isolate(local_score[0],SIGNAL, SAMPLE_RATE,"Doesn't","Matter",isolation_parameters, normalize_local_scores = normalize_local_scores)
     else:
         automated_df = pd.DataFrame()
 
-    local_line_graph(local_score[0].tolist(),clip_path,SAMPLE_RATE,SIGNAL,automated_df,human_df,log_scale = log_scale, save_fig = save_fig, normalize_local_scores = normalize_local_scores)
+    local_line_graph(local_score[0].tolist(),clip_path,SAMPLE_RATE,SIGNAL,automated_df,premade_annotations_df,premade_annotations_label = premade_annotations_label,log_scale = log_scale, save_fig = save_fig, normalize_local_scores = normalize_local_scores)
 
 def plot_bird_label_scores(automated_df,human_df,save_fig = False):
     """
