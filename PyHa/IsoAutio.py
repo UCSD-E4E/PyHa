@@ -450,19 +450,19 @@ def chunk_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename, isolat
     return pd.DataFrame.from_dict(entry)
 
 
-def generate_automated_labels(bird_dir, isolation_parameters, manual_id = "bird", weight_path=None, Normalized_Sample_Rate = 44100, normalize_local_scores = False):
+def generate_automated_labels(audio_dir, isolation_parameters, manual_id = "bird", weight_path=None, Normalized_Sample_Rate = 44100, normalize_local_scores = False):
     """
     Function that applies isolation technique determined by isolation_parameters dictionary across a folder of audio clips.
 
     Args:
-        bird_dir (string) - Directory with wav audio files.
+        audio_dir (string) - Directory with wav audio files.
         isolation_parameters (dict) - Python Dictionary that controls the various label creation techniques.
         manual_id (string) - controls the name of the class written to the pandas dataframe
         weight_path (string) - File path of weights to be used by the RNNDetector for determining presence of bird sounds.
         Normalized_Sample_Rate (int) - Sampling rate that the audio files should all be normalized to.
 
     Returns:
-        Dataframe of automated labels for the audio clips in bird_dir.
+        Dataframe of automated labels for the audio clips in audio_dir.
     """
 
     # init detector
@@ -478,16 +478,16 @@ def generate_automated_labels(bird_dir, isolation_parameters, manual_id = "bird"
     # init labels dataframe
     annotations = pd.DataFrame()
     # generate local scores for every bird file in chosen directory
-    for audio_file in os.listdir(bird_dir):
+    for audio_file in os.listdir(audio_dir):
         # skip directories
-        if os.path.isdir(bird_dir+audio_file): continue
+        if os.path.isdir(audio_dir+audio_file): continue
 
         # It is a bit awkward here to be relying on Microfaune's wave file reading when we want to expand to other frameworks,
         # Likely want to change that in the future. Librosa had some troubles.
 
         # Reading in the wave audio files
         try:
-            SAMPLE_RATE, SIGNAL = audio.load_wav(bird_dir + audio_file)
+            SAMPLE_RATE, SIGNAL = audio.load_wav(audio_dir + audio_file)
         except:
             print("Failed to load",audio_file)
             continue
@@ -522,7 +522,7 @@ def generate_automated_labels(bird_dir, isolation_parameters, manual_id = "bird"
 
         try:
             # Running moment to moment algorithm and appending to a master dataframe.
-            new_entry = isolate(local_scores[0], SIGNAL, SAMPLE_RATE, bird_dir, audio_file, isolation_parameters, manual_id = manual_id, normalize_local_scores=normalize_local_scores)
+            new_entry = isolate(local_scores[0], SIGNAL, SAMPLE_RATE, audio_dir, audio_file, isolation_parameters, manual_id = manual_id, normalize_local_scores=normalize_local_scores)
             #print(new_entry)
             if annotations.empty == True:
                 annotations = new_entry
