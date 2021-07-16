@@ -97,7 +97,7 @@ def local_score_visualization(clip_path, weight_path = None, human_df = None,aut
     the local_line_graph function.
 
     Args:
-        clip_path (string) - Directory of the clip.
+        clip_path (string) - Path to an audio clip.
         weight_path (string) - Weights to be used for RNNDetector.
         human_df (Dataframe) - Dataframe of human labels for the audio clip.
         automated_df (Dataframe) - Whether the audio clip should be labelled by the isolate function and subsequently plotted.
@@ -109,22 +109,38 @@ def local_score_visualization(clip_path, weight_path = None, human_df = None,aut
     """
 
     # Loading in the clip with Microfaune's built-in loading function
-    SAMPLE_RATE, SIGNAL = audio.load_wav(clip_path)
+    try:
+        SAMPLE_RATE, SIGNAL = audio.load_wav(clip_path)
+    except:
+        print("Failure in loading",clip_path)
+        return
     # downsample the audio if the sample rate > 44.1 kHz
     # Force everything into the human hearing range.
-    if SAMPLE_RATE > 44100:
-        rate_ratio = 44100 / SAMPLE_RATE
-        SIGNAL = scipy_signal.resample(SIGNAL, int(len(SIGNAL)*rate_ratio))
-        SAMPLE_RATE = 44100
-        # Converting to Mono if Necessary
+    try:
+        if SAMPLE_RATE > 44100:
+            rate_ratio = 44100 / SAMPLE_RATE
+            SIGNAL = scipy_signal.resample(SIGNAL, int(len(SIGNAL)*rate_ratio))
+            SAMPLE_RATE = 44100
+    except:
+        print("Failure in downsampling",clip_path)
+        return
+
+    # Converting to Mono if Necessary
     if len(SIGNAL.shape) == 2:
+        # averaging the two channels together
         SIGNAL = SIGNAL.sum(axis=1) / 2
 
     # Initializing the detector to baseline or with retrained weights
     if weight_path is None:
+        # Microfaune RNNDetector class
         detector = RNNDetector()
     else:
-        detector = RNNDetector(weight_path)
+        try:
+            # Initializing Microfaune hybrid CNN-RNN with new weights
+            detector = RNNDetector(weight_path)
+        except:
+            print("Error in weight path:",weight_path)
+            return
     try:
         # Computing Mel Spectrogram of the audio clip
         microfaune_features = detector.compute_features([SIGNAL])
@@ -135,7 +151,7 @@ def local_score_visualization(clip_path, weight_path = None, human_df = None,aut
 
     # In the case where the user wants to look at automated bird labels
     if human_df is None:
-        human_df = pd.DataFrame
+        human_df = pd.DataFrame()
     if automated_df == True:
         automated_df = isolate(local_score[0],SIGNAL, SAMPLE_RATE,"Doesn't","Matter",isolation_parameters, normalize_local_scores = normalize_local_scores)
     else:
