@@ -33,7 +33,7 @@ isolation_parameters = {
     "threshold_type" : "",
     "threshold_const" : 0.0,
     "threshold_min" : 0.0,
-    "bi_directional_jump" : 0.0,
+    "window_size" : 0.0,
     "chunk_size" : 0.0,
 } 
 ```
