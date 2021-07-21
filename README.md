@@ -411,4 +411,17 @@ All files in the `microfaune_package` directory are from the [microfaune reposit
 ## Examples
 *These examples were created on a Windows 10 machine. Results may vary between different OS distributions.*
 
+Examples were created using this dictionary for the `isolation_parameters`: 
+
+```json
+isolation_parameters = {
+    "technique" : "steinberg",
+    "threshold_type" : "median",
+    "threshold_const" : 2.0,
+    "threshold_min" : 0.0,
+    "window_size" : 2.0,
+    "chunk_size" : 5.0
+}
+```
+
 ### 
