@@ -208,11 +208,6 @@ This function returns a Pandas Dataframe containing count, mean, mode, standard 
 
 Usage: `annotation_duration_statistics(df)`
 
-
-
-
-
-
 ### [`bird_label_scores`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)
 *Found in [`statistics.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)*
 
@@ -220,8 +215,8 @@ This function to generates a dataframe with statistics relating to the efficienc
 
 | Parameter | Type |  Description |
 | --- | --- | --- |
-| automated_df | Dataframe | Dataframe of automated labels for one clip |
-| human_df | Dataframe | Dataframe of human labels for one clip. |
+| `automated_df` | Dataframe | Dataframe of automated labels for one clip |
+| `human_df` | Dataframe | Dataframe of human labels for one clip. |
 
 This function returns a dataframe with general clip overlap statistics comparing the automated and human labeling. 
 
@@ -229,7 +224,21 @@ Usage: `bird_label_scores(automated_df, human_df)`
 
 
 
+### [`automated_labeling_statistics`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)
+*Found in [`statistics.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)*
 
+This function allows users to easily pass in two dataframes of manual labels and automated labels, and returns a dataframe with statistics examining the efficiency of the automated labelling system compared to the human labels for multiple clips.
+
+| Parameter | Type |  Description |
+| --- | --- | --- |
+| `automated_df` | Dataframe | Dataframe of automated labels of multiple clips. |
+| `manual_df` | Dataframe |  Dataframe of human labels of multiple clips. |
+| `stats_type` | String | String that determines which type of statistics are of interest |
+| `threshold` | Float | Defines a threshold for certain types of statistics |
+
+This function returns a dataframe with general clip overlap statistics comparing the automated and human labeling. 
+
+Usage: `automated_labeling_statistics(automated_df, manual_df, stats_type, threshold)`
 
 
 
