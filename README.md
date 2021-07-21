@@ -195,21 +195,40 @@ Usage: `kaleidoscope_conversion(df)`
 ### [`local_line_graph`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/visualizations.py)
 *Found in [`visualizations.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/visualizations.py)*
 
-This Function produces graphs with the local score plot and spectrogram of an audio clip. It is now integrated with Pandas so you can visualize human and automated annotations.
-.
+This function produces graphs with the local score plot and spectrogram of an audio clip. It is now integrated with Pandas so you can visualize human and automated annotations.
 
 | Parameter | Type |  Description |
 | --- | --- | --- |
-| local_scores | list of floats | Local scores for the clip determined by the RNN. |
-| clip_name  | string | Directory of the clip. |
-| sample_rate | int | Sample rate of the audio clip, usually 44100. |
-| samples | list of ints | Each of the samples from the audio clip. |
-| automated_df | Dataframe | Dataframe of automated labelling of the clip. |
-| premade_annotations_df | Dataframe | Dataframe labels that have been made outside of the scope of this function. |
-| premade_annotations_label | string | Descriptor of premade_annotations_df |
-| log_scale | boolean | Whether the axis for local scores should be logarithmically scaled on the plot. |
-| save_fig  | boolean | Whether the clip should be saved in a directory as a png file. |
+| `local_scores` | list of floats | Local scores for the clip determined by the RNN. |
+| `clip_name`  | string | Directory of the clip. |
+| `sample_rate` | int | Sample rate of the audio clip, usually 44100. |
+| `samples` | list of ints | Each of the samples from the audio clip. |
+| `automated_df` | Dataframe | Dataframe of automated labelling of the clip. |
+| `premade_annotations_df` | Dataframe | Dataframe labels that have been made outside of the scope of this function. |
+| `premade_annotations_label` | string | Descriptor of premade_annotations_df |
+| `log_scale` | boolean | Whether the axis for local scores should be logarithmically scaled on the plot. |
+| `save_fig`  | boolean | Whether the clip should be saved in a directory as a png file. |
 
 This function does not return anything. 
 
 Usage: `local_line_graph(local_scores, clip_name, sample_rate, samples, automated_df, premade_annotations_df, premade_annotations_label, log_scale, save_fig, normalize_local_scores)`
+
+### [`local_score_visualization`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/visualizations.py)
+*Found in [`visualizations.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/visualizations.py)*
+
+This is the wrapper function for the local_line_graph function for ease of use. Processes clip for local scores to be used for the local_line_graph function.
+
+| Parameter | Type |  Description |
+| --- | --- | --- |
+| `clip_path` | string | Path to an audio clip. |
+| `weight_path` | string | Weights to be used for RNNDetector. |
+| `premade_annotations_df` | Dataframe | Dataframe of annotations to be displayed that have been created outside of the function. |
+| `premade_annotations_label` | string | String that serves as the descriptor for the premade_annotations dataframe. |
+| `automated_df` | Dataframe | Whether the audio clip should be labelled by the isolate function and subsequently plotted. |
+| `log_scale` | boolean | Whether the axis for local scores should be logarithmically scaled on the plot. |
+| `save_fig` | boolean | Whether the plots should be saved in a directory as a png file. |
+
+This function does not return anything. 
+
+Usage: `local_score_visualization(clip_path, weight_path, premade_annotations_df, premade_annotations_label,automated_df = False, isolation_parameters, log_scale, save_fig, normalize_local_scores)`
+
