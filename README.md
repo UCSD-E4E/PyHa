@@ -238,7 +238,6 @@ This function returns a dataframe of statistics comparing automated labels and h
 
 Usage: `automated_labeling_statistics(automated_df, manual_df, stats_type, threshold)`
 
-
 ### [`global_dataset_statistics`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)
 *Found in [`statistics.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)*
 
@@ -252,8 +251,19 @@ This function returns a dataframe of global statistics for the multiple audio cl
 
 Usage: `global_dataset_statistics(statistics_df)`
 
+### [`clip_IoU`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)
+*Found in [`statistics.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)*
 
+This function takes in the manual and automated labels for a clip and outputs IoU metrics of each human label with respect to each automated label.
 
+| Parameter | Type |  Description |
+| --- | --- | --- |
+| `automated_df` | Dataframe | Dataframe of automated labels for one clip |
+| `human_df` | Dataframe | Dataframe of human labels for one clip. |
+
+This function returns an `IoU_Matrix` (arr) - (human label count) x (automated label count) matrix where each row contains the IoU of each automated annotation with respect to a human label.
+
+Usage: `clip_IoU(automated_df,manual_df)`
 
 
 
