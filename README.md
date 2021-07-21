@@ -19,8 +19,6 @@ PyHa = Python + Piha (referring to a bird species of our interest known as the s
 ![design](https://user-images.githubusercontent.com/44332326/123478194-f74fda80-d5b3-11eb-81e4-86add2a8c0f0.png)
 *This image shows the design of the automated audio labeling system.*
 
-
-
 ### `isolation_parameters`
 
 Many of the functions take in the `isolation_parameters` argument, and as such it will be defined globally here. 
@@ -42,7 +40,9 @@ The `threshold_type` parameter can be: median, mean, average, standard deviation
 
 The remaining parameters are floats representing their respective values. 
 
-
+<details>
+ <summary>IsoAutio.py files</summary>
+ 
 ### [`isolate`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)
 *Found in [`IsoAutio.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)*
 
@@ -178,6 +178,8 @@ This function strips away pandas dataframe columns necessary for the PyHa packag
 | Parameter | Type |  Description |
 | --- | --- | --- |
 | `df` | Pandas Dataframe | Dataframe compatible with PyHa package whether it be human labels or automated labels. |
-This function returns a pandas dataframe compatible with Kaleidoscope. 
+
+ This function returns a pandas dataframe compatible with Kaleidoscope. 
 
 Usage: `kaleidoscope_conversion(df)`
+</details>
