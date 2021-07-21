@@ -198,7 +198,7 @@ Usage: `kaleidoscope_conversion(df)`
 ### [`annotation_duration_statistics`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)
 *Found in [`statistics.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)*
 
-This function that calculates basic statistics related to the duration of annotations of a Pandas Dataframe compatible with PyHa..
+This function calculates basic statistics related to the duration of annotations of a Pandas Dataframe compatible with PyHa.
 
 | Parameter | Type |  Description |
 | --- | --- | --- |
@@ -213,7 +213,19 @@ Usage: `annotation_duration_statistics(df)`
 
 
 
+### [`bird_label_scores`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)
+*Found in [`statistics.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)*
 
+This function to generates a dataframe with statistics relating to the efficiency of the automated label compared to the human label. These statistics include true positive, false positive, false negative, true negative, union, precision, recall, F1, and Global IoU for general clip overlap.
+
+| Parameter | Type |  Description |
+| --- | --- | --- |
+| automated_df | Dataframe | Dataframe of automated labels for one clip |
+| human_df | Dataframe | Dataframe of human labels for one clip. |
+
+This function returns a dataframe with general clip overlap statistics comparing the automated and human labeling. 
+
+Usage: `bird_label_scores(automated_df, human_df)`
 
 
 
