@@ -26,7 +26,7 @@ PyHa = Python + Piha (referring to a bird species of our interest known as the s
 
 
 ## Functions
-![design](https://user-images.githubusercontent.com/44332326/126560478-26690d9b-0807-4cd3-bb93-a6a14811073e.png)
+![design](https://user-images.githubusercontent.com/44332326/126560960-e9816f7e-c31b-40ee-804d-6947053323c2.png)
 
 *This image shows the design of the automated audio labeling system.*
 
