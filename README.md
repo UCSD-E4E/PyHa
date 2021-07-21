@@ -232,3 +232,18 @@ This function does not return anything.
 
 Usage: `local_score_visualization(clip_path, weight_path, premade_annotations_df, premade_annotations_label,automated_df = False, isolation_parameters, log_scale, save_fig, normalize_local_scores)`
 
+### [`plot_bird_label_scores`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/visualizations.py)
+*Found in [`visualizations.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/visualizations.py)*
+
+This function visualizes automated and human annotation scores across an audio clip..
+
+| Parameter | Type |  Description |
+| --- | --- | --- |
+| `automated_df` | Dataframe | Dataframe of automated labels for one clip. |
+| `human_df` | Dataframe | Dataframe of human labels for one clip. |
+| `plot_fig` | boolean | Whether or not the efficiency statistics should be displayed. |
+| `save_fig` | boolean | Whether or not the plot should be saved within a file. |
+
+This function returns a dataframe with statistics comparing the automated and human labeling. 
+
+Usage: `plot_bird_label_scores(automated_df,human_df,save_fig)`
