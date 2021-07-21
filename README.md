@@ -307,7 +307,19 @@ This function returns a dataframe of global IoU statistics which include the num
 
 Usage: `global_IoU_Statistics(statistics_df)`
 
+### [`dataset_Catch`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)
+*Found in [`statistics.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)*
 
+This function determines the overlap of each human label with respect to all of the human labels in a clip across a large number of clips.
+
+| Parameter | Type |  Description |
+| --- | --- | --- |
+| `automated_df` | Dataframe | Dataframe of automated labels for one clip |
+| `human_df` | Dataframe | Dataframe of human labels for one clip. |
+
+This function returns a dataframe of human labels with a column for the catch values of each label.
+
+Usage: `dataset_Catch(automated_df, manual_df)`
 
 
 
