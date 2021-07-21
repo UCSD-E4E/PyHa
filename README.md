@@ -280,7 +280,19 @@ This function returns a dataframe of clip statistics such as True Positive, Fals
 
 Usage: `matrix_IoU_Scores(IoU_Matrix, manual_df, threshold)`
 
+### [`clip_catch`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)
+*Found in [`statistics.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)*
 
+This function determines whether or not a human label has been found across all of the automated labels.
+
+| Parameter | Type |  Description |
+| --- | --- | --- |
+| `automated_df` | Dataframe | Dataframe of automated labels for one clip |
+| `human_df` | Dataframe | Dataframe of human labels for one clip. |
+
+This function returns a Numpy Array of statistics regarding the amount of overlap between the manual and automated labels relative to the number of samples.
+
+Usage: `clip_catch(automated_df,manual_df)`
 
 
 
