@@ -10,6 +10,7 @@ PyHa = Python + Piha (referring to a bird species of our interest known as the s
 ## Contents
 - [Installation and Setup](#installation-and-setup)
 - [Functions](#functions)
+- [Examples](#examples)
 
 ## Installation and Setup
 1. Clone the repository onto your local machine.
@@ -406,3 +407,6 @@ Usage: `plot_bird_label_scores(automated_df,human_df,save_fig)`
 
 
 All files in the `microfaune_package` directory are from the [microfaune repository](https://github.com/microfaune/microfaune), and their associated documentation can be found there.  
+
+## Examples
+*These examples were created on a Windows 10 machine*
