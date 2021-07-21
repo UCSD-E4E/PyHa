@@ -179,7 +179,7 @@ This function strips away pandas dataframe columns necessary for the PyHa packag
 | --- | --- | --- |
 | `df` | Pandas Dataframe | Dataframe compatible with PyHa package whether it be human labels or automated labels. |
 
- This function returns a pandas dataframe compatible with Kaleidoscope. 
+This function returns a pandas dataframe compatible with Kaleidoscope. 
 
 Usage: `kaleidoscope_conversion(df)`
 </details>
@@ -191,3 +191,25 @@ Usage: `kaleidoscope_conversion(df)`
 <details>
  <summary>visualizations.py file</summary>
 </details>
+
+### [`local_line_graph`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/visualizations.py)
+*Found in [`visualizations.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/visualizations.py)*
+
+This Function produces graphs with the local score plot and spectrogram of an audio clip. It is now integrated with Pandas so you can visualize human and automated annotations.
+.
+
+| Parameter | Type |  Description |
+| --- | --- | --- |
+| local_scores | list of floats | Local scores for the clip determined by the RNN. |
+| clip_name  | string | Directory of the clip. |
+| sample_rate | int | Sample rate of the audio clip, usually 44100. |
+| samples | list of ints | Each of the samples from the audio clip. |
+| automated_df | Dataframe | Dataframe of automated labelling of the clip. |
+| premade_annotations_df | Dataframe | Dataframe labels that have been made outside of the scope of this function. |
+| premade_annotations_label | string | Descriptor of premade_annotations_df |
+| log_scale | boolean | Whether the axis for local scores should be logarithmically scaled on the plot. |
+| save_fig  | boolean | Whether the clip should be saved in a directory as a png file. |
+
+This function does not return anything. 
+
+Usage: `local_line_graph(local_scores, clip_name, sample_rate, samples, automated_df, premade_annotations_df, premade_annotations_label, log_scale, save_fig, normalize_local_scores)`
