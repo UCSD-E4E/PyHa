@@ -257,3 +257,6 @@ This function returns a dataframe with statistics comparing the automated and hu
 Usage: `plot_bird_label_scores(automated_df,human_df,save_fig)`
  
 </details>
+
+
+All files in the `microfaune_package` directory are from the [microfaune repository](https://github.com/microfaune/microfaune), and their associated documentation can be found there.  
