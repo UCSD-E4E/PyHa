@@ -409,4 +409,4 @@ Usage: `plot_bird_label_scores(automated_df,human_df,save_fig)`
 All files in the `microfaune_package` directory are from the [microfaune repository](https://github.com/microfaune/microfaune), and their associated documentation can be found there.  
 
 ## Examples
-*These examples were created on a Windows 10 machine*
+*These examples were created on a Windows 10 machine. Results may vary between different OS distributions.*
