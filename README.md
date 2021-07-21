@@ -263,9 +263,22 @@ This function takes in the manual and automated labels for a clip and outputs Io
 
 This function returns an `IoU_Matrix` (arr) - (human label count) x (automated label count) matrix where each row contains the IoU of each automated annotation with respect to a human label.
 
-Usage: `clip_IoU(automated_df,manual_df)`
+Usage: `clip_IoU(automated_df, manual_df)`
 
+### [`matrix_IoU_Scores`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)
+*Found in [`statistics.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)*
 
+This function takes in the manual and automated labels for a clip and outputs IoU metrics of each human label with respect to each automated label.
+
+| Parameter | Type |  Description |
+| --- | --- | --- |
+| `IoU_Matrix`  | arr | (human label count) x (automated label count) matrix where each row contains the IoU of each automated annotation with respect to a human label. |
+| manual_df | Dataframe | Dataframe of human labels for an audio clip. |
+| threshold | float | IoU threshold for determining true positives, false positives, and false negatives. | 
+
+This function returns a dataframe of clip statistics such as True Positive, False Negative, False Positive, Precision, Recall, and F1 values for an audio clip.
+
+Usage: `matrix_IoU_Scores(IoU_Matrix, manual_df, threshold)`
 
 
 
