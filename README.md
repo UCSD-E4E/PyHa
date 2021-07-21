@@ -232,7 +232,7 @@ This function allows users to easily pass in two dataframes of manual labels and
 | `automated_df` | Dataframe | Dataframe of automated labels of multiple clips. |
 | `manual_df` | Dataframe |  Dataframe of human labels of multiple clips. |
 | `stats_type` | String | String that determines which type of statistics are of interest |
-| `threshold` | Float | Defines a threshold for certain types of statistics |
+| `threshold` | float | Defines a threshold for certain types of statistics |
 
 This function returns a dataframe of statistics comparing automated labels and human labels for multiple clips. 
 
@@ -321,7 +321,21 @@ This function returns a dataframe of human labels with a column for the catch va
 
 Usage: `dataset_Catch(automated_df, manual_df)`
 
+<!-- Need to be updated -->
+### [`dataset_IoU_Statistics`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)
+*Found in [`statistics.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)*
 
+This function determines the overlap of each human label with respect to all of the human labels in a clip across a large number of clips.
+
+| Parameter | Type |  Description |
+| --- | --- | --- |
+| `automated_df` | Dataframe | Dataframe of automated labels for one clip |
+| `human_df` | Dataframe | Dataframe of human labels for one clip. |
+| `threshold` | float | Defines a threshold for certain types of statistics |
+
+This function returns a dataframe of human labels with a column for the catch values of each label.
+
+Usage: `dataset_IoU_Statistics(automated_df, manual_df, threshold)`
 
 
 
