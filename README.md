@@ -152,3 +152,19 @@ This function returns a dataframe of automated labels for the audio clip.
 
 Usage: `chunk_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename,isolation_parameters, manual_id)`
 
+### [`generate_automated_labels`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)
+*Found in [`IsoAutio.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)*
+
+This function applies the isolation technique determined by the `isolation_parameters` dictionary accross a whole folder of audio clips. 
+
+| Parameter | Type |  Description |
+| --- | --- | --- |
+| `audio_dir` | string | Directory with wav audio files |
+| `isolation_parameters` | dict | Python Dictionary that controls the various label creation techniques. |
+| `manual_id` | string | controls the name of the class written to the pandas dataframe |
+| `weight_path` | string | File path of weights to be used by the RNNDetector for determining presence of bird sounds.
+| `Normalized_Sample_Rate` | int | Sampling rate that the audio files should all be normalized to.
+
+This function returns a dataframe of automated labels for the audio clips in audio_dir.
+
+Usage: `generate_automated_labels(audio_dir, isolation_parameters, manual_id, weight_path, Normalized_Sample_Rate, normalize_local_scores = False)`
