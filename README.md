@@ -169,3 +169,15 @@ This function applies the isolation technique determined by the `isolation_param
 This function returns a dataframe of automated labels for the audio clips in audio_dir.
 
 Usage: `generate_automated_labels(audio_dir, isolation_parameters, manual_id, weight_path, Normalized_Sample_Rate, normalize_local_scores)`
+
+### [`kaleidoscope_conversion`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)
+*Found in [`IsoAutio.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)*
+
+This function strips away pandas dataframe columns necessary for the PyHa package that aren't compatible with the Kaleidoscope software.
+
+| Parameter | Type |  Description |
+| --- | --- | --- |
+| `df` | Pandas Dataframe | Dataframe compatible with PyHa package whether it be human labels or automated labels. |
+This function returns a pandas dataframe compatible with Kaleidoscope. 
+
+Usage: `kaleidoscope_conversion(df)`
