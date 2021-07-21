@@ -222,12 +222,10 @@ This function returns a dataframe with general clip overlap statistics comparing
 
 Usage: `bird_label_scores(automated_df, human_df)`
 
-
-
 ### [`automated_labeling_statistics`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)
 *Found in [`statistics.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)*
 
-This function allows users to easily pass in two dataframes of manual labels and automated labels, and returns a dataframe with statistics examining the efficiency of the automated labelling system compared to the human labels for multiple clips.
+This function allows users to easily pass in two dataframes of manual labels and automated labels, and returns a dataframe with statistics examining the efficiency of the automated labelling system compared to the human labels for multiple clips. It calls `bird_local_scores` on corresponding audio clips to generate the efficiency statistics for one specific clip which is then all put into one dataframe of statistics for multiple audio clips.
 
 | Parameter | Type |  Description |
 | --- | --- | --- |
@@ -236,12 +234,23 @@ This function allows users to easily pass in two dataframes of manual labels and
 | `stats_type` | String | String that determines which type of statistics are of interest |
 | `threshold` | Float | Defines a threshold for certain types of statistics |
 
-This function returns a dataframe with general clip overlap statistics comparing the automated and human labeling. 
+This function returns a dataframe of statistics comparing automated labels and human labels for multiple clips. 
 
 Usage: `automated_labeling_statistics(automated_df, manual_df, stats_type, threshold)`
 
 
+### [`global_dataset_statistics`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)
+*Found in [`statistics.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)*
 
+This function takes in a dataframe of efficiency statistics for multiple clips and outputs their global values.
+
+| Parameter | Type |  Description |
+| --- | --- | --- |
+| `statistics_df` | Dataframe | Dataframe of statistics value for multiple audio clips as returned by the function automated_labelling_statistics. |
+
+This function returns a dataframe of global statistics for the multiple audio clips' labelling.. 
+
+Usage: `global_dataset_statistics(statistics_df)`
 
 
 
