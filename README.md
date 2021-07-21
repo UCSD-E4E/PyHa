@@ -192,9 +192,6 @@ Usage: `kaleidoscope_conversion(df)`
 <details>
  <summary>statistics.py file</summary>
 
-</details>
-
-
 ### [`annotation_duration_statistics`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)
 *Found in [`statistics.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)*
 
@@ -336,15 +333,9 @@ This function determines the overlap of each human label with respect to all of 
 This function returns a dataframe of human labels with a column for the catch values of each label.
 
 Usage: `dataset_IoU_Statistics(automated_df, manual_df, threshold)`
-
-
-
-
-
-
-
-
-
+ 
+</details>
+ 
 
 <!-- visualizations.py file -->
 <details>
