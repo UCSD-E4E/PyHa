@@ -183,3 +183,11 @@ This function strips away pandas dataframe columns necessary for the PyHa packag
 
 Usage: `kaleidoscope_conversion(df)`
 </details>
+
+<details>
+ <summary>statistics.py file</summary>
+</details>
+
+<details>
+ <summary>visualizations.py file</summary>
+</details>
