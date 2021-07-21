@@ -333,7 +333,7 @@ Usage: `dataset_Catch(automated_df, manual_df)`
 ### [`dataset_IoU_Statistics`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)
 *Found in [`statistics.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)*
 
-This function determines the overlap of each human label with respect to all of the human labels in a clip across a large number of clips.
+*The description for this function has not yet been updated* 
 
 | Parameter | Type |  Description |
 | --- | --- | --- |
@@ -341,7 +341,7 @@ This function determines the overlap of each human label with respect to all of 
 | `human_df` | Dataframe | Dataframe of human labels for one clip. |
 | `threshold` | float | Defines a threshold for certain types of statistics |
 
-This function returns a dataframe of human labels with a column for the catch values of each label.
+*The return for this function is not yet specified*
 
 Usage: `dataset_IoU_Statistics(automated_df, manual_df, threshold)`
  
@@ -395,7 +395,7 @@ Usage: `local_score_visualization(clip_path, weight_path, premade_annotations_df
 ### [`plot_bird_label_scores`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/visualizations.py)
 *Found in [`visualizations.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/visualizations.py)*
 
-This function visualizes automated and human annotation scores across an audio clip..
+This function visualizes automated and human annotation scores across an audio clip.
 
 | Parameter | Type |  Description |
 | --- | --- | --- |
