@@ -164,7 +164,8 @@ This function applies the isolation technique determined by the `isolation_param
 | `manual_id` | string | controls the name of the class written to the pandas dataframe |
 | `weight_path` | string | File path of weights to be used by the RNNDetector for determining presence of bird sounds.
 | `Normalized_Sample_Rate` | int | Sampling rate that the audio files should all be normalized to.
+| `normalize_local_scores` | boolean | Set whether or not to normalize the local scores. 
 
 This function returns a dataframe of automated labels for the audio clips in audio_dir.
 
-Usage: `generate_automated_labels(audio_dir, isolation_parameters, manual_id, weight_path, Normalized_Sample_Rate, normalize_local_scores = False)`
+Usage: `generate_automated_labels(audio_dir, isolation_parameters, manual_id, weight_path, Normalized_Sample_Rate, normalize_local_scores)`
