@@ -175,13 +175,13 @@ Usage: `generate_automated_labels(audio_dir, isolation_parameters, manual_id, we
 ### [`kaleidoscope_conversion`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)
 *Found in [`IsoAutio.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)*
 
-This function strips away pandas dataframe columns necessary for the PyHa package that aren't compatible with the Kaleidoscope software.
+This function strips away Pandas Dataframe columns necessary for the PyHa package that aren't compatible with the Kaleidoscope software.
 
 | Parameter | Type |  Description |
 | --- | --- | --- |
 | `df` | Pandas Dataframe | Dataframe compatible with PyHa package whether it be human labels or automated labels. |
 
-This function returns a pandas dataframe compatible with Kaleidoscope. 
+This function returns a Pandas Dataframe compatible with Kaleidoscope. 
 
 Usage: `kaleidoscope_conversion(df)`
 
@@ -192,9 +192,57 @@ Usage: `kaleidoscope_conversion(df)`
 <details>
  <summary>statistics.py file</summary>
 
- 
-
 </details>
+
+
+### [`annotation_duration_statistics`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)
+*Found in [`statistics.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)*
+
+This function that calculates basic statistics related to the duration of annotations of a Pandas Dataframe compatible with PyHa..
+
+| Parameter | Type |  Description |
+| --- | --- | --- |
+| `df` | Pandas Dataframe | Dataframe of automated labels or manual labels. |
+
+This function returns a Pandas Dataframe containing count, mean, mode, standard deviation, and IQR values based on annotation duration. 
+
+Usage: `annotation_duration_statistics(df)`
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 <!-- visualizations.py file -->
 <details>
