@@ -190,8 +190,6 @@ Usage: `kaleidoscope_conversion(df)`
 
 <details>
  <summary>visualizations.py file</summary>
-</details>
-
 ### [`local_line_graph`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/visualizations.py)
 *Found in [`visualizations.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/visualizations.py)*
 
@@ -247,3 +245,4 @@ This function visualizes automated and human annotation scores across an audio c
 This function returns a dataframe with statistics comparing the automated and human labeling. 
 
 Usage: `plot_bird_label_scores(automated_df,human_df,save_fig)`
+</details>
