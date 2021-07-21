@@ -17,10 +17,10 @@ PyHa = Python + Piha (referring to a bird species of our interest known as the s
 
 
 ## Installation and Setup
-* Clone the repository onto your local machine
-* Install [Miniconda](https://docs.conda.io/en/latest/miniconda.html) or [Miniforge](https://github.com/conda-forge/miniforge)
-* Install the conda environment by running `conda env create --file conda_environments/{filename}`, where `filename` is the name of the yaml containing the environment for your OS. 
-* 
+1. Clone the repository onto your local machine
+2. Install [Miniconda](https://docs.conda.io/en/latest/miniconda.html) or [Miniforge](https://github.com/conda-forge/miniforge)
+3. Install the conda environment by running `conda env create --file conda_environments/{filename}`, where `filename` is the name of the yaml containing the environment for your OS. 
+4.  
 
 
 
