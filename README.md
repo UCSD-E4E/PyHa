@@ -8,13 +8,8 @@ A tool designed to convert audio-based "weak" labels to "strong" moment-to-momen
 PyHa = Python + Piha (referring to a bird species of our interest known as the screaming-piha)
 
 ## Contents
-- [How it Works](#how-it-works)
 - [Installation and Setup](#installation-and-setup)
 - [Functions](#functions)
-
-
-## How it Works
-
 
 ## Installation and Setup
 1. Clone the repository onto your local machine.
