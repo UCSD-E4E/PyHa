@@ -294,7 +294,18 @@ This function returns a Numpy Array of statistics regarding the amount of overla
 
 Usage: `clip_catch(automated_df,manual_df)`
 
+### [`global_IoU_Statistics`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)
+*Found in [`statistics.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)*
 
+This function takes the output of dataset_IoU Statistics and outputs a global count of true positives and false positives, as well as computes the precision, recall, and f1 metrics across the dataset.
+
+| Parameter | Type |  Description |
+| --- | --- | --- |
+| `statistics_df` | Dataframe | Dataframe of matrix IoU scores for multiple clips. |
+
+This function returns a dataframe of global IoU statistics which include the number of true positives, false positives, and false negatives. Contains Precision, Recall, and F1 metrics as well
+
+Usage: `global_IoU_Statistics(statistics_df)`
 
 
 
