@@ -424,4 +424,117 @@ isolation_parameters = {
 }
 ```
 
-### 
+To generate automated labels and get manual labels: 
+```python
+automated_df = generate_automated_labels(path,isolation_parameters,normalize_local_scores=True)
+manual_df = pd.read_csv("Manual_Labels.csv")
+```
+
+### Function that gathers statistics about the duration of labels 
+```python
+annotation_duration_statistics(automated_df)
+```
+![image](https://user-images.githubusercontent.com/44332326/126691565-274b6207-ac44-44f8-a666-c007c67711d4.png)
+
+
+### Helper function to convert to kaleidoscope-compatible format 
+```python
+kaleidoscope_conversion(manual_df)
+```
+![image](https://user-images.githubusercontent.com/44332326/126691472-2dd37fd9-26db-429b-99ee-40f256073264.png)
+
+
+### Baseline Graph without any annotations
+```python
+clip_path = "./TEST/ScreamingPiha2.wav"
+local_score_visualization(clip_path)
+```
+![image](https://user-images.githubusercontent.com/44332326/126690224-e1990009-b96e-44d8-a1c2-f40c8dd4ec16.png)
+
+### Baseline Graph with log scale
+```python
+local_score_visualization(clip_path,log_scale = True)
+```
+![image](https://user-images.githubusercontent.com/44332326/126690533-17cf8626-3487-4db2-949e-560a879a7247.png)
+
+### Baseline graph with normalized local score values between [0,1] 
+```python
+local_score_visualization(clip_path, normalize_local_scores = True)
+```
+![image](https://user-images.githubusercontent.com/44332326/126690626-921321bc-fc29-4fb6-92b3-d3ec691dad25.png)
+
+### Graph with Automated Labeling 
+```python
+local_score_visualization(clip_path,automated_df = True, isolation_parameters = isolation_parameters)
+```
+![image](https://user-images.githubusercontent.com/44332326/126690661-4348b58d-e38d-45bd-bcea-bfc877a0b6f1.png)
+
+### Graph with Human Labelling
+```python
+local_score_visualization(clip_path, premade_annotations_df = manual_df[manual_df["IN FILE"] == "ScreamingPiha2.wav"],premade_annotations_label = "Piha Human Labels")
+```
+![image](https://user-images.githubusercontent.com/44332326/126690752-454aca39-1dbf-4ef6-92d9-f5bf53f009c5.png)
+
+### Graph with Both Automated and Human Labels 
+*Legend:*
+
+    - Orange ==> True Positive
+    - Red ==> False Negative
+    - Yellow ==> False Positive
+    - White ==> True Negative
+
+```python
+local_score_visualization(clip_path,automated_df = True,isolation_parameters=isolation_parameters,premade_annotations_df = manual_df[manual_df["IN FILE"] == "ScreamingPiha2.wav"])
+```
+![image](https://user-images.githubusercontent.com/44332326/126690847-59b008f8-cbea-417a-a17a-98d86a5bd034.png)
+
+### Another Visualization of True Positives, False Positives, False Negatives, and True Negatives 
+```python
+automated_piha_df = automated_df[automated_df["IN FILE"] == "ScreamingPiha2.wav"]
+manual_piha_df = manual_df[manual_df["IN FILE"] == "ScreamingPiha2.wav"]
+piha_stats = plot_bird_label_scores(automated_piha_df,manual_piha_df)
+```
+![image](https://user-images.githubusercontent.com/44332326/126691012-f53b6e14-6285-47c7-995d-52e5b1209b1e.png)
+
+### Function that generates statistics to gauge efficacy of automated labeling compared to human labels 
+```python
+statistics_df = automated_labeling_statistics(automated_df,manual_df,stats_type = "general")
+statistics_df
+```
+![image](https://user-images.githubusercontent.com/44332326/126691143-0e1015b5-5a27-48ea-8d5c-7d85a2b0d29f.png)
+
+### Function that takes the statistical ouput of all of the clips and gets the equivalent global scores 
+```python
+global_dataset_statistics(statistics_df)
+```
+![image](https://user-images.githubusercontent.com/44332326/126691163-41362887-72f0-439e-8981-d449db59f165.png)
+
+### Function that takes in the manual and automated labels for a clip and outputs human label-by-label IoU Scores. Used to derive statistics that measure how well a system is isolating desired segments of audio clips
+```python
+Intersection_over_Union_Matrix = clip_IoU(automated_piha_df,manual_piha_df)
+print(Intersection_over_Union_Matrix)
+```
+![image](https://user-images.githubusercontent.com/44332326/126691234-58634dc6-fd25-45d1-afea-2b8c7fcdf362.png)
+
+### Function that turns the IoU Matrix of a clip into true positive and false positives values, as well as computing the precision, recall, and F1 statistics
+```python
+matrix_IoU_Scores(Intersection_over_Union_Matrix,manual_piha_df,0.5)
+```
+![image](https://user-images.githubusercontent.com/44332326/126691296-990433da-0cd8-48b1-a6ab-f4563397ae1f.png)
+
+### Wrapper function that takes matrix_IoU_Scores across multiple clips. Allows user to modify the threshold that determines whether or not a label is a true positive.
+```python
+stats_df = automated_labeling_statistics(automated_df,manual_df,stats_type = "IoU",threshold = 0.5)
+stats_df
+```
+![image](https://user-images.githubusercontent.com/44332326/126691343-9b914328-be10-46c3-afb8-001ad0495ac1.png)
+
+### Function that takes the output of dataset_IoU Statistics and ouputs a global count of true positives and false positives, as well as computing common metrics across the dataset
+```python
+global_stats_df = global_IoU_Statistics(stats_df)
+global_stats_df
+```
+![image](https://user-images.githubusercontent.com/44332326/126691391-1499617d-512d-4e46-a31f-f5dae2a5bd14.png)
+
+
+
