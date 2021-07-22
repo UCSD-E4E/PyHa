@@ -424,7 +424,7 @@ isolation_parameters = {
 }
 ```
 
-To generate automated labels and get manual labels: 
+### To generate automated labels and get manual labels: 
 ```python
 automated_df = generate_automated_labels(path,isolation_parameters,normalize_local_scores=True)
 manual_df = pd.read_csv("Manual_Labels.csv")
