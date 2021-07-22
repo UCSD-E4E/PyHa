@@ -449,31 +449,31 @@ kaleidoscope_conversion(manual_df)
 clip_path = "./TEST/ScreamingPiha2.wav"
 local_score_visualization(clip_path)
 ```
-![image](https://user-images.githubusercontent.com/44332326/126690224-e1990009-b96e-44d8-a1c2-f40c8dd4ec16.png)
+![image](https://user-images.githubusercontent.com/44332326/126691710-01c4e88c-0c54-4539-a24d-c682cd93aebf.png)
 
 ### Baseline Graph with log scale
 ```python
 local_score_visualization(clip_path,log_scale = True)
 ```
-![image](https://user-images.githubusercontent.com/44332326/126690533-17cf8626-3487-4db2-949e-560a879a7247.png)
+![image](https://user-images.githubusercontent.com/44332326/126691745-b1cb8be6-c52f-45cc-b7e6-9973070aacc9.png)
 
 ### Baseline graph with normalized local score values between [0,1] 
 ```python
 local_score_visualization(clip_path, normalize_local_scores = True)
 ```
-![image](https://user-images.githubusercontent.com/44332326/126690626-921321bc-fc29-4fb6-92b3-d3ec691dad25.png)
+![image](https://user-images.githubusercontent.com/44332326/126691803-b01c96e8-31bc-45dd-b936-58f0d9a153b4.png)
 
 ### Graph with Automated Labeling 
 ```python
 local_score_visualization(clip_path,automated_df = True, isolation_parameters = isolation_parameters)
 ```
-![image](https://user-images.githubusercontent.com/44332326/126690661-4348b58d-e38d-45bd-bcea-bfc877a0b6f1.png)
+![image](https://user-images.githubusercontent.com/44332326/126691893-33703499-c760-4432-9871-d609b5cc64a2.png)
 
 ### Graph with Human Labelling
 ```python
 local_score_visualization(clip_path, premade_annotations_df = manual_df[manual_df["IN FILE"] == "ScreamingPiha2.wav"],premade_annotations_label = "Piha Human Labels")
 ```
-![image](https://user-images.githubusercontent.com/44332326/126690752-454aca39-1dbf-4ef6-92d9-f5bf53f009c5.png)
+![image](https://user-images.githubusercontent.com/44332326/126691932-5d21fa25-3586-42a9-99f8-09e5f7f50aaa.png)
 
 ### Graph with Both Automated and Human Labels 
 *Legend:*
@@ -486,7 +486,7 @@ local_score_visualization(clip_path, premade_annotations_df = manual_df[manual_d
 ```python
 local_score_visualization(clip_path,automated_df = True,isolation_parameters=isolation_parameters,premade_annotations_df = manual_df[manual_df["IN FILE"] == "ScreamingPiha2.wav"])
 ```
-![image](https://user-images.githubusercontent.com/44332326/126690847-59b008f8-cbea-417a-a17a-98d86a5bd034.png)
+![image](https://user-images.githubusercontent.com/44332326/126691965-30715cbd-b78e-4966-b2a3-1203200e4e43.png)
 
 ### Another Visualization of True Positives, False Positives, False Negatives, and True Negatives 
 ```python
@@ -494,7 +494,7 @@ automated_piha_df = automated_df[automated_df["IN FILE"] == "ScreamingPiha2.wav"
 manual_piha_df = manual_df[manual_df["IN FILE"] == "ScreamingPiha2.wav"]
 piha_stats = plot_bird_label_scores(automated_piha_df,manual_piha_df)
 ```
-![image](https://user-images.githubusercontent.com/44332326/126691012-f53b6e14-6285-47c7-995d-52e5b1209b1e.png)
+![image](https://user-images.githubusercontent.com/44332326/126692010-32ee752b-c99e-4edf-9350-75d17c0abbb4.png)
 
 ### Function that generates statistics to gauge efficacy of automated labeling compared to human labels 
 ```python
