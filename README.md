@@ -17,10 +17,9 @@ PyHa = Python + Piha (referring to a bird species of our interest known as the s
 ## Installation and Setup
 1. Clone the repository onto your local machine.
 2. Install [Miniconda](https://docs.conda.io/en/latest/miniconda.html) or [Miniforge](https://github.com/conda-forge/miniforge).
-3. Install [Jupyter Notebook](https://jupyter.org/install).
-4. Install the conda environment by running `conda env create --file conda_environments/{filename}`, where `filename` is the name of the yaml containing the environment for your OS. 
-5. Run `conda activate species-id` to activate the conda environment. 
-6. Run `jupyter notebook` to activate the notebook and view the files
+3. Install the conda environment by running `conda env create --file conda_environments/{filename}`, where `filename` is the name of the yaml containing the environment for your OS. 
+4. Run `conda activate species-id` to activate the conda environment. 
+5. Run `jupyter notebook` to activate the notebook and view the files
 
 ## Functions
 ![design](https://user-images.githubusercontent.com/44332326/126560960-e9816f7e-c31b-40ee-804d-6947053323c2.png)
