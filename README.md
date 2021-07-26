@@ -15,11 +15,12 @@ PyHa = Python + Piha (referring to a bird species of our interest known as the s
 - [Examples](#examples)
 
 ## Installation and Setup
-1. Clone the repository onto your local machine.
+1. Navigate to a desired folder and clone the repository onto your local machine. `git clone https://github.com/UCSD-E4E/PyHa.git`
 2. Install [Miniconda](https://docs.conda.io/en/latest/miniconda.html) or [Miniforge](https://github.com/conda-forge/miniforge).
 3. Install the conda environment by running `conda env create --file conda_environments/{filename}`, where `filename` is the name of the yaml containing the environment for your OS. 
-4. Run `conda activate species-id` to activate the conda environment. 
-5. Run `jupyter notebook` to activate the notebook and view the files
+4. Run `conda activate species-id` to activate the conda environment used to develop the package. 
+5. Here you can download the Xeno-canto Screaming Piha test set used in our demos: https://drive.google.com/drive/u/0/folders/1lIweB8rF9JZhu6imkuTg_No0i04ClDh1
+6. Run `jupyter notebook` while in the proper folder to activate the PyHa_Tutorial.ipynb notebook and make sure PyHa is running properly. Make sure the paths are properly aligned to the TEST folder in the notebook as well as in the ScreamingPiha_Manual_Labels.csv file
 
 ## Functions
 ![design](https://user-images.githubusercontent.com/44332326/126560960-e9816f7e-c31b-40ee-804d-6947053323c2.png)
