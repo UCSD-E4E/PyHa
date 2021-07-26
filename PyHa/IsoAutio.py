@@ -20,27 +20,35 @@ def build_isolation_parameters(
     each technique based on isolation_parameters "technique" key.
 
     Args:
-        technique (string) - Chooses which of the four isolation techniques to
-                             deploy
-            options: "steinberg", "chunk", "stack", "simple"
-        threshold_type (string) - Chooses how to derive a threshold from local
-                                  score arrays
-            options: "mean", "median", "standard deviation", "pure"
-        threshold_const (float) - Multiplier for "mean", "median", and
-                                  "standard deviation". Acts as threshold for
-                                  "pure"
-        threshold_min (float) - Serves as a minimum barrier of entry for a local
-                                score to be considered a positive ID of a class.
-            default: 0
-        window_size (float) - determines how many seconds around a positive ID
-                              local score to build an annotation.
-        chunk_size (float) - determines the length of annotation when using
-                             "chunk" isolation technique
+        technique (string)
+            - Chooses which of the four isolation techniques to deploy
+            - options: "steinberg", "chunk", "stack", "simple"
+
+        threshold_type (string)
+            - Chooses how to derive a threshold from local score arrays
+            - options: "mean", "median", "standard deviation", "pure"
+
+        threshold_const (float)
+            - Multiplier for "mean", "median", and "standard deviation". Acts
+              as threshold for "pure"
+
+        threshold_min (float)
+            - Serves as a minimum barrier of entry for a local score to be
+              considered a positive ID of a class.
+            - default: 0
+
+        window_size (float)
+            - determines how many seconds around a positive ID local score
+              to build an annotation.
+
+        chunk_size (float)
+            - determines the length of annotation when using "chunk"
+              isolation technique
 
     Returns:
-        isolation_parameters (dict) - Python dictionary that controls how to go
-                                      about isolating automated labels from
-                                      audio.
+        isolation_parameters (dict)
+            - Python dictionary that controls how to go about isolating
+              automated labels from audio.
     """
     isolation_parameters = {
         "technique": technique,
@@ -76,15 +84,25 @@ def isolate(
     each technique based on isolation_parameters "technique" key.
 
     Args:
-        local_scores (list of floats) - Local scores of the audio clip as
-                                        determined by Microfaune Recurrent
-                                        Neural Network.
-        SIGNAL (list of ints) - Samples that make up the audio signal.
-        SAMPLE_RATE (int) - Sampling rate of the audio clip, usually 44100.
-        audio_dir (string) - Directory of the audio clip.
-        filename (string) - Name of the audio clip file.
-        isolation_parameters (dict) - Python Dictionary that controls the
-                                      various label creation techniques.
+        local_scores (list of floats)
+            - Local scores of the audio clip as determined by
+              Microfaune Recurrent Neural Network.
+
+        SIGNAL (list of ints)
+            - Samples that make up the audio signal.
+
+        SAMPLE_RATE (int)
+            - Sampling rate of the audio clip, usually 44100.
+
+        audio_dir (string)
+            - Directory of the audio clip.
+
+        filename (string)
+            - Name of the audio clip file.
+
+        isolation_parameters (dict)
+            - Python Dictionary that controls the various label creation
+              techniques.
 
     Returns:
         Dataframe of automated labels for the audio clip based on passed in
@@ -151,26 +169,29 @@ def threshold(local_scores, isolation_parameters):
     from the isolation_parameters dictionary.
 
     Args:
-        local_scores (list of floats) - Local scores of the audio clip as
-                                        determined by Microfaune Recurrent
-                                        Neural Network.
-        isolation_parameters (dict) - Python Dictionary that controls the
-                                      various label creation techniques.
+        local_scores (list of floats)
+            - Local scores of the audio clip as determined by Microfaune
+              Recurrent Neural Network.
+
+        isolation_parameters (dict)
+            - Python Dictionary that controls the various label creation
+              techniques.
 
     Returns:
-        thresh (float) - threshold at which the local scores in the local score
-                         array of an audio clip will be viewed as a positive ID.
+        thresh (float)
+            - threshold at which the local scores in the local score array of
+              an audio clip will be viewed as a positive ID.
     """
     if isolation_parameters["threshold_type"] == "median":
-        thresh = np.median(local_scores) * \
-            isolation_parameters["threshold_const"]
+        thresh = np.median(local_scores) * 
+                    isolation_parameters["threshold_const"]
     elif isolation_parameters["threshold_type"] == "mean"
     or isolation_parameters["threshold_type"] == "average":
-        thresh = np.mean(local_scores) * \
-            isolation_parameters["threshold_const"]
+        thresh = np.mean(local_scores) * 
+                    isolation_parameters["threshold_const"]
     elif isolation_parameters["threshold_type"] == "standard deviation":
         thresh = np.mean(local_scores) + (np.std(local_scores)
-                                    * isolation_parameters["threshold_const"])
+                    * isolation_parameters["threshold_const"])
     elif isolation_parameters["threshold_type"] == "pure":
         thresh = isolation_parameters["threshold_const"]
         if thresh < 0:
@@ -207,16 +228,27 @@ def steinberg_isolate(
     the "window_size" from a prior local score
 
     Args:
-        local_scores (list of floats) - Local scores of the audio clip as
-                                        determined by RNNDetector.
-        SIGNAL (list of ints) - Samples from the audio clip.
-        SAMPLE_RATE (int) - Sampling rate of the audio clip, usually 44100.
-        audio_dir (string) - Directory of the audio clip.
-        filename (string) - Name of the audio clip file.
-        isolation_parameters (dict) - Python Dictionary that controls the
-                                      various label creation techniques.
-        manual_id (string) - controls the name of the class written to the
-                             pandas dataframe
+        local_scores (list of floats)
+            - Local scores of the audio clip as determined by RNNDetector.
+
+        SIGNAL (list of ints)
+            - Samples from the audio clip.
+
+        SAMPLE_RATE (int)
+            - Sampling rate of the audio clip, usually 44100.
+
+        audio_dir (string)
+            - Directory of the audio clip.
+
+        filename (string)
+            - Name of the audio clip file.
+
+        isolation_parameters (dict)
+            - Python Dictionary that controls the various label creation
+              techniques.
+
+        manual_id (string)
+            - controls the name of the class written to the pandas dataframe
 
     Returns:
         Pandas Dataframe of automated labels for the audio clip.
@@ -253,11 +285,13 @@ def steinberg_isolate(
             # upper and lower bound of captured call
             # sample rate is # of samples in 1 second: +-1 second
             lo_idx = max(
-                0, score_pos - int(isolation_parameters["window_size"] / 2
-                                   * SAMPLE_RATE))
+                0, 
+                score_pos - int(isolation_parameters["window_size"] 
+                / 2 * SAMPLE_RATE))
             hi_idx = min(
-                len(SIGNAL), score_pos + int(isolation_parameters["window_size"]
-                                             / 2 * SAMPLE_RATE))
+                len(SIGNAL), 
+                score_pos + int(isolation_parameters["window_size"]
+                / 2 * SAMPLE_RATE))
             lo_time = lo_idx / SAMPLE_RATE
             hi_time = hi_idx / SAMPLE_RATE
 
@@ -322,16 +356,27 @@ def simple_isolate(
             continue
 
     Args:
-        local_scores (list of floats) - Local scores of the audio clip as
-                                        determined by RNNDetector.
-        SIGNAL (list of ints) - Samples from the audio clip.
-        SAMPLE_RATE (int) - Sampling rate of the audio clip, usually 44100.
-        audio_dir (string) - Directory of the audio clip.
-        filename (string) - Name of the audio clip file.
-        isolation_parameters (dict) - Python Dictionary that controls the
-                                      various label creation techniques.
-        manual_id (string) - controls the name of the class written to the
-                             pandas dataframe
+        local_scores (list of floats)
+            - Local scores of the audio clip as determined by RNNDetector.
+
+        SIGNAL (list of ints)
+            - Samples from the audio clip.
+
+        SAMPLE_RATE (int)
+            - Sampling rate of the audio clip, usually 44100.
+
+        audio_dir (string)
+            - Directory of the audio clip.
+
+        filename (string)
+            - Name of the audio clip file.
+
+        isolation_parameters (dict)
+            - Python Dictionary that controls the various label creation
+              techniques.
+
+        manual_id (string)
+            - controls the name of the class written to the pandas dataframe
 
     Returns:
         Pandas Dataframe of automated labels for the audio clip.
@@ -415,16 +460,27 @@ def stack_isolate(
             continue
 
     Args:
-        local_scores (list of floats) - Local scores of the audio clip as
-                                        determined by RNNDetector.
-        SIGNAL (list of ints) - Samples from the audio clip.
-        SAMPLE_RATE (int) - Sampling rate of the audio clip, usually 44100.
-        audio_dir (string) - Directory of the audio clip.
-        filename (string) - Name of the audio clip file.
-        isolation_parameters (dict) - Python Dictionary that controls the
-                                      various label creation techniques.
-        manual_id (string) - controls the name of the class written to the
-                             pandas dataframe
+        local_scores (list of floats)
+            - Local scores of the audio clip as determined by RNNDetector.
+
+        SIGNAL (list of ints)
+            - Samples from the audio clip.
+
+        SAMPLE_RATE (int)
+            - Sampling rate of the audio clip, usually 44100.
+
+        audio_dir (string)
+            - Directory of the audio clip.
+
+        filename (string)
+            - Name of the audio clip file.
+
+        isolation_parameters (dict)
+            - Python Dictionary that controls the various label creation
+              techniques.
+
+        manual_id (string)
+            - controls the name of the class written to the pandas dataframe
 
     Returns:
         Pandas Dataframe of automated labels for the audio clip.
@@ -536,16 +592,27 @@ def chunk_isolate(
             continue
 
     Args:
-        local_scores (list of floats) - Local scores of the audio clip as
-                                        determined by RNNDetector.
-        SIGNAL (list of ints) - Samples from the audio clip.
-        SAMPLE_RATE (int) - Sampling rate of the audio clip, usually 44100.
-        audio_dir (string) - Directory of the audio clip.
-        filename (string) - Name of the audio clip file.
-        isolation_parameters (dict) - Python Dictionary that controls the
-                                      various label creation techniques.
-        manual_id (string) - controls the name of the class written to the
-                             pandas dataframe
+        local_scores (list of floats)
+            - Local scores of the audio clip as determined by RNNDetector.
+
+        SIGNAL (list of ints)
+            - Samples from the audio clip.
+
+        SAMPLE_RATE (int)
+            - Sampling rate of the audio clip, usually 44100.
+
+        audio_dir (string)
+            - Directory of the audio clip.
+
+        filename (string)
+            - Name of the audio clip file.
+
+        isolation_parameters (dict)
+            - Python Dictionary that controls the various label creation
+              techniques.
+
+        manual_id (string)
+            - controls the name of the class written to the pandas dataframe
 
     Returns:
         Pandas Dataframe of automated labels for the audio clip.
@@ -604,20 +671,26 @@ def generate_automated_labels(
         Normalized_Sample_Rate=44100,
         normalize_local_scores=False):
     """
-    Function that applies isolation technique determined by isolation_parameters
-    dictionary across a folder of audio clips.
+    Function that applies isolation technique determined by 
+    isolation_parameters dictionary across a folder of audio clips.
 
     Args:
-        audio_dir (string) - Directory with wav audio files.
-        isolation_parameters (dict) - Python Dictionary that controls the
-                                      various label creation techniques.
-        manual_id (string) - controls the name of the class written to the
-                             pandas dataframe
-        weight_path (string) - File path of weights to be used by the
-                               RNNDetector for determining presence of bird
-                               sounds.
-        Normalized_Sample_Rate (int) - Sampling rate that the audio files
-                                       should all be normalized to.
+        audio_dir (string)
+            - Directory with wav audio files.
+
+        isolation_parameters (dict)
+            - Python Dictionary that controls the various label creation
+              techniques.
+
+        manual_id (string)
+            - controls the name of the class written to the pandas dataframe
+
+        weight_path (string)
+            - File path of weights to be used by the RNNDetector for
+              determining presence of bird sounds.
+
+        Normalized_Sample_Rate (int)
+            - Sampling rate that the audio files should all be normalized to.
 
     Returns:
         Dataframe of automated labels for the audio clips in audio_dir.
@@ -711,8 +784,9 @@ def kaleidoscope_conversion(df):
     package that aren't compatible with Kaleidoscope software
 
     Args:
-        df (Pandas Dataframe) - Dataframe compatible with PyHa package whether
-        it be human labels or automated labels.
+        df (Pandas Dataframe)
+            - Dataframe compatible with PyHa package whether it be human labels
+              or automated labels.
 
     Returns:
         Pandas Dataframe compatible with Kaleidoscope.
