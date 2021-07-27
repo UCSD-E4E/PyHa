@@ -349,3 +349,29 @@ def plot_bird_label_scores(automated_df, human_df, save_fig=False):
         x = clip_name.split(".")
         clip_name = x[0]
         plt.save_fig(clip_name + "_label_plot.png")
+
+def annotation_histogram(
+    annotation_df,
+    n_bins = 15,
+    save_fig = False,
+    filename = "annotation_histogram.png"):
+    """
+    Function to build a histogram so a user can visually see the length of 
+    the annotations they are working with. 
+
+    Args:
+        annotation_df (Dataframe)
+            - Dataframe of automated or human labels
+        n_bins (int)
+            - number of histogram bins in the final histogram
+            - default: 15
+        save_fig (boolean)
+            - Whether or not the histogram should be saved as a file.
+            - default: False
+        filename (string)
+            - Name of the file to save the histogram to.
+            - default: "annotation_histogram.png"
+
+    Returns:
+        Histogram of the length of the annotations.
+    """
