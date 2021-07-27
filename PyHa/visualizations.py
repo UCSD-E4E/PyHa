@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import scipy.signal as scipy_signal
 import numpy as np
+import seaborn as sns
 from .IsoAutio import *
 
 
@@ -362,12 +363,15 @@ def annotation_histogram(
     Args:
         annotation_df (Dataframe)
             - Dataframe of automated or human labels
+
         n_bins (int)
             - number of histogram bins in the final histogram
             - default: 15
+
         save_fig (boolean)
             - Whether or not the histogram should be saved as a file.
             - default: False
+
         filename (string)
             - Name of the file to save the histogram to.
             - default: "annotation_histogram.png"
@@ -375,3 +379,6 @@ def annotation_histogram(
     Returns:
         Histogram of the length of the annotations.
     """
+    sns.histplot(x=annotation_df["DURATION"], bins=bins).set_title("Annotation Length (s)")
+    sns.save_fig(filename)
+    plt.show()
