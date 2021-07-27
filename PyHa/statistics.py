@@ -12,7 +12,8 @@ def annotation_duration_statistics(df):
     annotations of a Pandas Dataframe compatible with PyHa.
 
     Args:
-        df (Pandas Dataframe) - Automated labels or manual labels.
+        df (Pandas Dataframe)
+            - Automated labels or manual labels.
 
     Returns:
         Pandas Dataframe containing count, mean, mode, standard deviation, and
@@ -42,13 +43,16 @@ def bird_label_scores(automated_df, human_df):
     """
     Function to generate a dataframe with statistics relating to the efficiency
     of the automated label compared to the human label.
-    These statistics include true positive, false positive, false negative, true
-    negative, union, precision, recall, F1, and Global IoU.
-For general clip overlap
+    These statistics include true positive, false positive, false negative,
+    true negative, union, precision, recall, F1, and Global IoU. For general
+    clip overlap
 
     Args:
-        automated_df (Dataframe) - Dataframe of automated labels for one clip
-        human_df (Dataframe) - Dataframe of human labels for one clip.
+        automated_df (Dataframe)
+            - Dataframe of automated labels for one clip
+
+        human_df (Dataframe)
+            - Dataframe of human labels for one clip.
 
     Returns:
         Dataframe with general clip overlap statistics comparing the automated
@@ -58,8 +62,8 @@ For general clip overlap
     clip_class = list(dict.fromkeys(clip_class))[0]
     duration = automated_df["CLIP LENGTH"].to_list()[0]
     SAMPLE_RATE = automated_df["SAMPLE RATE"].to_list()[0]
-    # Initializing two arrays that will represent the human labels and automated
-    # labels with respect to the audio clip
+    # Initializing two arrays that will represent the human labels and
+    # automated labels with respect to the audio clip
     # print(SIGNAL.shape)
     human_arr = np.zeros((int(SAMPLE_RATE * duration),))
     bot_arr = np.zeros((int(SAMPLE_RATE * duration),))
@@ -164,13 +168,17 @@ def automated_labeling_statistics(
     dataframe of statistics for multiple audio clips.
 
     Args:
-        automated_df (Dataframe) - Dataframe of automated labels of multiple
-                                   clips.
-        manual_df (Dataframe) - Dataframe of human labels of multiple clips.
-        stats_type (String) - String that determines which type of statistics
-                              are of interest
-        threshold (Float) - Defines a threshold for certain types of statistics
-                            such as
+        automated_df (Dataframe)
+            - Dataframe of automated labels of multiple clips.
+
+        manual_df (Dataframe)
+            - Dataframe of human labels of multiple clips.
+
+        stats_type (String)
+            - String that determines which type of statistics are of interest
+
+        threshold (Float)
+            - Defines a threshold for certain types of statistics such as
 
     Returns:
         Dataframe of statistics comparing automated labels and human labels for
@@ -216,8 +224,9 @@ def global_dataset_statistics(statistics_df):
     clips and outputs their global values.
 
     Args:
-        statistics_df (Dataframe) - Dataframe of statistics value for multiple
-        audio clips as returned by the function automated_labelling_statistics.
+        statistics_df (Dataframe)
+            - Dataframe of statistics value for multiple audio clips as
+              returned by the function automated_labelling_statistics.
 
     Returns:
         Dataframe of global statistics for the multiple audio clips' labelling.
@@ -253,14 +262,17 @@ def clip_IoU(automated_df, manual_df):
     automated label.
 
     Args:
-        automated_df (Dataframe) - Dataframe of automated labels for an audio
-                                   clip.
-        manual_df (Dataframe) - Dataframe of human labels for an audio clip.
+        automated_df (Dataframe)
+            - Dataframe of automated labels for an audio clip.
+
+        manual_df (Dataframe)
+             - Dataframe of human labels for an audio clip.
 
     Returns:
-        IoU_Matrix (arr) - (human label count) x (automated label count) matrix
-        where each row contains the IoU of each automated annotation with
-        respect to a human label.
+        IoU_Matrix (arr)
+            - (human label count) x (automated label count) matrix where each
+              row contains the IoU of each automated annotation with respect to
+              a human label.
     """
 
     automated_df.reset_index(inplace=True, drop=True)
@@ -345,15 +357,20 @@ def clip_IoU(automated_df, manual_df):
 def matrix_IoU_Scores(IoU_Matrix, manual_df, threshold):
     """
     Function that takes in the IoU Matrix from the clip_IoU function and ouputs
-    the number of true positives and false positives, as well as calculating the
-    precision, recall, and f1 metrics.
+    the number of true positives and false positives, as well as calculating
+    the precision, recall, and f1 metrics.
 
     Args:
-        IoU_Matrix (arr) - (human label count) x (automated label count) matrix
-                           where each row contains the IoU of each automated
-                           annotation with respect to a human label.
-        manual_df (Dataframe) - Dataframe of human labels for an audio clip.
-        threshold (float) - IoU threshold for determining true positives, false
+        IoU_Matrix (arr)
+            - (human label count) x (automated label count) matrix where each
+               row contains the IoU of each automated annotation with respect
+               to a human label.
+
+        manual_df (Dataframe)
+            - Dataframe of human labels for an audio clip.
+
+        threshold (float)
+            - IoU threshold for determining true positives, false
                             positives, and false negatives.
 
     Returns:
@@ -363,12 +380,12 @@ def matrix_IoU_Scores(IoU_Matrix, manual_df, threshold):
     clip_class = manual_df["MANUAL ID"][0]
     audio_dir = manual_df["FOLDER"][0]
     filename = manual_df["IN FILE"][0]
-    # TODO make sure that all of these calculations are correct. It is confusing
-    # to me that the Precision and Recall scores have a positive correlation.
-    # Determining which automated label has the highest IoU across each human
-    # label
+    # TODO make sure that all of these calculations are correct. It is
+    # confusing to me that the Precision and Recall scores have a positive
+    # correlation. Determining which automated label has the highest IoU across
+    # each human label
     automated_label_best_fits = np.max(IoU_Matrix, axis=1)
-    #human_label_count = automated_label_best_fits.shape[0]
+    # human_label_count = automated_label_best_fits.shape[0]
     # Calculating the number of true positives based off of the passed in
     # thresholds.
     tp_count = automated_label_best_fits[automated_label_best_fits >=
@@ -414,9 +431,10 @@ def clip_catch(automated_df, manual_df):
     all of the automated labels.
 
     Args:
-        automated_df (Dataframe) - Dataframe of automated labels for an audio
-                                   clip.
-        manual_df (Dataframe) - Dataframe of human labels for an audio clip.
+        automated_df (Dataframe)
+            - Dataframe of automated labels for an audio clip.
+        manual_df (Dataframe)
+            - Dataframe of human labels for an audio clip.
 
     Returns:
         Numpy Array of statistics regarding the amount of overlap between the
@@ -524,17 +542,21 @@ def clip_catch(automated_df, manual_df):
 # def class_IoU_Statistics(automated_df,manual_df,threshold = 0.5):
 #    """
 #    Wrapper function that takes matrix_IoU_Scores across multiple clips from a
-#    class. Allows user to modify the threshold that determines whether or not a
-#    label is a true positive.
-#
+#    class. Allows user to modify the threshold that determines whether or not
+#    a label is a true positive.
+
 #    Args:
-#        automated_df (Dataframe) - Dataframe of automated labels for multiple
+#         automated_df (Dataframe)
+#             - Dataframe of automated labels for multiple
 #                                   audio clips.
-#        manual_df (Dataframe) - Dataframe of human labels for multiple audio
-#                                clips.
-#        threshold (float) - IoU threshold for determining true positives, false
-#                            positives, and false negatives.
-#
+
+#         manual_df (Dataframe)
+#             - Dataframe of human labels for multiple audio clips.
+
+#         threshold (float)
+#             - IoU threshold for determining true positives, false positives,
+#               and false negatives.
+
 #    Returns:
 #        Dataframe of IoU statistics for multiple audio clips.
 #    """
@@ -562,12 +584,12 @@ def clip_catch(automated_df, manual_df):
 def global_IoU_Statistics(statistics_df):
     """
     Function that takes the output of dataset_IoU Statistics and outputs a
-    global count of true positives and false positives, as well as computing the
-    precision, recall, and f1 metrics across the dataset.
+    global count of true positives and false positives, as well as computing \
+    the precision, recall, and f1 metrics across the dataset.
 
     Args:
-        statistics_df (Dataframe) - Dataframe of matrix IoU scores for multiple
-        clips.
+        statistics_df (Dataframe)
+            - Dataframe of matrix IoU scores for multiple clips.
 
     Returns:
         Dataframe of global IoU statistics which include the number of true
@@ -605,14 +627,15 @@ def global_IoU_Statistics(statistics_df):
 
 def dataset_Catch(automated_df, manual_df):
     """
-    Function that determines the overlap of each human label with respect to all
-    of the human labels in a clip across a large number of clips.
+    Function that determines the overlap of each human label with respect to
+    all of the human labels in a clip across a large number of clips.
 
     Args:
-        automated_df (Dataframe) - Dataframe of automated labels for multiple
-                                   audio clips.
-        manual_df (Dataframe) - Dataframe of human labels for multiple audio
-                                   clips.
+        automated_df (Dataframe)
+            - Dataframe of automated labels for multiple audio clips.
+
+        manual_df (Dataframe)
+            - Dataframe of human labels for multiple audio clips.
 
     Returns:
         Dataframe of human labels with a column for the catch values of each
@@ -658,7 +681,9 @@ def dataset_IoU_Statistics(automated_df, manual_df, threshold=0.5):
     # Looping through each class
     for class_id in class_list:
         # Isolating the class from the
-        class_automated_df = automated_df[automated_df["MANUAL_ID"] == class_id]
+        class_automated_df = automated_df[
+                                automated_df[
+                                    "MANUAL_ID"] == class_id]
         class_manual_df = manual_df[manual_df["MANUAL ID"] == class_id]
         class_stats_df = class_IoU_Statistics(
             class_automated_df, class_manual_df, threshold=threshold)

@@ -24,21 +24,34 @@ def local_line_graph(
     automated annotations.
 
     Args:
-        local_scores (list of floats) - Local scores for the clip determined by
-                                        the RNN.
-        clip_name (string) - Directory of the clip.
-        sample_rate (int) - Sample rate of the audio clip, usually 44100.
-        samples (list of ints) - Each of the samples from the audio clip.
-        automated_df (Dataframe) - Dataframe of automated labelling of the clip.
-        premade_annotations_df (Dataframe) - Dataframe labels that have been
-                                             made outside of the scope of this
-                                             function.
-        premade_annotations_label (string) - Descriptor of
-                                             premade_annotations_df
-        log_scale (boolean) - Whether the axis for local scores should be
-                              logarithmically scaled on the plot.
-        save_fig (boolean) - Whether the clip should be saved in a directory as
-                             a png file.
+        local_scores (list of floats)
+            - Local scores for the clip determined by the RNN.
+
+        clip_name (string)
+            - Directory of the clip.
+
+        sample_rate (int)
+            - Sample rate of the audio clip, usually 44100.
+
+        samples (list of ints)
+            - Each of the samples from the audio clip.
+
+        automated_df (Dataframe)
+            - Dataframe of automated labelling of the clip.
+
+        premade_annotations_df (Dataframe)
+            - Dataframe labels that have been made outside of the scope of this
+              function.
+
+        premade_annotations_label (string)
+            - Descriptor of premade_annotations_df
+
+        log_scale (boolean)
+            - Whether the axis for local scores should be logarithmically
+              scaled on the plot.
+
+        save_fig (boolean)
+            - Whether the clip should be saved in a directory as a png file.
 
     Returns:
         None
@@ -104,9 +117,13 @@ def local_line_graph(
 
     # spectrogram - bottom plot
     # Will require the input of a pandas dataframe
-    Pxx, freqs, bins, im = axs[1].specgram(samples, Fs=sample_rate,
-                                          NFFT=4096, noverlap=2048,
-                                          window=np.hanning(4096), cmap="ocean")
+    Pxx, freqs, bins, im = axs[1].specgram(
+                                            samples,
+                                            Fs=sample_rate,
+                                            NFFT=4096,
+                                            noverlap=2048,
+                                            window=np.hanning(4096),
+                                            cmap="ocean")
     axs[1].set_xlim(0, duration)
     axs[1].set_ylim(0, 22050)
     axs[1].grid(which='major', linestyle='-')
@@ -135,21 +152,29 @@ def local_score_visualization(
     function.
 
     Args:
-        clip_path (string) - Path to an audio clip.
-        weight_path (string) - Weights to be used for RNNDetector.
-        premade_annotations_df (Dataframe) - Dataframe of annotations to be
-                                             displayed that have been created
-                                             outside of the function.
-        premade_annotations_label (string) - String that serves as the
-                                             descriptor for the
-                                             premade_annotations dataframe.
-        automated_df (Dataframe) - Whether the audio clip should be labelled by
-                                   the isolate function and subsequently
-                                   plotted.
-        log_scale (boolean) - Whether the axis for local scores should be
-                              logarithmically scaled on the plot.
-        save_fig (boolean) - Whether the plots should be saved in a directory as
-                             a png file.
+        clip_path (string)
+            - Path to an audio clip.
+
+        weight_path (string)
+            - Weights to be used for RNNDetector.
+
+        premade_annotations_df (Dataframe)
+            - Dataframe of annotations to be displayed that have been created
+              outside of the function.
+        premade_annotations_label (string)
+            - String that serves as the descriptor for the premade_annotations
+              dataframe.
+
+        automated_df (Dataframe)
+            - Whether the audio clip should be labelled by the isolate function
+              and subsequently plotted.
+
+        log_scale (boolean)
+            - Whether the axis for local scores should be logarithmically
+              scaled on the plot.
+
+        save_fig (boolean)
+            - Whether the plots should be saved in a directory as a png file.
 
     Returns:
         None
@@ -234,12 +259,17 @@ def plot_bird_label_scores(automated_df, human_df, save_fig=False):
     clip.
 
     Args:
-        automated_df (Dataframe) - Dataframe of automated labels for one clip
-        human_df (Dataframe) - Dataframe of human labels for one clip.
-        plot_fig (boolean) - Whether or not the efficiency statistics should be
-                             displayed.
-        save_fig (boolean) - Whether or not the plot should be saved within a
-                             file.
+        automated_df (Dataframe)
+            - Dataframe of automated labels for one clip
+
+        human_df (Dataframe)
+            - Dataframe of human labels for one clip.
+
+        plot_fig (boolean)
+            - Whether or not the efficiency statistics should be displayed.
+
+        save_fig (boolean)
+            - Whether or not the plot should be saved within a file.
 
     Returns:
         Dataframe with statistics comparing the automated and human labeling.

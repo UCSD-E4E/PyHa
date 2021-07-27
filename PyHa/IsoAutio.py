@@ -183,15 +183,15 @@ def threshold(local_scores, isolation_parameters):
               an audio clip will be viewed as a positive ID.
     """
     if isolation_parameters["threshold_type"] == "median":
-        thresh = np.median(local_scores) * 
-                    isolation_parameters["threshold_const"]
-    elif isolation_parameters["threshold_type"] == "mean"
-    or isolation_parameters["threshold_type"] == "average":
-        thresh = np.mean(local_scores) * 
-                    isolation_parameters["threshold_const"]
+        thresh = np.median(local_scores) \
+            * isolation_parameters["threshold_const"]
+    elif (isolation_parameters["threshold_type"] == "mean" or
+            isolation_parameters["threshold_type"] == "average"):
+        thresh = np.mean(local_scores) \
+            * isolation_parameters["threshold_const"]
     elif isolation_parameters["threshold_type"] == "standard deviation":
-        thresh = np.mean(local_scores) + (np.std(local_scores)
-                    * isolation_parameters["threshold_const"])
+        thresh = np.mean(local_scores) + \
+            (np.std(local_scores) * isolation_parameters["threshold_const"])
     elif isolation_parameters["threshold_type"] == "pure":
         thresh = isolation_parameters["threshold_const"]
         if thresh < 0:
@@ -277,21 +277,21 @@ def steinberg_isolate(
     prev_cap = 0        # sample idx of previously captured
     for i in range(len(local_scores)):
         # if a score hits or surpasses thresh, capture 1s on both sides of it
-        if local_scores[i] >= thresh
-        and local_scores[i] >= isolation_parameters["threshold_min"]:
+        if (local_scores[i] >= thresh and
+                local_scores[i] >= isolation_parameters["threshold_min"]):
             # score_pos is the sample index that the score corresponds to
             score_pos = i * samples_per_score
 
             # upper and lower bound of captured call
             # sample rate is # of samples in 1 second: +-1 second
             lo_idx = max(
-                0, 
-                score_pos - int(isolation_parameters["window_size"] 
-                / 2 * SAMPLE_RATE))
+                0,
+                score_pos - int(isolation_parameters["window_size"]
+                                / 2 * SAMPLE_RATE))
             hi_idx = min(
-                len(SIGNAL), 
+                len(SIGNAL),
                 score_pos + int(isolation_parameters["window_size"]
-                / 2 * SAMPLE_RATE))
+                                / 2 * SAMPLE_RATE))
             lo_time = lo_idx / SAMPLE_RATE
             hi_time = hi_idx / SAMPLE_RATE
 
@@ -410,19 +410,20 @@ def simple_isolate(
     for ndx in range(len(local_scores)):
         current_score = local_scores[ndx]
         # Start of a new sequence.
-        if current_score >= thresh and annotation_start == 0
-        and current_score >= isolation_parameters["threshold_min"]:
+        if (current_score >= thresh and
+                annotation_start == 0 and
+                current_score >= isolation_parameters["threshold_min"]):
             # signal a start of a new sequence.
             annotation_start = 1
             call_start = float(ndx * time_per_score)
-            #print("Call Start",call_start)
+            # print("Call Start",call_start)
         # End of a sequence
         elif current_score < thresh and annotation_start == 1:
             # signal the end of a sequence
             annotation_start = 0
             #
             call_end = float(ndx * time_per_score)
-            #print("Call End",call_end)
+            # print("Call End",call_end)
             entry['OFFSET'].append(call_start)
             entry['DURATION'].append(call_end - call_start)
             entry['MANUAL ID'].append(manual_id)
@@ -525,8 +526,8 @@ def stack_isolate(
             entry['DURATION'].append(call_end - call_start)
             entry['MANUAL ID'].append(manual_id)
         # pushing onto the stack whenever a sample is above the threshold
-        if local_scores[ndx] >= thresh
-        and local_scores[ndx] >= isolation_parameters["threshold_min"]:
+        if (local_scores[ndx] >= thresh and
+                local_scores[ndx] >= isolation_parameters["threshold_min"]):
             # in case this is the start of a new annotation
             if stack_counter == 0:
                 call_start = float(ndx * time_per_score)
@@ -671,7 +672,7 @@ def generate_automated_labels(
         Normalized_Sample_Rate=44100,
         normalize_local_scores=False):
     """
-    Function that applies isolation technique determined by 
+    Function that applies isolation technique determined by
     isolation_parameters dictionary across a folder of audio clips.
 
     Args:
@@ -734,7 +735,7 @@ def generate_automated_labels(
                 SIGNAL, int(len(SIGNAL) * rate_ratio))
             SAMPLE_RATE = Normalized_Sample_Rate
             # resample produces unreadable float32 array so convert back
-            #SIGNAL = np.asarray(SIGNAL, dtype=np.int16)
+            # SIGNAL = np.asarray(SIGNAL, dtype=np.int16)
 
         # print(SIGNAL.shape)
         # convert stereo to mono if needed
@@ -809,7 +810,8 @@ def kaleidoscope_conversion(df):
 #            combined_annotation_df = df.loc[annotation,:]
 #        else:
 #            combined_annotation_df = combined_annotation_df.append()
-# keeps track of how many annotations have been added to the current annotation.
+# keeps track of how many annotations have been added to the current
+# annotation.
 #        annotation_chain_count = 0
 # Boolean to keep track whether or not an annotation should be combined with
 # the current annotation
