@@ -353,7 +353,8 @@ def plot_bird_label_scores(automated_df, human_df, save_fig=False):
 
 def annotation_histogram(
     annotation_df,
-    n_bins = 5,
+    n_bins = 6,
+    max_length = None,
     save_fig = False,
     filename = "annotation_histogram.png"):
     """
@@ -366,7 +367,11 @@ def annotation_histogram(
 
         n_bins (int)
             - number of histogram bins in the final histogram
-            - default: 5
+            - default: 6
+
+        max_length (int)
+            - maximum length of the audio clip
+            - default: 60s
 
         save_fig (boolean)
             - Whether or not the histogram should be saved as a file.
@@ -380,7 +385,15 @@ def annotation_histogram(
         Histogram of the length of the annotations.
     """
     duration = annotation_df["DURATION"].to_list()
-    sns_hist = sns.histplot(data=duration, bins=n_bins)
+    sns_hist = sns.histplot(
+        data=duration,
+        bins=n_bins,
+        line_kws=dict(edgecolor="k", linewidth=2),
+        stat="count")
+
+    if max_length is not None:
+        plt.xlim(0, max_length)
+    # sns.set(xlim=(0, max_length))
     sns_hist.set_title("Annotation Length Histogram")
     sns_hist.set(xlabel="Annotation Length (s)", ylabel = "Count")
     if save_fig: 
