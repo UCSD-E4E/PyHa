@@ -429,21 +429,26 @@ isolation_parameters = {
 ### To generate automated labels and get manual labels: 
 ```python
 automated_df = generate_automated_labels(path,isolation_parameters,normalize_local_scores=True)
-manual_df = pd.read_csv("Manual_Labels.csv")
+manual_df = pd.read_csv("ScreamingPiha_Manual_Labels.csv")
 ```
 
 ### Function that gathers statistics about the duration of labels 
 ```python
 annotation_duration_statistics(automated_df)
 ```
-![image](https://user-images.githubusercontent.com/44332326/126691565-274b6207-ac44-44f8-a666-c007c67711d4.png)
+![image](https://user-images.githubusercontent.com/44332326/127575042-96d46c11-cc3e-470e-a10d-31f1d7ef052a.png)
+
+```python
+annotation_duration_statistics(manual_df)
+```
+![image](https://user-images.githubusercontent.com/44332326/127575181-9ce49439-5396-425d-a1d5-148ef47db373.png)
 
 
 ### Helper function to convert to kaleidoscope-compatible format 
 ```python
 kaleidoscope_conversion(manual_df)
 ```
-![image](https://user-images.githubusercontent.com/44332326/126691472-2dd37fd9-26db-429b-99ee-40f256073264.png)
+![image](https://user-images.githubusercontent.com/44332326/127575089-023bc41a-5aaf-43fc-8ea6-3a8b9dd69b66.png)
 
 
 ### Baseline Graph without any annotations
@@ -453,11 +458,13 @@ local_score_visualization(clip_path)
 ```
 ![image](https://user-images.githubusercontent.com/44332326/126691710-01c4e88c-0c54-4539-a24d-c682cd93aebf.png)
 
+
 ### Baseline Graph with log scale
 ```python
 local_score_visualization(clip_path,log_scale = True)
 ```
 ![image](https://user-images.githubusercontent.com/44332326/126691745-b1cb8be6-c52f-45cc-b7e6-9973070aacc9.png)
+
 
 ### Baseline graph with normalized local score values between [0,1] 
 ```python
@@ -469,13 +476,15 @@ local_score_visualization(clip_path, normalize_local_scores = True)
 ```python
 local_score_visualization(clip_path,automated_df = True, isolation_parameters = isolation_parameters)
 ```
-![image](https://user-images.githubusercontent.com/44332326/126691893-33703499-c760-4432-9871-d609b5cc64a2.png)
+![image](https://user-images.githubusercontent.com/44332326/127575291-8e83e9ed-0ca3-4caf-a3fb-a83785123f33.png)
+
 
 ### Graph with Human Labelling
 ```python
 local_score_visualization(clip_path, premade_annotations_df = manual_df[manual_df["IN FILE"] == "ScreamingPiha2.wav"],premade_annotations_label = "Piha Human Labels")
 ```
-![image](https://user-images.githubusercontent.com/44332326/126691932-5d21fa25-3586-42a9-99f8-09e5f7f50aaa.png)
+![image](https://user-images.githubusercontent.com/44332326/127575314-712aeaf8-f88c-44ef-8afa-3c3da86000cb.png)
+
 
 ### Graph with Both Automated and Human Labels 
 *Legend:*
@@ -488,7 +497,8 @@ local_score_visualization(clip_path, premade_annotations_df = manual_df[manual_d
 ```python
 local_score_visualization(clip_path,automated_df = True,isolation_parameters=isolation_parameters,premade_annotations_df = manual_df[manual_df["IN FILE"] == "ScreamingPiha2.wav"])
 ```
-![image](https://user-images.githubusercontent.com/44332326/126691965-30715cbd-b78e-4966-b2a3-1203200e4e43.png)
+![image](https://user-images.githubusercontent.com/44332326/127575359-9dbfd330-f9e1-423c-a063-62b2a9af78dc.png)
+
 
 ### Another Visualization of True Positives, False Positives, False Negatives, and True Negatives 
 ```python
@@ -496,47 +506,47 @@ automated_piha_df = automated_df[automated_df["IN FILE"] == "ScreamingPiha2.wav"
 manual_piha_df = manual_df[manual_df["IN FILE"] == "ScreamingPiha2.wav"]
 piha_stats = plot_bird_label_scores(automated_piha_df,manual_piha_df)
 ```
-![image](https://user-images.githubusercontent.com/44332326/126692010-32ee752b-c99e-4edf-9350-75d17c0abbb4.png)
+![image](https://user-images.githubusercontent.com/44332326/127575392-2c5df40c-27e7-490f-ace5-7d9d253487f7.png)
+
 
 ### Function that generates statistics to gauge efficacy of automated labeling compared to human labels 
 ```python
 statistics_df = automated_labeling_statistics(automated_df,manual_df,stats_type = "general")
-statistics_df
 ```
-![image](https://user-images.githubusercontent.com/44332326/126691143-0e1015b5-5a27-48ea-8d5c-7d85a2b0d29f.png)
+![image](https://user-images.githubusercontent.com/44332326/127575467-cb9a8637-531e-4ed7-a15e-5b5b611ba92c.png)
+
 
 ### Function that takes the statistical ouput of all of the clips and gets the equivalent global scores 
 ```python
 global_dataset_statistics(statistics_df)
 ```
-![image](https://user-images.githubusercontent.com/44332326/126691163-41362887-72f0-439e-8981-d449db59f165.png)
+![image](https://user-images.githubusercontent.com/44332326/127575622-5be17af4-f3a0-40ee-8a54-365825eea03e.png)
+
 
 ### Function that takes in the manual and automated labels for a clip and outputs human label-by-label IoU Scores. Used to derive statistics that measure how well a system is isolating desired segments of audio clips
 ```python
 Intersection_over_Union_Matrix = clip_IoU(automated_piha_df,manual_piha_df)
-print(Intersection_over_Union_Matrix)
 ```
-![image](https://user-images.githubusercontent.com/44332326/126691234-58634dc6-fd25-45d1-afea-2b8c7fcdf362.png)
+![image](https://user-images.githubusercontent.com/44332326/127575675-71f91fc8-3143-49e6-a10b-0c1781fb498e.png)
+
 
 ### Function that turns the IoU Matrix of a clip into true positive and false positives values, as well as computing the precision, recall, and F1 statistics
 ```python
 matrix_IoU_Scores(Intersection_over_Union_Matrix,manual_piha_df,0.5)
 ```
-![image](https://user-images.githubusercontent.com/44332326/126691296-990433da-0cd8-48b1-a6ab-f4563397ae1f.png)
+![image](https://user-images.githubusercontent.com/44332326/127575732-6c805bcc-a863-4c32-aba6-712ce2bac7bb.png)
 
 ### Wrapper function that takes matrix_IoU_Scores across multiple clips. Allows user to modify the threshold that determines whether or not a label is a true positive.
 ```python
 stats_df = automated_labeling_statistics(automated_df,manual_df,stats_type = "IoU",threshold = 0.5)
-stats_df
 ```
-![image](https://user-images.githubusercontent.com/44332326/126691343-9b914328-be10-46c3-afb8-001ad0495ac1.png)
+![image](https://user-images.githubusercontent.com/44332326/127575771-9866f288-61cf-47c5-b9de-041b49e583d1.png)
 
 ### Function that takes the output of dataset_IoU Statistics and ouputs a global count of true positives and false positives, as well as computing common metrics across the dataset
 ```python
 global_stats_df = global_IoU_Statistics(stats_df)
-global_stats_df
 ```
-![image](https://user-images.githubusercontent.com/44332326/126691391-1499617d-512d-4e46-a31f-f5dae2a5bd14.png)
+![image](https://user-images.githubusercontent.com/44332326/127575798-f84540ea-5121-4e7a-83c4-4ca5ad02e9d0.png)
 
 
 
