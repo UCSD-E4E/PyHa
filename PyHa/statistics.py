@@ -171,32 +171,22 @@ def automated_labeling_statistics(automated_df,manual_df,stats_type = "IoU", thr
     statistics_df.reset_index(inplace = True, drop = True)
     return statistics_df
 
-# Function that will provide statistics across a whole dataset, inclusive of all classes
-def dataset_statistics(statistics_df, stats_type):
 
-    return pd.DataFrame.from_dict([entry])
-
-# Function that summarizes statistics across all classes
-def global_dataset_statistics(statistics_df, stats_type):
-
-    return pd.DataFrame.from_dict([entry])
-
-def class_general_statistics(statistics_df):
+def global_dataset_statistics(statistics_df):
     """
-    Function that takes in a dataframe of statistics for multiple clips and outputs the same statistics, but across summed across the dataset.
+    Function that takes in a dataframe of efficiency statistics for multiple clips and outputs their global values.
 
     Args:
         statistics_df (Dataframe) - Dataframe of statistics value for multiple audio clips as returned by the function automated_labelling_statistics.
+
     Returns:
-        Dataframe of global statistics for the efficacy of automated labels across multiple audio clips.
+        Dataframe of global statistics for the multiple audio clips' labelling.
     """
-    # Determining which class the clips are derived from
     class_id = statistics_df["MANUAL ID"][0]
-    # summing all of the
     tp_sum = statistics_df["TRUE POSITIVE"].sum()
     fp_sum = statistics_df["FALSE POSITIVE"].sum()
     fn_sum = statistics_df["FALSE NEGATIVE"].sum()
-    #tn_sum = statistics_df["TRUE NEGATIVE"].sum()
+    tn_sum = statistics_df["TRUE NEGATIVE"].sum()
     union_sum = statistics_df["UNION"].sum()
     precision = tp_sum/(tp_sum + fp_sum)
     recall = tp_sum/(tp_sum + fn_sum)
@@ -351,7 +341,7 @@ def clip_catch(automated_df,manual_df):
     manual_df.reset_index(inplace = True, drop = True)
     # figuring out how many automated labels and human labels exist
     manual_row_count = manual_df.shape[0]
-    #automated_row_count = automated_df.shape[0]
+    automated_row_count = automated_df.shape[0]
     # finding the length of the clip as well as the sampling frequency.
     duration = automated_df["CLIP LENGTH"].to_list()[0]
     SAMPLE_RATE = automated_df["SAMPLE RATE"].to_list()[0]
@@ -463,7 +453,7 @@ def clip_catch(automated_df,manual_df):
 #    IoU_Statistics.reset_index(inplace = True, drop = True)
 #    return IoU_Statistics
 
-def class_IoU_statistics(statistics_df):
+def global_IoU_Statistics(statistics_df):
     """
     Function that takes the output of dataset_IoU Statistics and outputs a global count of true positives and false positives,
     as well as computing the precision, recall, and f1 metrics across the dataset.
@@ -541,7 +531,7 @@ def dataset_Catch(automated_df,manual_df):
 # I am going to wait on showing off this function since we don't have any multi-class classifiers yet.
 def dataset_IoU_Statistics(automated_df, manual_df, threshold = 0.5):
 
-    # Building a list of unique classes
+    # finding the number of unique classes.
     class_list = manual_df["MANUAL ID"].to_list()
     class_list = list(dict.fromkeys(class_list))
 
@@ -551,13 +541,13 @@ def dataset_IoU_Statistics(automated_df, manual_df, threshold = 0.5):
 
     # Looping through each class
     for class_id in class_list:
-        # Isolating the class from the passed in dataframe
+        # Isolating the class from the
         class_automated_df = automated_df[automated_df["MANUAL_ID"] == class_id]
         class_manual_df = manual_df[manual_df["MANUAL ID"] == class_id]
         class_stats_df = class_IoU_Statistics(class_automated_df,class_manual_df, threshold = threshold)
-        class_global_stats_df = class_IoU_statistics(class_stats_df)
+        class_global_stats_df = global_IoU_Statistics(class_stats_df)
         if master_clip_stats_df.empty:
-            master_clip_stats_df = class_stats_df
+            master_clips_stats_df = class_stats_df
         if master_global_stats_df.empty:
             master_global_stats_df = class_global_stats_df
         else:

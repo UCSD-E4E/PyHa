@@ -250,6 +250,7 @@ def simple_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename, isola
 
     annotation_start = 0
     call_start = 0
+    call_stop = 0
     # looping through all of the local scores
     for ndx in range(len(local_scores)):
         current_score = local_scores[ndx]
@@ -333,6 +334,7 @@ def stack_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename, isolat
     stack_counter = 0
     annotation_start = 0
     call_start = 0
+    call_stop = 0
     # looping through every local score array value
     for ndx in range(len(local_scores)):
         # the case for the end of the local score array and the stack isn't empty.
@@ -515,6 +517,8 @@ def generate_automated_labels(audio_dir, isolation_parameters, manual_id = "bird
             print("Error in detection, skipping", audio_file)
             continue
 
+        # get duration of clip
+        duration = len(SIGNAL) / SAMPLE_RATE
 
         try:
             # Running moment to moment algorithm and appending to a master dataframe.
