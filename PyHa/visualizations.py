@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import scipy.signal as scipy_signal
 import numpy as np
-from .IsoAutio import *
+from .IsoAutio import isolate
 
 
 
@@ -181,7 +181,7 @@ def plot_bird_label_scores(automated_df,human_df,save_fig = False):
     human_arr = np.zeros((int(SAMPLE_RATE*duration),))
     bot_arr = np.zeros((int(SAMPLE_RATE*duration),))
 
-    folder_name = automated_df["FOLDER"].to_list()[0]
+    #folder_name = automated_df["FOLDER"].to_list()[0]
     clip_name = automated_df["IN FILE"].to_list()[0]
     # Placing 1s wherever the au
     for row in automated_df.index:
