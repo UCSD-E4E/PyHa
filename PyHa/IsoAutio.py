@@ -829,3 +829,16 @@ def kaleidoscope_conversion(df):
 
 
 #        annotation = annotation + annotation_chain_count - 1
+
+def annotation_combine(df):
+    """
+    Function that connects annotations of the same class that overlap/touch 
+    one another. 
+
+    Args:
+        df (Pandas Dataframe)
+            - Dataframe compatible with PyHa package whether it be human labels
+              or automated labels.
+
+    Returns:
+    """
