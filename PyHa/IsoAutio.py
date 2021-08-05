@@ -846,7 +846,7 @@ def annotation_combine(df):
     modified_df = df.copy(deep=True)
 
     index = 0
-    while index < len(df.index) - 1: 
+    while index < len(df.index) - 1 : 
         clip_class = modified_df.loc[index, "MANUAL ID"]
 
         # keeps track of other clips with the same class
