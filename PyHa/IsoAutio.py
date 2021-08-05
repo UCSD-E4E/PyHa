@@ -841,4 +841,37 @@ def annotation_combine(df):
               or automated labels.
 
     Returns:
+        Pandas Dataframe with overlapping clips combined.
     """
+    modified_df = df.copy(deep=True)
+
+    index = 0
+    while index < len(df.index) - 1: 
+        clip_class = modified_df.loc[index, "MANUAL ID"]
+
+        # keeps track of other clips with the same class
+        ind = index + 1
+
+        while df.loc[ind, "MANUAL ID"] == clip_class:
+            first_start = modified_df.loc[index, "OFFSET"]
+            first_end = modified_df.loc[index, "OFFSET"] + modified_df.loc[index, "DURATION"]
+            second_start = modified_df.loc[ind, "OFFSET"]
+            second_end = modified_df.loc[ind, "OFFSET"] + modified_df.loc[ind, "DURATION"]
+
+            # First clip overlaps with second clip
+            if  first_end >= second_start: 
+                # First clip ends in the second clip
+                if first_end <= second_end:
+                    modified_df.loc[index, "DURATION"] = modified_df.loc[ind, "DURATION"]
+                    
+                
+                # First clip ends after the second clip
+                if first_end > second_end: 
+                    modified_df.loc[index, "OFFSET"] = first_end
+                
+                # Drop the overlapping clip 
+                modified_df.drop(ind, inplace=True)
+                ind = index + 1
+                continue
+
+    return modified_df
