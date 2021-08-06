@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import scipy.signal as scipy_signal
 import numpy as np
+import seaborn as sns
 from .IsoAutio import *
 
 
@@ -349,3 +350,68 @@ def plot_bird_label_scores(automated_df, human_df, save_fig=False):
         x = clip_name.split(".")
         clip_name = x[0]
         plt.save_fig(clip_name + "_label_plot.png")
+
+def annotation_duration_histogram(
+    annotation_df,
+    n_bins = 6,
+    min_length = None,
+    max_length = None,
+    save_fig = False,
+    title = "Annotation Length Histogram",
+    filename = "annotation_histogram.png"):
+    """
+    Function to build a histogram so a user can visually see the length of 
+    the annotations they are working with. 
+
+    Args:
+        annotation_df (Dataframe)
+            - Dataframe of automated or human labels
+
+        n_bins (int)
+            - number of histogram bins in the final histogram
+            - default: 6
+            
+        min_length (int)
+            - minimum length of the audio clip
+            - default: 0s
+
+        max_length (int)
+            - maximum length of the audio clip
+            - default: 60s
+
+        save_fig (boolean)
+            - Whether or not the histogram should be saved as a file.
+            - default: False
+
+        filename (string)
+            - Name of the file to save the histogram to.
+            - default: "annotation_histogram.png"
+
+    Returns:
+        Histogram of the length of the annotations.
+    """
+    # Create the initial histogram
+    duration = annotation_df["DURATION"].to_list()
+    sns_hist = sns.histplot(
+        data=duration,
+        bins=n_bins,
+        line_kws=dict(edgecolor="k", linewidth=2),
+        stat="count")
+
+    # Modify the length of the x-axis as specified
+    if max_length is not None and min_length is not None:
+        if max_length < min_length:
+            raise ValueError("max_length cannot be less than `min_length")
+        plt.xlim(min_length, max_length)
+    elif max_length is not None:
+        plt.xlim(right=max_length)
+    elif min_length is not None:
+        plt.xlim(left=min_length)
+
+    # Set title and the labels
+    sns_hist.set_title(title)
+    sns_hist.set(xlabel="Annotation Length (s)", ylabel = "Count")
+
+    # Save the histogram if specified
+    if save_fig: 
+        sns_hist.get_figure().savefig(filename)
