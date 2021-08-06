@@ -846,32 +846,109 @@ def annotation_combine(df):
     modified_df = df.copy(deep=True)
 
     index = 0
-    while index < len(df.index) - 1 : 
-        clip_class = modified_df.loc[index, "MANUAL ID"]
 
-        # keeps track of other clips with the same class
+    # Compared each annotation to the next ones
+    while index < len(modified_df.index) - 1: 
+
+        # Get class and filename of current annotation
+        clip_class = modified_df.loc[index, "MANUAL ID"]
+        file_name = modified_df.loc[index, "IN FILE"]
+
+        # iterator to keep track of following annotations with same class and filename
         ind = index + 1
 
-        while df.loc[ind, "MANUAL ID"] == clip_class:
+        # Check all following annotations with same file and class
+        while ind < len(modified_df.index)-1 and df.loc[ind, "MANUAL ID"] == clip_class and df.loc[ind, "IN FILE"] == file_name:
+
             first_start = modified_df.loc[index, "OFFSET"]
             first_end = modified_df.loc[index, "OFFSET"] + modified_df.loc[index, "DURATION"]
+            first_length = modified_df.loc[index, "DURATION"]
             second_start = modified_df.loc[ind, "OFFSET"]
             second_end = modified_df.loc[ind, "OFFSET"] + modified_df.loc[ind, "DURATION"]
+            second_length = modified_df.loc[ind, "DURATION"]
 
-            # First clip overlaps with second clip
-            if  first_end >= second_start: 
-                # First clip ends in the second clip
-                if first_end <= second_end:
-                    modified_df.loc[index, "DURATION"] = modified_df.loc[ind, "DURATION"]
+
+            # First clip is before second clip
+            if first_start < second_start:
+                
+                # First clip ends before second clip starts
+                if first_end < second_start:
+                    ind = ind + 1
+                    continue
+                
+                # First clip ends after second clip starts
+                if first_end >= second_start: 
                     
+                    # First clip ends right as second clip starts
+                    if first_end == second_start:
+                        modified_df.loc[index,"DURATION"] = first_length + second_length
+                        modified_df.drop(modified_df.index[ind], inplace = True)
+                        modified_df.reset_index(drop=True, inplace=True)
+
+                    # Second clip is in first clip
+                    if first_end > second_end:
+                        modified_df.drop(modified_df.index[ind], inplace = True)
+                        modified_df.reset_index(drop=True, inplace=True)
+                    
+                    # First clip ends before or at the same time as the second clip
+                    if first_end <= second_end:
+                        modified_df.loc[index,"DURATION"] = first_length + (second_length - first_end)
+                        modified_df.drop(modified_df.index[ind], inplace = True)
+                        modified_df.reset_index(drop=True, inplace=True)
+                    
+
+            # Second clip is before first clip
+            if second_start < first_start:
+
+                # Second clip ends before first clip starts
+                if second_end < first_start:
+                    ind = ind + 1
+                    continue
                 
-                # First clip ends after the second clip
-                if first_end > second_end: 
-                    modified_df.loc[index, "OFFSET"] = first_end
+                # Second clip ends after first clip starts
+                if second_end >= first_start:
+
+                    # Second clip ends right as first clip starts
+                    if second_end == first_start:
+                        modified_df.loc[index,"OFFSET"] = second_start
+                        modified_df.loc[index,"DURATION"] = second_length + first_length
+                        modified_df.drop(modified_df.index[ind], inplace = True)
+                        modified_df.reset_index(drop=True, inplace=True)
+                    
+                    # First clip is in second clip
+                    if second_end > first_end:
+                        modified_df.loc[index] = modified_df.loc[ind]
+                        modified_df.drop(modified_df.index[ind], inplace = True)
+                        modified_df.reset_index(drop=True, inplace=True)
+
+                    # Second clip ends before or at the same time as the first clip
+                    if second_end <= first_end:
+                        modified_df.loc[index, "OFFSET"] = second_start
+                        modified_df.loc[index, "DURATION"] = (first_length - second_end) + second_length
+                        modified_df.drop(modified_df.index[ind], inplace = True)
+                        modified_df.reset_index(drop=True, inplace=True)
+            
+            # Clips start at the same time
+            if first_start == second_start:
+
+                # Clips end at the same time -> same clips
+                if first_end == second_end:
+                    modified_df.drop(modified_df.index[ind], inplace = True)
+                    modified_df.reset_index(drop=True, inplace=True)
                 
-                # Drop the overlapping clip 
-                modified_df.drop(ind, inplace=True)
-                ind = index + 1
-                continue
+                # First clip ends before second clip ends
+                if first_end < second_end: 
+                    modified_df.loc[index,"DURATION"] = first_length + (second_length - first_end)
+                    modified_df.drop(modified_df.index[ind], inplace = True)
+                    modified_df.reset_index(drop=True, inplace=True)
+
+                # Second clip ends before first clip ends
+                if first_end > second_end:
+                    modified_df.loc[index,"DURATION"] = (first_length - second_end) + second_length
+                    modified_df.drop(modified_df.index[ind], inplace = True)
+                    modified_df.reset_index(drop=True, inplace=True)
+
+            ind = ind + 1
+        index = index + 1
 
     return modified_df
