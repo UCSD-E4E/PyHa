@@ -1,4 +1,4 @@
- <img src="https://github.com/UCSD-E4E/PyHa/blob/readme/Logos/PyHa.svg" alt="PyHa logo" title="PyHa" align="right" height="300" />
+ <img src="https://github.com/UCSD-E4E/PyHa/blob/readme-fix/Logos/PyHa.svg" alt="PyHa logo" title="PyHa" align="right" height="300" />
 
 # PyHa
 <!-- ## Automated Audio Labeling System -->
