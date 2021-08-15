@@ -128,7 +128,7 @@ def isolate(
             audio_dir,
             filename,
             isolation_parameters,
-            manual_id="bird")
+            manual_id = manual_id)
     elif isolation_parameters["technique"] == "steinberg":
         isolation_df = steinberg_isolate(
             local_scores,
@@ -137,7 +137,7 @@ def isolate(
             audio_dir,
             filename,
             isolation_parameters,
-            manual_id="bird")
+            manual_id = manual_id)
     elif isolation_parameters["technique"] == "stack":
         isolation_df = stack_isolate(
             local_scores,
@@ -146,7 +146,7 @@ def isolate(
             audio_dir,
             filename,
             isolation_parameters,
-            manual_id="bird")
+            manual_id = manual_id)
     elif isolation_parameters["technique"] == "chunk":
         isolation_df = chunk_isolate(
             local_scores,
@@ -155,7 +155,7 @@ def isolate(
             audio_dir,
             filename,
             isolation_parameters,
-            manual_id="bird")
+            manual_id = manual_id)
 
     return isolation_df
 
