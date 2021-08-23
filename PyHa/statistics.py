@@ -39,7 +39,7 @@ def annotation_duration_statistics(df):
     return pd.DataFrame.from_dict([entry])
 
 
-def bird_label_scores(automated_df, human_df):
+def clip_general(automated_df, human_df):
     """
     Function to generate a dataframe with statistics relating to the efficiency
     of the automated label compared to the human label.
@@ -197,7 +197,7 @@ def automated_labeling_statistics(
         clip_manual_df = manual_df[manual_df["IN FILE"] == clip]
         try:
             if stats_type == "general":
-                clip_stats_df = bird_label_scores(
+                clip_stats_df = clip_general(
                     clip_automated_df, clip_manual_df)
                 if statistics_df.empty:
                     statistics_df = clip_stats_df
