@@ -586,7 +586,7 @@ def clip_catch(automated_df, manual_df):
 #    return IoU_Statistics
 
 # Consider adding in a new manual_id parameter here
-def global_IoU_Statistics(statistics_df, manual_id = 'bird'):
+def global_statistics(statistics_df, manual_id = 'N/A'):
     """
     Function that takes the output of dataset_IoU Statistics and outputs a
     global count of true positives and false positives, as well as computing \
@@ -671,37 +671,6 @@ def dataset_Catch(automated_df, manual_df):
     return manual_df_with_Catch
 
 
-# I am going to wait on showing off this function since we don't have any
-# multi-class classifiers yet.
-def dataset_IoU_Statistics(automated_df, manual_df, threshold=0.5):
-
-    # finding the number of unique classes.
-    class_list = manual_df["MANUAL ID"].to_list()
-    class_list = list(dict.fromkeys(class_list))
-
-    # initializing the output dataframes
-    master_clip_stats_df = pd.DataFrame()
-    master_global_stats_df = pd.DataFrame()
-
-    # Looping through each class
-    for class_id in class_list:
-        # Isolating the class from the
-        class_automated_df = automated_df[
-                                automated_df[
-                                    "MANUAL_ID"] == class_id]
-        class_manual_df = manual_df[manual_df["MANUAL ID"] == class_id]
-        class_stats_df = class_IoU_Statistics(
-            class_automated_df, class_manual_df, threshold=threshold)
-        class_global_stats_df = global_IoU_Statistics(class_stats_df)
-        if master_clip_stats_df.empty:
-            master_clips_stats_df = class_stats_df
-        if master_global_stats_df.empty:
-            master_global_stats_df = class_global_stats_df
-        else:
-            master_clip_stats_df = master_clip_stats_df.append(class_stats_df)
-            master_global_stats_df = master_global_stats_df.append(
-                class_global_stats_df)
-    return master_clip_stats_df, master_global_stats_df
 
 # Goes through each class, measuring how effective the labels are in each clip
 def clip_statistics(automated_df,manual_df, stats_type = "IoU", threshold = 0.5):
@@ -744,9 +713,9 @@ def class_statistics(clip_statistics):
         # isolating the current class of interest
         class_df = clip_statistics[clip_statistics["MANUAL ID"] == class_]
         if class_statistics.empty:
-            class_statistics = global_IoU_Statistics(class_df, manual_id = class_)
+            class_statistics = global_statistics(class_df, manual_id = class_)
         else:
-            temp_df = global_IoU_Statistics(class_df, manual_id = class_)
+            temp_df = global_statistics(class_df, manual_id = class_)
             class_statistics = class_statistics.append(temp_df)
         class_statistics.reset_index(inplace=True,drop=True)
         return class_statistics
