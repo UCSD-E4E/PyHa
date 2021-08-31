@@ -1,15 +1,65 @@
+import numpy as np
 from .microfaune_package.microfaune.detection import RNNDetector
 from .microfaune_package.microfaune import audio
 import matplotlib.pyplot as plt
 import pandas as pd
 import scipy.signal as scipy_signal
-import numpy as np
+import math
+import matplotlib.animation as ani
 from .IsoAutio import *
 
+#def animate_label(i,axs, minval,maxval ):
 
 
-def local_line_graph(local_scores,clip_name, sample_rate,samples, automated_df=None, human_df=None,log_scale = False, save_fig = False, normalize_local_scores = False):
+def animation(i, rate_lst, time_stamps,local_scores , line,  axs, automated_df, auto_lst , human_df , human_lst , duration, fig, thresh_start , thresh_end):
+     animator = None 
+     div= 12
+     if(len(local_scores) > 0): 
+         mult = int(len(local_scores)/div)
+         rate= i*mult
+         line.set_data(time_stamps[:rate], local_scores[:rate])
+     
+    
+    
+     if (rate> len(local_scores)):
+            thresh = axs.plot(thresh_start , thresh_end , color = "r")
+                  
+    
+     if (human_df.empty==False and rate_lst[0] <= len(human_lst)-1 and rate> len(local_scores)):
+                 
+                         j =  rate_lst[0]
+                         print(i)
+                         minval = human_df["OFFSET"][human_lst[j]]
+                         maxval = human_df["OFFSET"][human_lst[j]] +  human_df["DURATION"][human_lst[j]]
+                         rate_lst[0]= rate_lst[0] +1 
+                         axs.axvspan(xmin=minval,xmax=maxval, facecolor="red",alpha=0.4, label = "_"*rate + "Human_Label")
+                         #axs.legend()
+                                       
+                     
+                        
+     # after human labels are done animated labels start
+     if(automated_df.empty == False and rate_lst[0]== len(human_lst) and rate_lst[1]<len(auto_lst) ):
+                   
+                   
+                    k = rate_lst[1]       
+                    if( k<= len(auto_lst)-1 and automated_df["OFFSET"][auto_lst[k]]< rate  ):
+                         minval = automated_df["OFFSET"][auto_lst[k]]
+                         maxval = automated_df["OFFSET"][auto_lst[k]] + automated_df["DURATION"][auto_lst[k]]
+                         rate_lst[1]= rate_lst[1]  +1
+                         axs.axvspan(xmin=minval,xmax=maxval, facecolor="yellow",alpha=0.4, label = "_"*rate + "Automated_Labels")
+                         #axs.legend()
+                   
+                   
+     #axs.legend()
+     return  line, 
+    
+
+
+# new parameter to help call and get threshold
+def local_line_graph(local_scores,clip_name, sample_rate,samples, automated_df=None, human_df=None,log_scale = False, save_fig = False, normalize_local_scores = False, isolation_parameters= None):
+
     """
+
     Function that produces graphs with the local score plot and spectrogram of an audio clip. Now integrated with Pandas so you can visualize human and automated annotations.
 
     Args:
@@ -46,35 +96,73 @@ def local_line_graph(local_scores,clip_name, sample_rate,samples, automated_df=N
     fig.set_figwidth(22)
     fig.set_figheight(10)
     fig.suptitle("Spectrogram and Local Scores for "+clip_name)
+
     # score line plot - top plot
-    axs[0].plot(time_stamps, local_scores)
+    #axs[0].plot(time_stamps, local_scores)
     axs[0].set_xlim(0,duration)
+
     if log_scale:
         axs[0].set_yscale('log')
     else:
         axs[0].set_ylim(0,1)
     axs[0].grid(which='major', linestyle='-')
-    # Adding in the optional automated labels from a Pandas DataFrame
-    #if automated_df is not None:
-    if automated_df.empty == False:
-        ndx = 0
-        for row in automated_df.index:
-            minval = automated_df["OFFSET"][row]
-            maxval = automated_df["OFFSET"][row] + automated_df["DURATION"][row]
-            axs[0].axvspan(xmin=minval,xmax=maxval,facecolor="yellow",alpha=0.4, label = "_"*ndx + "Automated Labels")
-            ndx += 1
-    # Adding in the optional human labels from a Pandas DataFrame
-    #if human_df is not None:
-    if human_df.empty == False:
-        ndx = 0
-        for row in human_df.index:
-            minval = human_df["OFFSET"][row]
-            maxval = human_df["OFFSET"][row] + human_df["DURATION"][row]
-            axs[0].axvspan(xmin=minval,xmax=maxval,facecolor="red",alpha=0.4, label = "_"*ndx + "Human Labels")
-            ndx += 1
-    axs[0].legend()
+    
 
-    # spectrogram - bottom plot
+    # Adding in the optional automated labels from a Pandas DataFrame
+
+    #if automated_df is not None:
+    val = None
+    val2 = axs[1]
+    auto_lst = []
+
+    if automated_df.empty == False:
+        val =axs[0]
+
+        for row in automated_df.index:
+            auto_lst.append(row)
+           
+   
+    human_lst =[]
+    if human_df.empty == False:
+        value_df = human_df["OFFSET"].sort_values(ascending=True)
+        for row in value_df.index:
+            human_lst.append(row)
+           
+    thresh =0
+    if(threshold(local_scores, isolation_parameters) > isolation_parameters["threshold_min"]):
+        thresh = threshold(local_scores, isolation_parameters)
+    else:
+        thresh = isolation_parameters["threshold_min"]
+    #print (thresh)
+    thresh_start = list(range(0,math.ceil(duration)+1))
+    thresh_end = [thresh]*len(thresh_start)
+    #axs[0].plot(thresh_start , thresh_end , color = "r")
+
+    line, = axs[0].plot([],[])
+    human_track = []
+    auto_track = 0
+    rate_lst = [0,0]
+    polygon = []
+    axs[0].plot([],[], color = "r", label="Threshold") 
+    axs[0].plot([],[], color = "b", label="Local_Scores") 
+    axs[0].axvspan(xmin=0,xmax=0, facecolor="red",alpha=0.4, label = "Human_Label")
+    axs[0].axvspan(xmin=0,xmax=0, facecolor="yellow",alpha=0.4, label = "Automated_Labels")
+    axs[0].legend(loc='upper right')
+                        
+    animator = ani.FuncAnimation(fig, animation,fargs=(  rate_lst, time_stamps,local_scores, line, axs[0], automated_df , auto_lst ,human_df, human_lst, duration, fig, thresh_start , thresh_end  ), frames= (len(local_scores)+1), interval = 0, repeat=False, blit=False)
+    axs[1].legend()
+    """for row in human_lst:
+        minval = human_df["OFFSET"][row]
+        maxval = human_df["OFFSET"][row] + human_df["DURATION"][row]
+        axs[0].axvspan(xmin=minval,xmax=maxval, facecolor="red",alpha=0.4, label = "_"*row + "human_Labels")
+        plt.draw()
+    for row in auto_lst:
+        minval = automated_df["OFFSET"][row]
+        maxval = automated_df["OFFSET"][row] + automated_df["DURATION"][row]
+        axs[0].axvspan(xmin=minval,xmax=maxval, facecolor="yellow",alpha=0.4, label = "_"*row + "Automated_Labels")
+    """
+  
+        # spectrogram - bottom plot
     # Will require the input of a pandas dataframe
     Pxx, freqs, bins, im = axs[1].specgram(samples, Fs=sample_rate,
             NFFT=4096, noverlap=2048,
@@ -83,9 +171,13 @@ def local_line_graph(local_scores,clip_name, sample_rate,samples, automated_df=N
     axs[1].set_ylim(0,22050)
     axs[1].grid(which='major', linestyle='-')
 
+
     # save graph
     if save_fig:
         plt.savefig(clip_name + "_Local_Score_Graph.png")
+    plt.show()
+
+
 
 # TODO rework function so that instead of generating the automated labels, it takes the automated_df as input
 # same as it does with the manual dataframe.
@@ -141,7 +233,7 @@ def local_score_visualization(clip_path,weight_path = None, human_df = None,auto
     else:
         automated_df = pd.DataFrame()
 
-    local_line_graph(local_score[0].tolist(),clip_path,SAMPLE_RATE,SIGNAL,automated_df,human_df,log_scale = log_scale, save_fig = save_fig, normalize_local_scores = normalize_local_scores)
+    local_line_graph(local_score[0].tolist(),clip_path,SAMPLE_RATE,SIGNAL,automated_df,human_df,log_scale = log_scale, save_fig = save_fig, normalize_local_scores = normalize_local_scores, isolation_parameters = isolation_parameters )
 
 def plot_bird_label_scores(automated_df,human_df,save_fig = False):
     """
