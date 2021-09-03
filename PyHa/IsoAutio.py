@@ -977,6 +977,58 @@ def annotation_combine(df):
     return modified_df
 
 
+def same_id_same_clip(df):
+    index = 0
+    while index < (len(df)):
+
+        # print ("\n ======== \n")
+        # print("index", index)
+        # print(df)
+        # print("length", len(df))
+
+        # print ("\n --------- \n")
+        
+        annotation = df.iloc[index]
+        current_end = annotation["OFFSET"] + annotation["DURATION"]
+        # print(current_end)
+        max_offset = index
+        overlapping = []
+        # print(overlapping)
+
+        # Find the annotation with the maximum ending 
+        # time and record all the overlapping annotations
+        for next_index in range(len(df)):
+            # Don't check the same annotation with itself
+            if next_index == index:
+                continue
+
+            next_annotation = df.iloc[next_index]
+            if next_annotation["OFFSET"] > annotation["OFFSET"] \
+                and next_annotation["OFFSET"] < current_end:
+                overlapping.append(next_index)
+                if next_annotation["OFFSET"] + next_annotation["DURATION"] > current_end:
+                    current_end = next_annotation["OFFSET"] + next_annotation["DURATION"]
+            
+        # print(overlapping)
+        duration_longest = current_end
+        df.loc[index, "DURATION"] = duration_longest - annotation["OFFSET"] 
+        # print("index", index)
+
+        # Drop the overlapping annotation(s)
+        for drop_index in overlapping:
+            # print(drop_index)
+            df.drop([drop_index], inplace = True)
+        df.reset_index(drop=True, inplace=True)
+        
+        # print(df)
+        # print("length", len(df))
+        # print("index", index)
+        # print ("\n --------- \n")
+        index += 1
+    
+    return df
+        
+                
 
 # def in_file(df):
 #     """
