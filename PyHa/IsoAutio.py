@@ -726,7 +726,7 @@ def generate_automated_labels(
             print("Failed to load", audio_file)
             continue
 
-        # downsample the audio if the sample rate > 44.1 kHz
+        # downsample the audio if the sample rate isn't 44.1 kHz
         # Force everything into the human hearing range.
         # May consider reworking this function so that it upsamples as well
         if SAMPLE_RATE != Normalized_Sample_Rate:
