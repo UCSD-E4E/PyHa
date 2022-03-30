@@ -792,7 +792,7 @@ def kaleidoscope_conversion(df):
     Returns:
         Pandas Dataframe compatible with Kaleidoscope.
     """
-    kaleidoscope_df = [df["FOLDER"], df["IN FILE"], df["CHANNEL"],
+    kaleidoscope_df = [df["FOLDER"].str.rstrip("/\\"), df["IN FILE"], df["CHANNEL"],
                        df["OFFSET"], df["DURATION"], df["MANUAL ID"]]
     headers = ["FOLDER", "IN FILE", "CHANNEL",
                "OFFSET", "DURATION", "MANUAL ID"]
