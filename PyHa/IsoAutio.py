@@ -729,11 +729,14 @@ def generate_automated_labels(
         # downsample the audio if the sample rate isn't 44.1 kHz
         # Force everything into the human hearing range.
         # May consider reworking this function so that it upsamples as well
-        if SAMPLE_RATE != Normalized_Sample_Rate:
-            rate_ratio = Normalized_Sample_Rate / SAMPLE_RATE
-            SIGNAL = scipy_signal.resample(
-                SIGNAL, int(len(SIGNAL) * rate_ratio))
-            SAMPLE_RATE = Normalized_Sample_Rate
+        try:
+            if SAMPLE_RATE != Normalized_Sample_Rate:
+                rate_ratio = Normalized_Sample_Rate / SAMPLE_RATE
+                SIGNAL = scipy_signal.resample(
+                    SIGNAL, int(len(SIGNAL) * rate_ratio))
+                SAMPLE_RATE = Normalized_Sample_Rate
+        except:
+            print("Failed to Downsample" + audio_file)
             # resample produces unreadable float32 array so convert back
             # SIGNAL = np.asarray(SIGNAL, dtype=np.int16)
 
