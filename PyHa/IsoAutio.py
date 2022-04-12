@@ -736,6 +736,7 @@ def generate_automated_labels_birdnet(audio_dir, isolation_parameters):
 def generate_automated_labels_microfaune(
         audio_dir,
         isolation_parameters,
+        ml_model = "microfaune",
         manual_id="bird",
         weight_path=None,
         normalized_sample_rate=44100,
@@ -776,7 +777,8 @@ def generate_automated_labels_microfaune(
         detector = RNNDetector()
     # Use Custom weights for Microfaune Detector
     else:
-        detector = RNNDetector(weight_path)
+        print("model \"{}\" does not exist".format(ml_model))
+        return None
 
     # init labels dataframe
     annotations = pd.DataFrame()
