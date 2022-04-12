@@ -1,3 +1,4 @@
+#from PyHa.tweetynet_package.tweetynet.network import TweetyNet
 from .microfaune_package.microfaune.detection import RNNDetector
 from .microfaune_package.microfaune import audio
 import pandas as pd
@@ -6,6 +7,9 @@ import numpy as np
 import math
 import os
 
+import torch
+from .tweetynet_package.tweetynet.TweetyNetModel import TweetyNetModel
+from .tweetynet_package.tweetynet.Load_data_functions import compute_features
 
 def build_isolation_parameters(
         technique,
@@ -255,7 +259,6 @@ def steinberg_isolate(
     """
     # calculate original duration
     old_duration = len(SIGNAL) / SAMPLE_RATE
-
     # create entry for audio clip
     entry = {'FOLDER': audio_dir,
              'IN FILE': filename,
@@ -268,7 +271,6 @@ def steinberg_isolate(
     # calculating threshold that will define how labels are created in current
     # audio clip
     thresh = threshold(local_scores, isolation_parameters)
-
     # how many samples one local score represents
     samples_per_score = len(SIGNAL) // len(local_scores)
 
@@ -315,12 +317,12 @@ def steinberg_isolate(
             # sub-clip numpy array
             isolated_samples = np.append(
                 isolated_samples, SIGNAL[lo_idx:hi_idx])
-
     entry = pd.DataFrame.from_dict(entry)
     # TODO, when you go through the process of rebuilding this isolate function
     # as a potential optimization problem
     # rework the algorithm so that it builds the dataframe correctly to save
     # time.
+
     OFFSET = entry['OFFSET'].str[0]
     DURATION = entry['OFFSET'].str[1]
     DURATION = DURATION - OFFSET
@@ -667,6 +669,7 @@ def chunk_isolate(
 def generate_automated_labels(
         audio_dir,
         isolation_parameters,
+        ml_model = "microfaune",
         manual_id="bird",
         weight_path=None,
         Normalized_Sample_Rate=44100,
@@ -701,11 +704,19 @@ def generate_automated_labels(
     # Use Default Microfaune Detector
     # TODO
     # Expand to neural networks beyond just microfaune
-    if weight_path is None:
-        detector = RNNDetector()
-    # Use Custom weights for Microfaune Detector
+    #Add flag to work for creating tweetynet model.
+    if ml_model == "microfaune":
+        if weight_path is None:
+            detector = RNNDetector()
+        # Use Custom weights for Microfaune Detector
+        else:
+            detector = RNNDetector(weight_path)
+    elif ml_model == "tweetynet":
+        device = torch.device('cpu')
+        detector = TweetyNetModel(2, (1, 86, 43), 43, device, binary = False)
     else:
-        detector = RNNDetector(weight_path)
+        print("model \"{}\" does not exist".format(ml_model))
+        return None
 
     # init labels dataframe
     annotations = pd.DataFrame()
@@ -742,11 +753,19 @@ def generate_automated_labels(
         # Might want to compare to just taking the first set of data.
         if len(SIGNAL.shape) == 2:
             SIGNAL = SIGNAL.sum(axis=1) / 2
-
         # detection
         try:
-            microfaune_features = detector.compute_features([SIGNAL])
-            global_score, local_scores = detector.predict(microfaune_features)
+            #Add flag to work with creating features for tweetynet.
+            if ml_model == "microfaune":
+                microfaune_features = detector.compute_features([SIGNAL])
+                global_score, local_scores = detector.predict(microfaune_features)
+            elif ml_model == "tweetynet":
+                #need a function to convert a signal into a spectrogram and then window it
+                tweetynet_features = compute_features(SIGNAL)
+                predictions, local_scores = detector.predict(tweetynet_features, model_weights=weight_path)
+            #print(len(local_scores[0]))
+            #print(local_scores)
+            #print(min(local_scores[0]), max(local_scores[0]))
         except BaseException:
             print("Error in detection, skipping", audio_file)
             continue
