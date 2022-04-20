@@ -161,11 +161,11 @@ def automated_labeling_statistics(
     """
     Function that will allow users to easily pass in two dataframes of manual
     labels and automated labels, and a dataframe is returned with statistics
-    examining the efficiency of the automated labelling system compared to the
+    examining the efficacy of the automated labelling system compared to the
     human labels for multiple clips.
 
     Calls bird_local_scores on corresponding audio clips to generate the
-    efficiency statistics for one specific clip which is then all put into one
+    efficacy statistics for one specific clip which is then all put into one
     dataframe of statistics for multiple audio clips.
 
     Args:
@@ -221,7 +221,7 @@ def automated_labeling_statistics(
 
 def global_dataset_statistics(statistics_df, manual_id = "bird"):
     """
-    Function that takes in a dataframe of efficiency statistics for multiple
+    Function that takes in a dataframe of efficacy statistics for multiple
     clips and outputs their global values.
 
     Args:
@@ -671,11 +671,37 @@ def dataset_Catch(automated_df, manual_df):
     return manual_df_with_Catch
 
 
+def clip_statistics(
+        automated_df,
+        manual_df, 
+        stats_type = "IoU", 
+        threshold = 0.5):
+    """
+    Function to generate a dataframe containing efficacy statistics of automated
+    labeling compared to human labels for multiple classes.
 
-# Goes through each class, measuring how effective the labels are in each clip
-def clip_statistics(automated_df,manual_df, stats_type = "IoU", threshold = 0.5):
-    # Creating identifying the overlapping classes between the two sets of dataframes
+    Calls automated_labeling_statistics on individual classes to identify
+    the overlapping human and automated labels, then concats the dataframes.
+
+    Args: 
+        automated_df (Dataframe)
+            - Dataframe of automated labels for multiple classes.
+
+        manual_df (Dataframe)
+            - Dataframe of human labels for multiple classes.
+        
+        stats_type (String)
+            - String that determines which type of statistics are of interest
+        
+        threshold (Float)
+            - Defines a threshold for certain types of statistics such as an
+            IoU threshold for determining true positives, false positives, and
+            false negatives.
     
+    Returns: 
+        Dataframe with clip overlap statistics comparing automated and human 
+        labeling for multiple classes.
+    """
     # Creating a list of classes from the automated dataframe
     automated_class_list = automated_df["MANUAL ID"].to_list()
     automated_class_list = list(dict.fromkeys(automated_class_list))
@@ -703,6 +729,20 @@ def clip_statistics(automated_df,manual_df, stats_type = "IoU", threshold = 0.5)
     return clip_statistics
 
 def class_statistics(clip_statistics):
+    """
+    Function that takes in a dataframe of efficacy statistics for multiple 
+    classes and outputs global efficacy values for each class.
+
+    Calls global_statistics on individual classes, then concats the dataframes.
+
+    Args: 
+        clip_statistics (Dataframe)
+            - Dataframe of multi-class statistics values for audio clips as 
+            returned by the function clip_statistics.
+    
+    Returns:
+        Dataframe of global efficacy statistics for multiple classes.
+    """
     # Initializing the output dataframe
     class_statistics = pd.DataFrame()
     # creating a list of the unique classes being passed in.
@@ -717,5 +757,5 @@ def class_statistics(clip_statistics):
         else:
             temp_df = global_statistics(class_df, manual_id = class_)
             class_statistics = class_statistics.append(temp_df)
-        class_statistics.reset_index(inplace=True,drop=True)
-        return class_statistics
+    class_statistics.reset_index(inplace=True,drop=True)
+    return class_statistics

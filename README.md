@@ -326,22 +326,31 @@ This function returns a dataframe of human labels with a column for the catch va
 
 Usage: `dataset_Catch(automated_df, manual_df)`
 
-<!-- Need to be updated -->
-### [`dataset_IoU_Statistics`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)
+### [`clip_statistics`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)
 *Found in [`statistics.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)*
-
-*The description for this function has not yet been updated* 
 
 | Parameter | Type |  Description |
 | --- | --- | --- |
-| `automated_df` | Dataframe | Dataframe of automated labels for one clip |
-| `human_df` | Dataframe | Dataframe of human labels for one clip. |
-| `threshold` | float | Defines a threshold for certain types of statistics |
+| `automated_df` | Dataframe | Dataframe of automated labels for multiple classes. |
+| `human_df` | Dataframe | Dataframe of human labels for multiple classes. |
+| `stats_type` | String | String that determines which statistis are of interest. |
+| `threshold` | float | Defines a threshold for certain types of statistics. |
 
-*The return for this function is not yet specified*
+This function returns a dataframe with clip overlap statistics comparing automated and human labeling for multiple classes
 
-Usage: `dataset_IoU_Statistics(automated_df, manual_df, threshold)`
- 
+Usage: `clip_statistics(automated_df, manual_df, stats_type, threshold)`
+
+### [`class_statistics`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)
+*Found in [`statistics.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)*
+
+| Parameter | Type |  Description |
+| --- | --- | --- |
+| `clip_statistics` | Dataframe | Dataframe of multi-class statistics values for audio clips as returned by the function clip_statistics. |
+
+This function returns a dataframe of global efficacy values for multiple classes.
+
+Usage: `class_statistics(clip_statistics)`
+
 </details>
  
 
