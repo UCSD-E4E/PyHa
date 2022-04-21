@@ -41,7 +41,7 @@ def annotation_duration_statistics(df):
 
 def clip_general(automated_df, human_df):
     """
-    Function to generate a dataframe with statistics relating to the efficiency
+    Function to generate a dataframe with statistics relating to the efficacy
     of the automated label compared to the human label.
     These statistics include true positive, false positive, false negative,
     true negative, union, precision, recall, F1, and Global IoU. For general
@@ -177,9 +177,20 @@ def automated_labeling_statistics(
 
         stats_type (String)
             - String that determines which type of statistics are of interest
+            - options: "IoU", "general" 
+                - "IoU"
+                    - Compares the intersection over union of automated annotations
+                      with respect to manual annotations for individual clips.
+                - "general"
+                    - Consolidates all automated annotations and compares them to all of
+                      the manual annotations that have been consolidated across a clip.
+            - default: "IoU"
 
         threshold (Float)
-            - Defines a threshold for certain types of statistics such as
+            - Defines a threshold for certain types of statistics such as an
+            IoU threshold for determining true positives, false positives, and
+            false negatives.
+            - default: 0.5
 
     Returns:
         Dataframe of statistics comparing automated labels and human labels for
@@ -230,8 +241,8 @@ def global_dataset_statistics(statistics_df, manual_id = "bird"):
               returned by the function automated_labelling_statistics.
         manual_id (String)
             - String to control the "MANUAL ID" column of the csv file
-            format that is used in PyHa. Defaulted to "bird" since the
-            package started out with binary bird classification.
+              format that is used in PyHa. Defaulted to "bird" since the
+              package started out with binary bird classification.
 
     Returns:
         Dataframe of global statistics for the multiple audio clips' labelling.
@@ -375,7 +386,8 @@ def matrix_IoU_Scores(IoU_Matrix, manual_df, threshold):
 
         threshold (float)
             - IoU threshold for determining true positives, false
-                            positives, and false negatives.
+              positives, and false negatives.
+            - default: 0.5
 
     Returns:
         Dataframe of clip statistics such as True Positive, False Negative,
@@ -595,6 +607,11 @@ def global_statistics(statistics_df, manual_id = 'N/A'):
     Args:
         statistics_df (Dataframe)
             - Dataframe of matrix IoU scores for multiple clips.
+        
+        manual_id (String)
+            - String to control the "MANUAL ID" column of the csv file
+              format that is used in PyHa.
+            - default: "N/A"
 
     Returns:
         Dataframe of global IoU statistics which include the number of true
@@ -692,11 +709,20 @@ def clip_statistics(
         
         stats_type (String)
             - String that determines which type of statistics are of interest
-        
+            - options: "IoU", "general" 
+                - "IoU"
+                    - Compares the intersection over union of automated annotations
+                      with respect to manual annotations for individual clips.
+                - "general"
+                    - Consolidates all automated annotations and compares them to all of
+                      the manual annotations that have been consolidated across a clip.
+            - default: "IoU"
+
         threshold (Float)
             - Defines a threshold for certain types of statistics such as an
-            IoU threshold for determining true positives, false positives, and
-            false negatives.
+              IoU threshold for determining true positives, false positives, and
+              false negatives.
+            - default: 0.5
     
     Returns: 
         Dataframe with clip overlap statistics comparing automated and human 
@@ -738,7 +764,7 @@ def class_statistics(clip_statistics):
     Args: 
         clip_statistics (Dataframe)
             - Dataframe of multi-class statistics values for audio clips as 
-            returned by the function clip_statistics.
+              returned by the function clip_statistics.
     
     Returns:
         Dataframe of global efficacy statistics for multiple classes.

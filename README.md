@@ -338,6 +338,12 @@ Usage: `dataset_Catch(automated_df, manual_df)`
 
 This function returns a dataframe with clip overlap statistics comparing automated and human labeling for multiple classes
 
+The `stats_type` parameter can be set as follows: 
+| Name | Description |
+| --- | --- |
+|`"IoU"`| Default. Compares the intersection over union of automated annotations with respect to manual annotations for individual clips. | 
+|`"general"` | Consolidates all automated annotations and compares them to all of the manual annotations that have been consolidated across a clip. |
+
 Usage: `clip_statistics(automated_df, manual_df, stats_type, threshold)`
 
 ### [`class_statistics`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)
