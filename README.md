@@ -48,7 +48,7 @@ The `threshold_type` parameter can be: median, mean, average, standard deviation
 
 The remaining parameters are floats representing their respective values. 
 
-<!-- IsoAudio.py file -->
+<!-- IsoAutio.py file -->
 
 <details>
  <summary>IsoAutio.py files</summary>
@@ -213,10 +213,10 @@ This function returns a Pandas Dataframe containing count, mean, mode, standard 
 
 Usage: `annotation_duration_statistics(df)`
 
-### [`bird_label_scores`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)
+### [`clip_general`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)
 *Found in [`statistics.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)*
 
-This function to generates a dataframe with statistics relating to the efficiency of the automated label compared to the human label. These statistics include true positive, false positive, false negative, true negative, union, precision, recall, F1, and Global IoU for general clip overlap.
+This function generates a dataframe with statistics relating to the efficiency of the automated label compared to the human label. These statistics include true positive, false positive, false negative, true negative, union, precision, recall, F1, and Global IoU for general clip overlap.
 
 | Parameter | Type |  Description |
 | --- | --- | --- |
@@ -225,12 +225,12 @@ This function to generates a dataframe with statistics relating to the efficienc
 
 This function returns a dataframe with general clip overlap statistics comparing the automated and human labeling. 
 
-Usage: `bird_label_scores(automated_df, human_df)`
+Usage: `clip_general(automated_df, human_df)`
 
 ### [`automated_labeling_statistics`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)
 *Found in [`statistics.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)*
 
-This function allows users to easily pass in two dataframes of manual labels and automated labels, and returns a dataframe with statistics examining the efficiency of the automated labelling system compared to the human labels for multiple clips. It calls `bird_local_scores` on corresponding audio clips to generate the efficiency statistics for one specific clip which is then all put into one dataframe of statistics for multiple audio clips.
+This function allows users to easily pass in two dataframes of manual labels and automated labels, and returns a dataframe with statistics examining the efficiency of the automated labelling system compared to the human labels for multiple clips. 
 
 | Parameter | Type |  Description |
 | --- | --- | --- |
@@ -240,6 +240,13 @@ This function allows users to easily pass in two dataframes of manual labels and
 | `threshold` | float | Defines a threshold for certain types of statistics |
 
 This function returns a dataframe of statistics comparing automated labels and human labels for multiple clips. 
+
+The `stats_type` parameter can be set as follows: 
+| Name | Description |
+| --- | --- |
+|`"IoU"`| Default. Compares the intersection over union of automated annotationswith respect to manual annotations for individual clips. | 
+|`"general"` | Consolidates all automated annotations and compares them to all of the manual annotations that have been consolidated across a clip. |
+
 
 Usage: `automated_labeling_statistics(automated_df, manual_df, stats_type, threshold)`
 
@@ -278,8 +285,8 @@ This function takes in the manual and automated labels for a clip and outputs Io
 | Parameter | Type |  Description |
 | --- | --- | --- |
 | `IoU_Matrix`  | arr | (human label count) x (automated label count) matrix where each row contains the IoU of each automated annotation with respect to a human label. |
-| manual_df | Dataframe | Dataframe of human labels for an audio clip. |
-| threshold | float | IoU threshold for determining true positives, false positives, and false negatives. | 
+| `manual_df `| Dataframe | Dataframe of human labels for an audio clip. |
+| `threshold` | float | IoU threshold for determining true positives, false positives, and false negatives. | 
 
 This function returns a dataframe of clip statistics such as True Positive, False Negative, False Positive, Precision, Recall, and F1 values for an audio clip.
 
@@ -299,7 +306,7 @@ This function returns a Numpy Array of statistics regarding the amount of overla
 
 Usage: `clip_catch(automated_df,manual_df)`
 
-### [`global_IoU_Statistics`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)
+### [`global_statistics`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)
 *Found in [`statistics.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)*
 
 This function takes the output of dataset_IoU Statistics and outputs a global count of true positives and false positives, as well as computes the precision, recall, and f1 metrics across the dataset.
@@ -310,7 +317,7 @@ This function takes the output of dataset_IoU Statistics and outputs a global co
 
 This function returns a dataframe of global IoU statistics which include the number of true positives, false positives, and false negatives. Contains Precision, Recall, and F1 metrics as well
 
-Usage: `global_IoU_Statistics(statistics_df)`
+Usage: `global_statistics(statistics_df)`
 
 ### [`dataset_Catch`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)
 *Found in [`statistics.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/statistics.py)*
@@ -341,7 +348,7 @@ This function returns a dataframe with clip overlap statistics comparing automat
 The `stats_type` parameter can be set as follows: 
 | Name | Description |
 | --- | --- |
-|`"IoU"`| Default. Compares the intersection over union of automated annotations with respect to manual annotations for individual clips. | 
+|`"IoU"`| Default. Compares the intersection over union of automated annotationswith respect to manual annotations for individual clips. | 
 |`"general"` | Consolidates all automated annotations and compares them to all of the manual annotations that have been consolidated across a clip. |
 
 Usage: `clip_statistics(automated_df, manual_df, stats_type, threshold)`
@@ -559,7 +566,7 @@ stats_df = automated_labeling_statistics(automated_df,manual_df,stats_type = "Io
 
 ### Function that takes the output of dataset_IoU Statistics and ouputs a global count of true positives and false positives, as well as computing common metrics across the dataset
 ```python
-global_stats_df = global_IoU_Statistics(stats_df)
+global_stats_df = global_statistics(stats_df)
 ```
 ![image](https://user-images.githubusercontent.com/44332326/127575798-f84540ea-5121-4e7a-83c4-4ca5ad02e9d0.png)
 

@@ -164,10 +164,6 @@ def automated_labeling_statistics(
     examining the efficacy of the automated labelling system compared to the
     human labels for multiple clips.
 
-    Calls bird_local_scores on corresponding audio clips to generate the
-    efficacy statistics for one specific clip which is then all put into one
-    dataframe of statistics for multiple audio clips.
-
     Args:
         automated_df (Dataframe)
             - Dataframe of automated labels of multiple clips.
