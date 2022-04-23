@@ -244,7 +244,7 @@ This function returns a dataframe of statistics comparing automated labels and h
 The `stats_type` parameter can be set as follows: 
 | Name | Description |
 | --- | --- |
-|`"IoU"`| Default. Compares the intersection over union of automated annotationswith respect to manual annotations for individual clips. | 
+|`"IoU"`| Default. Compares the intersection over union of automated annotations with respect to manual annotations for individual clips. | 
 |`"general"` | Consolidates all automated annotations and compares them to all of the manual annotations that have been consolidated across a clip. |
 
 
