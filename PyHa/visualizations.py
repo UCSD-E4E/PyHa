@@ -296,6 +296,7 @@ def plot_bird_label_scores(automated_df, human_df, save_fig=False):
                 0))
         bot_arr[minval:maxval] = 1
     for row in human_df.index:
+        
         minval = int(round(human_df["OFFSET"][row] * SAMPLE_RATE, 0))
         maxval = int(
             round(
