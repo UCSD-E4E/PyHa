@@ -5,7 +5,8 @@ import scipy.signal as scipy_signal
 import numpy as np
 import math
 import os
-
+from .birdnet_lite.analyze import analyze
+from copy import deepcopy
 
 def build_isolation_parameters(
         technique,
@@ -128,7 +129,7 @@ def isolate(
             audio_dir,
             filename,
             isolation_parameters,
-            manual_id="bird")
+            manual_id=manual_id)
     elif isolation_parameters["technique"] == "steinberg":
         isolation_df = steinberg_isolate(
             local_scores,
@@ -137,7 +138,7 @@ def isolate(
             audio_dir,
             filename,
             isolation_parameters,
-            manual_id="bird")
+            manual_id=manual_id)
     elif isolation_parameters["technique"] == "stack":
         isolation_df = stack_isolate(
             local_scores,
@@ -146,7 +147,7 @@ def isolate(
             audio_dir,
             filename,
             isolation_parameters,
-            manual_id="bird")
+            manual_id=manual_id)
     elif isolation_parameters["technique"] == "chunk":
         isolation_df = chunk_isolate(
             local_scores,
@@ -155,7 +156,7 @@ def isolate(
             audio_dir,
             filename,
             isolation_parameters,
-            manual_id="bird")
+            manual_id=manual_id)
 
     return isolation_df
 
@@ -664,7 +665,7 @@ def chunk_isolate(
     return pd.DataFrame.from_dict(entry)
 
 
-def generate_automated_labels(
+def generate_automated_labels_microfaune(
         audio_dir,
         isolation_parameters,
         manual_id="bird",
@@ -672,8 +673,9 @@ def generate_automated_labels(
         Normalized_Sample_Rate=44100,
         normalize_local_scores=False):
     """
-    Function that applies isolation technique determined by
-    isolation_parameters dictionary across a folder of audio clips.
+    Function that applies isolation technique on the local scores generated
+    by the Microfaune mode across a folder of audio clips. It is determined
+    by the isolation_parameters dictionary.
 
     Args:
         audio_dir (string)
@@ -780,6 +782,101 @@ def generate_automated_labels(
     # Quick fix to indexing
     annotations.reset_index(inplace=True, drop=True)
     return annotations
+
+def generate_automated_labels_birdnet(audio_dir, isolation_parameters):
+    """
+    Function that generated the bird labels for an audio file or across a
+    folder using the BirdNet-Lite model
+
+    Args:
+        audio_dir (string)
+            - Directory with wav audio files. Can be an individual file
+              as well.
+
+        isolation_parameters (dict)
+            - Python Dictionary that controls the various label creation
+              techniques. The keys it accepts are :
+              - output_path
+              - lat
+              - lon
+              - week
+              - overlap
+              - sensitivity
+              - min_conf
+              - custom_list
+              - filetype
+              - num_predictions
+              - write_to_csv
+
+    Returns:
+        Dataframe of automated labels for the audio clip(s) in audio_dir.
+    """
+    annotations = analyze(audio_path=audio_dir, **isolation_parameters)
+    return annotations
+
+def generate_automated_labels(
+        audio_dir,
+        isolation_parameters,
+        manual_id="bird",
+        weight_path=None,
+        Normalized_Sample_Rate=44100,
+        normalize_local_scores=False):
+    """
+    Function that generated the bird labels across a folder of audio clips
+    given the isolation_parameters
+
+    Args:
+        audio_dir (string)
+            - Directory with wav audio files.
+
+        isolation_parameters (dict)
+            - Python Dictionary that controls the various label creation
+              techniques.
+
+        manual_id (string)
+            - controls the name of the class written to the pandas dataframe
+
+        weight_path (string)
+            - File path of weights to be used by the model for
+              determining presence of bird sounds.
+
+        Normalized_Sample_Rate (int)
+            - Sampling rate that the audio files should all be normalized to.
+              Used only for the Microfaune model.
+
+    Returns:
+        Dataframe of automated labels for the audio clips in audio_dir.
+    """
+    
+    #try:
+    if(isolation_parameters["model"] == 'microfaune'):
+        annotations = generate_automated_labels_microfaune(
+                        audio_dir=audio_dir,
+                        isolation_parameters=isolation_parameters,
+                        manual_id=manual_id,
+                        weight_path=weight_path,
+                        Normalized_Sample_Rate=Normalized_Sample_Rate,
+                        normalize_local_scores=normalize_local_scores)
+    elif(isolation_parameters["model"] == 'birndet'):
+        # We need to delete the some keys from the isolation_parameters
+        # because we are unpacking the other arguments
+        birdnet_parameters = deepcopy(isolation_parameters)
+        keys_to_delete = ['model', 'technique', 'threshold_type',
+            'threshold_const', 'chunk_size']
+        for key in keys_to_delete:
+            birdnet_parameters.pop(key, None)
+        annotations = generate_automated_labels_birdnet(
+                        audio_dir, birdnet_parameters)
+    elif(isolation_parameters['model'] == 'tweetynet'):
+        pass
+    else:
+        print("{model_name} model does not exist"\
+            .format(model_name=isolation_parameters["model"]))
+    # except:
+    #     print("Error. Check your isolation_parameters")
+    #     return None
+    return annotations
+            
 
 
 def kaleidoscope_conversion(df):
