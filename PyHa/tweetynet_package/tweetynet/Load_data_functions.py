@@ -175,8 +175,8 @@ def load_signal2spec(signal, SR, n_mels, frame_size, hop_length):
     time_bins = dataset['time_bins']
     return X, Y, uids, time_bins
 
-def compute_features(signal, SR=44100, n_mels=86, frame_size=2048, hop_length=1024, windowsize=1):
-    x, y, uids, time_bins = load_signal2spec(signal, SR, n_mels, frame_size, hop_length)
+def compute_features(signal, SR=44100, n_mels=86, frame_size=2048, hop_length=1024, windowsize=2):
+    x, y, uids, time_bins = load_signal2spec(signal[0], SR, n_mels, frame_size, hop_length)
     dataset = window_data(x, y, uids, time_bins, windowsize)
     X = np.array(dataset['X'])
     X = X.reshape(X.shape[0], 1, X.shape[1], X.shape[2])
@@ -186,3 +186,30 @@ def compute_features(signal, SR=44100, n_mels=86, frame_size=2048, hop_length=10
     UIDS = UIDS.reshape(UIDS.shape[1])
     tweetynet_features = CustomAudioDataset(X, Y, UIDS)
     return tweetynet_features
+
+def predictions_to_kaleidoscope(predictions, SIGNAL, audio_dir, audio_file, manual_id, sample_rate):
+    time_bin_seconds = predictions.iloc[0]["time_bins"]
+    zero_sorted_filtered_df = predictions[predictions["pred"] == 0]
+    offset = zero_sorted_filtered_df["time_bins"]
+    duration = zero_sorted_filtered_df["time_bins"].diff().shift(-1)
+    intermediary_df = pd.DataFrame({"OFFSET": offset, "DURATION": duration})
+    #need to fill out df. 
+    print("made it")
+    kaliedoscope_df = []
+    if offset.iloc[0] != 0:
+        kaliedoscope_df.append(pd.DataFrame({"OFFSET": [0], "DURATION": [offset.iloc[0]]}))
+    kaliedoscope_df.append(intermediary_df[intermediary_df["DURATION"] >= 2*time_bin_seconds])
+    if offset.iloc[-1] < predictions.iloc[-1]["time_bins"]:
+        kaliedoscope_df.append(pd.DataFrame({"OFFSET": [offset.iloc[-1]], "DURATION": [predictions.iloc[-1]["time_bins"] + 
+                                predictions.iloc[1]["time_bins"]]}))
+    kaliedoscope_df = pd.concat(kaliedoscope_df)
+    kaliedoscope_df = kaliedoscope_df.reset_index(drop=True)
+    kaliedoscope_df["FOLDER"] = audio_dir
+    kaliedoscope_df["IN FILE"] = audio_file
+    kaliedoscope_df["CHANNEL"] = 0
+    kaliedoscope_df["CLIP LENGTH"] = len(SIGNAL)/sample_rate
+    kaliedoscope_df["SAMPLE RATE"] = sample_rate
+    kaliedoscope_df["MANUAL ID"] = manual_id
+
+    return kaliedoscope_df
+    

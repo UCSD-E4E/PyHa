@@ -9,7 +9,7 @@ import os
 
 import torch
 from .tweetynet_package.tweetynet.TweetyNetModel import TweetyNetModel
-from .tweetynet_package.tweetynet.Load_data_functions import compute_features
+from .tweetynet_package.tweetynet.Load_data_functions import compute_features, predictions_to_kaleidoscope
 
 def build_isolation_parameters(
         technique,
@@ -670,6 +670,7 @@ def generate_automated_labels(
         audio_dir,
         isolation_parameters,
         ml_model = "microfaune",
+        tweety_output = False,
         manual_id="bird",
         weight_path=None,
         Normalized_Sample_Rate=44100,
@@ -761,13 +762,11 @@ def generate_automated_labels(
                 global_score, local_scores = detector.predict(microfaune_features)
             elif ml_model == "tweetynet":
                 #need a function to convert a signal into a spectrogram and then window it
-                tweetynet_features = compute_features(SIGNAL)
+                tweetynet_features = compute_features([SIGNAL])
                 predictions, local_scores = detector.predict(tweetynet_features, model_weights=weight_path)
-            #print(len(local_scores[0]))
-            #print(local_scores)
-            #print(min(local_scores[0]), max(local_scores[0]))
-        except BaseException:
+        except BaseException as e:
             print("Error in detection, skipping", audio_file)
+            print(e)
             continue
 
         # get duration of clip
@@ -776,22 +775,33 @@ def generate_automated_labels(
         try:
             # Running moment to moment algorithm and appending to a master
             # dataframe.
-            new_entry = isolate(
-                local_scores[0],
-                SIGNAL,
-                SAMPLE_RATE,
-                audio_dir,
-                audio_file,
-                isolation_parameters,
-                manual_id=manual_id,
-                normalize_local_scores=normalize_local_scores)
+            #Add tweetynet without isolation functions here 
+            if tweety_output:
+                    local_scores = [np.array(predictions["pred"].values)]
+                    print(local_scores)
+                    print(predictions)
+                    print("here", audio_file)
+                    predictions.to_csv(audio_file + ".csv")
+                    print("saved_csv")
+                    new_entry = predictions_to_kaleidoscope(predictions, SIGNAL, audio_dir, audio_file, manual_id, SAMPLE_RATE)
+            else:
+                new_entry = isolate(
+                    local_scores[0],
+                    SIGNAL,
+                    SAMPLE_RATE,
+                    audio_dir,
+                    audio_file,
+                    isolation_parameters,
+                    manual_id=manual_id,
+                    normalize_local_scores=normalize_local_scores)
             # print(new_entry)
             if annotations.empty:
                 annotations = new_entry
             else:
                 annotations = annotations.append(new_entry)
-        except BaseException:
+        except BaseException as e:
             print("Error in isolating bird calls from", audio_file)
+            print(e)
             continue
     # Quick fix to indexing
     annotations.reset_index(inplace=True, drop=True)

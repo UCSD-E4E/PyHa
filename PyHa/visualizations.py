@@ -7,6 +7,9 @@ import numpy as np
 import seaborn as sns
 from .IsoAutio import *
 
+import torch
+from .tweetynet_package.tweetynet.TweetyNetModel import TweetyNetModel
+from .tweetynet_package.tweetynet.Load_data_functions import compute_features
 
 def local_line_graph(
         local_scores,
@@ -81,6 +84,7 @@ def local_line_graph(
     fig.suptitle("Spectrogram and Local Scores for " + clip_name)
     # score line plot - top plot
     axs[0].plot(time_stamps, local_scores)
+    #Look into this and their relation.
     axs[0].set_xlim(0, duration)
     if log_scale:
         axs[0].set_yscale('log')
@@ -139,6 +143,8 @@ def local_line_graph(
 
 def local_score_visualization(
         clip_path,
+        ml_model="tweetynet",
+        tweety_output=False,
         weight_path=None,
         premade_annotations_df=None,
         premade_annotations_label="Human Labels",
@@ -205,21 +211,35 @@ def local_score_visualization(
         SIGNAL = SIGNAL.sum(axis=1) / 2
 
     # Initializing the detector to baseline or with retrained weights
-    if weight_path is None:
-        # Microfaune RNNDetector class
-        detector = RNNDetector()
+    if ml_model == "microfaune":
+        if weight_path is None:
+            # Microfaune RNNDetector class
+            detector = RNNDetector()
+        else:
+            try:
+                # Initializing Microfaune hybrid CNN-RNN with new weights
+                detector = RNNDetector(weight_path)
+            except BaseException:
+                print("Error in weight path:", weight_path)
+                return
+    elif ml_model == "tweetynet":
+        device = torch.device('cpu')
+        detector = TweetyNetModel(2, (1, 86, 43), 43, device, binary = False)
     else:
-        try:
-            # Initializing Microfaune hybrid CNN-RNN with new weights
-            detector = RNNDetector(weight_path)
-        except BaseException:
-            print("Error in weight path:", weight_path)
-            return
+        print("model \"{}\" does not exist".format(ml_model))
+        return None
     try:
-        # Computing Mel Spectrogram of the audio clip
-        microfaune_features = detector.compute_features([SIGNAL])
-        # Running the Mel Spectrogram through the RNN
-        global_score, local_score = detector.predict(microfaune_features)
+        if ml_model == "microfaune":
+            # Computing Mel Spectrogram of the audio clip
+            microfaune_features = detector.compute_features([SIGNAL])
+            # Running the Mel Spectrogram through the RNN
+            global_score, local_score = detector.predict(microfaune_features)
+        elif ml_model == "tweetynet":
+            #need a function to convert a signal into a spectrogram and then window it
+            tweetynet_features = compute_features([SIGNAL])
+            predictions, local_score = detector.predict(tweetynet_features, model_weights=weight_path)
+        #if tweety_output:
+            #    local_score = [np.array(predictions["pred"].values)]
     except BaseException:
         print(
             "Skipping " +
@@ -230,14 +250,18 @@ def local_score_visualization(
     if premade_annotations_df is None:
         premade_annotations_df = pd.DataFrame()
     if automated_df:
-        automated_df = isolate(
-            local_score[0],
-            SIGNAL,
-            SAMPLE_RATE,
-            "Doesn't",
-            "Matter",
-            isolation_parameters,
-            normalize_local_scores=normalize_local_scores)
+        if tweety_output:
+                local_scores = [np.array(predictions["pred"].values)]
+                automated_df = predictions_to_kaleidoscope(predictions, SIGNAL, "Doesn't", "Doesn't", "Matter", SAMPLE_RATE)
+        else:
+            automated_df = isolate(
+                local_score[0],
+                SIGNAL,
+                SAMPLE_RATE,
+                "Doesn't",
+                "Matter",
+                isolation_parameters,
+                normalize_local_scores=normalize_local_scores)
     else:
         automated_df = pd.DataFrame()
 
