@@ -847,7 +847,7 @@ def generate_automated_labels(
     Returns:
         Dataframe of automated labels for the audio clips in audio_dir.
     """
-    
+
     #try:
     if(isolation_parameters["model"] == 'microfaune'):
         annotations = generate_automated_labels_microfaune(
@@ -857,7 +857,7 @@ def generate_automated_labels(
                         weight_path=weight_path,
                         Normalized_Sample_Rate=Normalized_Sample_Rate,
                         normalize_local_scores=normalize_local_scores)
-    elif(isolation_parameters["model"] == 'birndet'):
+    elif(isolation_parameters["model"] == 'birdnet'):
         # We need to delete the some keys from the isolation_parameters
         # because we are unpacking the other arguments
         birdnet_parameters = deepcopy(isolation_parameters)
@@ -876,7 +876,7 @@ def generate_automated_labels(
     #     print("Error. Check your isolation_parameters")
     #     return None
     return annotations
-            
+
 
 
 def kaleidoscope_conversion(df):
