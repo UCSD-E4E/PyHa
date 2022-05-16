@@ -31,10 +31,13 @@ PyHa = Python + Piha (referring to a bird species of our interest known as the s
 
 Many of the functions take in the `isolation_parameters` argument, and as such it will be defined globally here. 
 
-The `isolation_parameters` dictionary is as follows: 
+The `isolation_parameters` dictionary definition depends on the model used. The currently supported models are Microfaune and BirdNET-Lite.  
+
+The Microfaune `isolation_parameters` dictionary is as follows: 
 
 ``` python
 isolation_parameters = {
+    "model" : "microfaune",
     "technique" : "",
     "threshold_type" : "",
     "threshold_const" : 0.0,
@@ -43,10 +46,32 @@ isolation_parameters = {
     "chunk_size" : 0.0,
 } 
 ```
+
 The `technique` parameter can be: Simple, Stack, Steinberg, and Chunk. This input must be a string in all lowercase.  
 The `threshold_type` parameter can be: median, mean, average, standard deviation, or pure. This input must be a string in all lowercase.
 
-The remaining parameters are floats representing their respective values. 
+The remaining parameters are floats representing their respective values.  
+
+<br>
+
+The BirdNET-Lite `isolation_parameters` dictionary is as follows: 
+
+``` python
+isolation_parameters = {
+    "model" : "birdnet",
+    "output_path" : "",
+    "lat" : 0.0,
+    "lon" : 0.0,
+    "week" : 0,
+    "overlap" : 0.0,
+    "sensitivity" : 0.0,
+    "min_conf" : 0.0,
+    "custom_list" : "",
+    "filetype" : "", 
+    "num_predictions" : 0,
+    "write_to_csv" : False
+} 
+```
 
 <!-- IsoAutio.py file -->
 
@@ -56,7 +81,7 @@ The remaining parameters are floats representing their respective values.
 ### [`isolate`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)
 *Found in [`IsoAutio.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)*
 
-This function is the wrapper function for all the audio isolation techniques, and will call the respective function based on its parameters. 
+This function is the wrapper function for all of Microfaune's audio isolation techniques, and will call the respective function based on `isolation_parameters` "technique" key. 
 
 | Parameter | Type |  Description |
 | --- | --- | --- |
@@ -127,7 +152,7 @@ Usage: `simple_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename,is
 ### [`stack_isolate`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)
 *Found in [`IsoAutio.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)*
 
-This function uses a technique created by Jacob Ayers. Attempts to produce automated annotations of an audio clip baseon local score array outputs from a neural network. It is called by the `isolate` function when `isolation_parameters['technique'] == stack`. 
+This function uses a technique created by Jacob Ayers. Attempts to produce automated annotations of an audio clip based on local score array outputs from a neural network. It is called by the `isolate` function when `isolation_parameters['technique'] == stack`. 
 
 | Parameter | Type |  Description |
 | --- | --- | --- |
@@ -146,7 +171,7 @@ Usage: `stack_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename,iso
 ### [`chunk_isolate`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)
 *Found in [`IsoAutio.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)*
 
-This function uses a technique created by Jacob Ayers. Attempts to produce automated annotations of an audio clip baseon local score array outputs from a neural network. It is called by the `isolate` function when `isolation_parameters['technique'] == chunk`. 
+This function uses a technique created by Jacob Ayers. Attempts to produce automated annotations of an audio clip based on local score array outputs from a neural network. It is called by the `isolate` function when `isolation_parameters['technique'] == chunk`. 
 
 | Parameter | Type |  Description |
 | --- | --- | --- |
@@ -165,7 +190,7 @@ Usage: `chunk_isolate(local_scores, SIGNAL, SAMPLE_RATE, audio_dir, filename,iso
 ### [`generate_automated_labels`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)
 *Found in [`IsoAutio.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)*
 
-This function applies the isolation technique determined by the `isolation_parameters` dictionary accross a whole folder of audio clips. 
+This function generates labels across a folder of audio clips determined by the model and other parameters specified in the `isolation_parameters` dictionary. 
 
 | Parameter | Type |  Description |
 | --- | --- | --- |
@@ -179,6 +204,41 @@ This function applies the isolation technique determined by the `isolation_param
 This function returns a dataframe of automated labels for the audio clips in audio_dir.
 
 Usage: `generate_automated_labels(audio_dir, isolation_parameters, manual_id, weight_path, Normalized_Sample_Rate, normalize_local_scores)`
+
+
+### [`generate_automated_labels_microfaune`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)
+*Found in [`IsoAutio.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)*
+
+This function is called by `generate_automated_labels` if `isolation_parameters["model"]` is set to `microfaune`. It applies the isolation technique determined by the `isolation_parameters` dictionary across a whole folder of audio clips. 
+
+| Parameter | Type |  Description |
+| --- | --- | --- |
+| `audio_dir` | string | Directory with wav audio files |
+| `isolation_parameters` | dict | Python Dictionary that controls the various label creation techniques. |
+| `manual_id` | string | controls the name of the class written to the pandas dataframe |
+| `weight_path` | string | File path of weights to be used by the RNNDetector for determining presence of bird sounds.
+| `Normalized_Sample_Rate` | int | Sampling rate that the audio files should all be normalized to.
+| `normalize_local_scores` | boolean | Set whether or not to normalize the local scores. 
+
+This function returns a dataframe of automated labels for the audio clips in audio_dir.
+
+Usage: `generate_automated_labels_microfaune(audio_dir, isolation_parameters, manual_id, weight_path, Normalized_Sample_Rate, normalize_local_scores)`
+
+
+### [`generate_automated_labels_birdnet`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)
+*Found in [`IsoAutio.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)*
+
+This function is called by `generate_automated_labels` if `isolation_parameters["model"]` is set to `birdnet`. It generates bird labels across a folder of audio clips using BirdNET-Lite given the isolation parameters.
+
+| Parameter | Type |  Description |
+| --- | --- | --- |
+| `audio_dir` | string | Directory with wav audio files |
+| `isolation_parameters` | dict | Python Dictionary that controls the various label creation techniques. |
+
+This function returns a dataframe of automated labels for the audio clips in audio_dir.
+
+Usage: `generate_automated_labels_birdnet(audio_dir, isolation_parameters)`
+
 
 ### [`kaleidoscope_conversion`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)
 *Found in [`IsoAutio.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)*
@@ -259,7 +319,7 @@ This function takes in a dataframe of efficiency statistics for multiple clips a
 | --- | --- | --- |
 | `statistics_df` | Dataframe | Dataframe of statistics value for multiple audio clips as returned by the function automated_labelling_statistics. |
 
-This function returns a dataframe of global statistics for the multiple audio clips' labelling.. 
+This function returns a dataframe of global statistics for the multiple audio clips' labelling. 
 
 Usage: `global_dataset_statistics(statistics_df)`
 
@@ -340,7 +400,7 @@ Usage: `dataset_Catch(automated_df, manual_df)`
 | --- | --- | --- |
 | `automated_df` | Dataframe | Dataframe of automated labels for multiple classes. |
 | `human_df` | Dataframe | Dataframe of human labels for multiple classes. |
-| `stats_type` | String | String that determines which statistis are of interest. |
+| `stats_type` | String | String that determines which statistics are of interest. |
 | `threshold` | float | Defines a threshold for certain types of statistics. |
 
 This function returns a dataframe with clip overlap statistics comparing automated and human labeling for multiple classes
@@ -348,7 +408,7 @@ This function returns a dataframe with clip overlap statistics comparing automat
 The `stats_type` parameter can be set as follows: 
 | Name | Description |
 | --- | --- |
-|`"IoU"`| Default. Compares the intersection over union of automated annotationswith respect to manual annotations for individual clips. | 
+|`"IoU"`| Default. Compares the intersection over union of automated annotations with respect to manual annotations for individual clips. | 
 |`"general"` | Consolidates all automated annotations and compares them to all of the manual annotations that have been consolidated across a clip. |
 
 Usage: `clip_statistics(automated_df, manual_df, stats_type, threshold)`
@@ -432,10 +492,12 @@ Usage: `plot_bird_label_scores(automated_df,human_df,save_fig)`
 
 All files in the `microfaune_package` directory are from the [microfaune repository](https://github.com/microfaune/microfaune), and their associated documentation can be found there.  
 
+All files in the `birdnet_lite` directory are from a [modified version](https://github.com/UCSD-E4E/BirdNET-Lite) of the [BirdNET Lite repository](https://github.com/kahst/BirdNET-Lite), and their associated documentation can be found there.  
+
 ## Examples
 *These examples were created on an Ubuntu 16.04 machine. Results may vary between different Operating Systems and Tensorflow versions.*
 
-Examples were created using this dictionary for the `isolation_parameters`: 
+Examples using Microfaune were created using this dictionary for the `isolation_parameters`: 
 
 ```json
 isolation_parameters = {
@@ -538,7 +600,7 @@ statistics_df = automated_labeling_statistics(automated_df,manual_df,stats_type 
 ![image](https://user-images.githubusercontent.com/44332326/127575467-cb9a8637-531e-4ed7-a15e-5b5b611ba92c.png)
 
 
-### Function that takes the statistical ouput of all of the clips and gets the equivalent global scores 
+### Function that takes the statistical output of all of the clips and gets the equivalent global scores 
 ```python
 global_dataset_statistics(statistics_df)
 ```
@@ -564,7 +626,7 @@ stats_df = automated_labeling_statistics(automated_df,manual_df,stats_type = "Io
 ```
 ![image](https://user-images.githubusercontent.com/44332326/127575771-9866f288-61cf-47c5-b9de-041b49e583d1.png)
 
-### Function that takes the output of dataset_IoU Statistics and ouputs a global count of true positives and false positives, as well as computing common metrics across the dataset
+### Function that takes the output of dataset_IoU Statistics and outputs a global count of true positives and false positives, as well as computing common metrics across the dataset
 ```python
 global_stats_df = global_statistics(stats_df)
 ```

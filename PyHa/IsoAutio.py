@@ -8,7 +8,7 @@ import os
 from .birdnet_lite.analyze import analyze
 from copy import deepcopy
 
-def build_isolation_parameters(
+def build_isolation_parameters_microfaune(
         technique,
         threshold_type,
         threshold_const,
@@ -16,9 +16,9 @@ def build_isolation_parameters(
         window_size=1.0,
         chunk_size=2.0):
     """
-    Wrapper function for all of the audio isolation techniques (Steinberg,
-    Simple, Stack, Chunk). Will call the respective function of
-    each technique based on isolation_parameters "technique" key.
+    Wrapper function for all of Microfaune's audio isolation techniques 
+    (Steinberg, Simple, Stack, Chunk). Will call the respective function 
+    of each technique based on isolation_parameters "technique" key.
 
     Args:
         technique (string)
@@ -53,7 +53,7 @@ def build_isolation_parameters(
     """
     isolation_parameters = {
         "technique": technique,
-        "treshold_type": threshold_type,
+        "threshold_type": threshold_type,
         "threshold_const": threshold_const,
         "threshold_min": threshold_min,
         "window_size": window_size,
@@ -80,9 +80,9 @@ def isolate(
         manual_id="bird",
         normalize_local_scores=False):
     """
-    Wrapper function for all of the audio isolation techniques (Steinberg,
-    Simple, Stack, Chunk). Will call the respective function of
-    each technique based on isolation_parameters "technique" key.
+    Wrapper function for all of Microfaune's audio isolation techniques 
+    (Steinberg, Simple, Stack, Chunk). Will call the respective function of each technique based on 
+    isolation_parameters "technique" key.
 
     Args:
         local_scores (list of floats)
@@ -536,7 +536,7 @@ def stack_isolate(
             # increasing this stack counter will be referred to as "pushing"
             stack_counter = stack_counter + 1
 
-        # when a score is below the treshold
+        # when a score is below the threshold
         else:
             # the case where it is the end of an annotation
             if stack_counter == 0 and annotation_start == 1:
@@ -651,7 +651,7 @@ def chunk_isolate(
         chunk_end = min((ndx + 1) * local_scores_per_chunk, len(local_scores))
         # breaking up the local_score array into a chunk.
         chunk = local_scores[int(chunk_start):int(chunk_end)]
-        # comparing the largest local score value to the treshold.
+        # comparing the largest local score value to the threshold.
         # the case for if we label the chunk as an annotation
         if max(chunk) >= thresh and max(
                 chunk) >= isolation_parameters["threshold_min"]:
@@ -785,7 +785,7 @@ def generate_automated_labels_microfaune(
 
 def generate_automated_labels_birdnet(audio_dir, isolation_parameters):
     """
-    Function that generated the bird labels for an audio file or across a
+    Function that generates the bird labels for an audio file or across a
     folder using the BirdNet-Lite model
 
     Args:
@@ -796,17 +796,54 @@ def generate_automated_labels_birdnet(audio_dir, isolation_parameters):
         isolation_parameters (dict)
             - Python Dictionary that controls the various label creation
               techniques. The keys it accepts are :
-              - output_path
-              - lat
-              - lon
-              - week
-              - overlap
-              - sensitivity
-              - min_conf
-              - custom_list
-              - filetype
-              - num_predictions
-              - write_to_csv
+              - output_path (string)
+                - Path to output folder. By default results are written into 
+                  the input folder
+                - default: None
+
+              - lat (float)
+                - Recording location latitude
+                - default: -1 (ignore)
+
+              - lon (float)
+                - Recording location longitude
+                - default: -1 (ignore)
+
+              - week (int)
+                - Week of the year when the recording was made
+                - Values in [1, 48] (4 weeks per month) 
+                - default: -1 (ignore)
+
+              - overlap (float)
+                - Overlap in seconds between extracted spectrograms
+                - Values in [0.5, 1.5]
+                - default: 0.0
+
+              - sensitivity (float)
+                - Detection sensitivity. Higher values result in higher sensitivity
+                - Values in [0.5, 1.5] 
+                - default: 1.0
+
+              - min_conf (float)
+                - Minimum confidence threshold
+                - Values in [0.01, 0.99]
+                - default: 0.1
+
+              - custom_list (string)
+                - Path to text file containing a list of species
+                - default: '' (not used if not provided)
+
+              - filetype (string)
+                - Filetype of soundscape recordings
+                - default: 'wav'
+
+              - num_predictions (int)
+                - Defines maximum number of written predictions in a given 3s segment
+                - default: 10
+
+              - write_to_csv (boolean)
+                - Set whether or not to write output to CSV
+                - default: False
 
     Returns:
         Dataframe of automated labels for the audio clip(s) in audio_dir.
@@ -822,7 +859,7 @@ def generate_automated_labels(
         Normalized_Sample_Rate=44100,
         normalize_local_scores=False):
     """
-    Function that generated the bird labels across a folder of audio clips
+    Function that generates the bird labels across a folder of audio clips
     given the isolation_parameters
 
     Args:
@@ -843,6 +880,9 @@ def generate_automated_labels(
         Normalized_Sample_Rate (int)
             - Sampling rate that the audio files should all be normalized to.
               Used only for the Microfaune model.
+        
+        normalize_local_scores (boolean)
+            - Set whether or not to normalize the local scores.
 
     Returns:
         Dataframe of automated labels for the audio clips in audio_dir.

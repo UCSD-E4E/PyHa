@@ -79,7 +79,7 @@ python3 analyze.py --i 'example/XC563936 - Soundscape.mp3' --lat 47.6766 --lon -
 
 Note: Please make sure to provide lat, lon, and week. BirdNET will work without these values, but the results might be less reliable.
 
-The results of the anlysis will be stored in a result file in CSV format. All confidence values are raw prediction scores and should be post-processed to eliminate occasional false-positive results.
+The results of the analysis will be stored in a result file in CSV format. All confidence values are raw prediction scores and should be post-processed to eliminate occasional false-positive results.
 
 # Contact us
 
