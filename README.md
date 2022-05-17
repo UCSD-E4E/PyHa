@@ -501,13 +501,14 @@ Examples using Microfaune were created using this dictionary for the `isolation_
 
 ```json
 isolation_parameters = {
-    "technique" : "steinberg",
-    "threshold_type" : "median",
-    "threshold_const" : 2.0,
-    "threshold_min" : 0.0,
-    "window_size" : 2.0,
-    "chunk_size" : 5.0
-}
+     "model" : "microfaune",
+     "technique" : "steinberg",
+     "threshold_type" : "median",
+     "threshold_const" : 2.0,
+     "threshold_min" : 0.0,
+     "window_size" : 2.0,
+     "chunk_size" : 5.0
+ }
 ```
 
 ### To generate automated labels and get manual labels: 
