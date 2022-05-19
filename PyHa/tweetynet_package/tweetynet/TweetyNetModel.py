@@ -99,8 +99,9 @@ class TweetyNetModel:
                 local_score.extend([x for x in output[0, 1, :]])
                 #add option to normalize
                 #be able to create df if interested
-                pred = torch.max(output, dim=1)[1].cpu().detach().numpy()
+                pred = torch.argmax(output, dim=1)
                 #pred = torch.argmax(output, dim=1)
+                print("pred shape", pred.shape)
                 pred = pred.reshape(pred.shape[1])
                 labels = labels.reshape(labels.shape[1])
                 #print(uids.shape, pred.shape, labels.shape)
