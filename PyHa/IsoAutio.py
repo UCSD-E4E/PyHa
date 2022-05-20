@@ -670,7 +670,7 @@ def generate_automated_labels_microfaune(
         isolation_parameters,
         manual_id="bird",
         weight_path=None,
-        Normalized_Sample_Rate=44100,
+        normalized_sample_rate=44100,
         normalize_local_scores=False):
     """
     Function that applies isolation technique on the local scores generated
@@ -692,7 +692,7 @@ def generate_automated_labels_microfaune(
             - File path of weights to be used by the RNNDetector for
               determining presence of bird sounds.
 
-        Normalized_Sample_Rate (int)
+        normalized_sample_rate (int)
             - Sampling rate that the audio files should all be normalized to.
 
     Returns:
@@ -732,11 +732,11 @@ def generate_automated_labels_microfaune(
         # Force everything into the human hearing range.
         # May consider reworking this function so that it upsamples as well
         try:
-            if SAMPLE_RATE != Normalized_Sample_Rate:
-                rate_ratio = Normalized_Sample_Rate / SAMPLE_RATE
+            if SAMPLE_RATE != normalized_sample_rate:
+                rate_ratio = normalized_sample_rate / SAMPLE_RATE
                 SIGNAL = scipy_signal.resample(
                     SIGNAL, int(len(SIGNAL) * rate_ratio))
-                SAMPLE_RATE = Normalized_Sample_Rate
+                SAMPLE_RATE = normalized_sample_rate
         except:
             print("Failed to Downsample" + audio_file)
             # resample produces unreadable float32 array so convert back
@@ -856,7 +856,7 @@ def generate_automated_labels(
         isolation_parameters,
         manual_id="bird",
         weight_path=None,
-        Normalized_Sample_Rate=44100,
+        normalized_sample_rate=44100,
         normalize_local_scores=False):
     """
     Function that generates the bird labels across a folder of audio clips
@@ -877,7 +877,7 @@ def generate_automated_labels(
             - File path of weights to be used by the model for
               determining presence of bird sounds.
 
-        Normalized_Sample_Rate (int)
+        normalized_sample_rate (int)
             - Sampling rate that the audio files should all be normalized to.
               Used only for the Microfaune model.
         
@@ -895,7 +895,7 @@ def generate_automated_labels(
                         isolation_parameters=isolation_parameters,
                         manual_id=manual_id,
                         weight_path=weight_path,
-                        Normalized_Sample_Rate=Normalized_Sample_Rate,
+                        normalized_sample_rate=normalized_sample_rate,
                         normalize_local_scores=normalize_local_scores)
     elif(isolation_parameters["model"] == 'birdnet'):
         # We need to delete the some keys from the isolation_parameters

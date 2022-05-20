@@ -7,6 +7,90 @@ import numpy as np
 import seaborn as sns
 from .IsoAutio import *
 
+def spectrogram_graph(
+        clip_name,
+        sample_rate,
+        samples,
+        automated_df=None,
+        premade_annotations_df=None,
+        premade_annotations_label="Human Labels",
+        save_fig=False):
+    """
+    Function that produces graphs with just the spectrogram of an audio 
+    clip. Now integrated with Pandas so you can visualize human and
+    automated annotations.
+
+    Args:
+        clip_name (string)
+            - Directory of the clip.
+
+        sample_rate (int)
+            - Sample rate of the audio clip, usually 44100.
+
+        samples (list of ints)
+            - Each of the samples from the audio clip.
+
+        save_fig (boolean)
+            - Whether the clip should be saved in a directory as a png file.
+
+    Returns:
+        None
+    """
+    # Calculating the length of the audio clip
+    duration = samples.shape[0] / sample_rate
+    time_stamps = np.arange(0, duration, step=1)
+
+    # general graph features
+    fig, axs = plt.subplots(1)
+    fig.set_figwidth(22)
+    fig.set_figheight(5)
+    fig.suptitle("Spectrogram for " + clip_name)
+
+    # spectrogram plot
+    # Will require the input of a pandas dataframe
+    Pxx, freqs, bins, im = axs.specgram(
+                                            samples,
+                                            Fs=sample_rate,
+                                            NFFT=4096,
+                                            noverlap=2048,
+                                            window=np.hanning(4096),
+                                            cmap="ocean")
+    axs.set_xlim(0, duration)
+    axs.set_ylim(0, 22050)
+    axs.grid(which='major', linestyle='-')
+
+    # if automated_df is not None:
+    if not automated_df.empty:
+        ndx = 0
+        for row in automated_df.index:
+            minval = automated_df["OFFSET"][row]
+            maxval = automated_df["OFFSET"][row] + \
+                automated_df["DURATION"][row]
+            axs.axvspan(xmin=minval, xmax=maxval, facecolor="yellow",
+                           alpha=0.4, label="_" * ndx + "Automated Labels")
+            ndx += 1
+
+    # Adding in the optional premade annotations from a Pandas DataFrame
+    if not premade_annotations_df.empty:
+        ndx = 0
+        for row in premade_annotations_df.index:
+            minval = premade_annotations_df["OFFSET"][row]
+            maxval = premade_annotations_df["OFFSET"][row] + \
+                premade_annotations_df["DURATION"][row]
+            axs.axvspan(
+                xmin=minval,
+                xmax=maxval,
+                facecolor="red",
+                alpha=0.4,
+                label="_" *
+                ndx +
+                premade_annotations_label)
+            ndx += 1
+    axs.legend()
+
+    # save graph
+    if save_fig:
+        plt.savefig(clip_name + "_Local_Score_Graph.png")
 
 def local_line_graph(
         local_scores,
@@ -162,6 +246,7 @@ def local_score_visualization(
         premade_annotations_df (Dataframe)
             - Dataframe of annotations to be displayed that have been created
               outside of the function.
+        
         premade_annotations_label (string)
             - String that serves as the descriptor for the premade_annotations
               dataframe.
@@ -187,7 +272,7 @@ def local_score_visualization(
     except BaseException:
         print("Failure in loading", clip_path)
         return
-    # downsample the audio if the sample rate > 44.1 kHz
+    # Downsample the audio if the sample rate > 44.1 kHz
     # Force everything into the human hearing range.
     try:
         if SAMPLE_RATE > 44100:
@@ -202,56 +287,82 @@ def local_score_visualization(
     # Converting to Mono if Necessary
     if len(SIGNAL.shape) == 2:
         # averaging the two channels together
-        SIGNAL = SIGNAL.sum(axis=1) / 2
+        SIGNAL = SIGNAL.sum(axis=1) / 2 
 
-    # Initializing the detector to baseline or with retrained weights
-    if weight_path is None:
-        # Microfaune RNNDetector class
-        detector = RNNDetector()
-    else:
-        try:
-            # Initializing Microfaune hybrid CNN-RNN with new weights
-            detector = RNNDetector(weight_path)
-        except BaseException:
-            print("Error in weight path:", weight_path)
-            return
-    try:
-        # Computing Mel Spectrogram of the audio clip
-        microfaune_features = detector.compute_features([SIGNAL])
-        # Running the Mel Spectrogram through the RNN
-        global_score, local_score = detector.predict(microfaune_features)
-    except BaseException:
-        print(
-            "Skipping " +
-            clip_path +
-            " due to error in Microfaune Prediction")
-
+    # Generate parameters for specific models
+    local_scores = None
+    if(isolation_parameters is not None):
+        if(isolation_parameters["model"] == 'microfaune'):
+            # Initializing the detector to baseline or with retrained weights
+            if weight_path is None:
+                # Microfaune RNNDetector class
+                detector = RNNDetector()
+            else:
+                try:
+                    # Initializing Microfaune hybrid CNN-RNN with new weights
+                    detector = RNNDetector(weight_path)
+                except BaseException:
+                    print("Error in weight path:", weight_path)
+                    return
+            try:
+                # Computing Mel Spectrogram of the audio clip
+                microfaune_features = detector.compute_features([SIGNAL])
+                # Running the Mel Spectrogram through the RNN
+                global_score, local_score = detector.predict(microfaune_features)
+                local_scores = local_score[0].tolist()
+            except BaseException:
+                print(
+                    "Skipping " +
+                    clip_path +
+                    " due to error in Microfaune Prediction")
+    
     # In the case where the user wants to look at automated bird labels
     if premade_annotations_df is None:
-        premade_annotations_df = pd.DataFrame()
-    if automated_df:
-        automated_df = isolate(
-            local_score[0],
-            SIGNAL,
-            SAMPLE_RATE,
-            "Doesn't",
-            "Matter",
-            isolation_parameters,
-            normalize_local_scores=normalize_local_scores)
+            premade_annotations_df = pd.DataFrame()
+
+    # Generate labels based on the model
+    if (automated_df):
+        # For Microfaune
+        if (local_scores is not None):
+            automated_df = isolate(
+                    local_score[0],
+                    SIGNAL,
+                    SAMPLE_RATE,
+                    audio_dir = "",
+                    filename = "",
+                    isolation_parameters=isolation_parameters)
+        else:  
+            automated_df = generate_automated_labels(
+                audio_dir=clip_path,
+                isolation_parameters=isolation_parameters,
+                weight_path=weight_path,
+                normalized_sample_rate=SAMPLE_RATE,
+                normalize_local_scores=normalize_local_scores)
     else:
         automated_df = pd.DataFrame()
 
-    local_line_graph(
-        local_score[0].tolist(),
-        clip_path,
-        SAMPLE_RATE,
-        SIGNAL,
-        automated_df,
-        premade_annotations_df,
-        premade_annotations_label=premade_annotations_label,
-        log_scale=log_scale,
-        save_fig=save_fig,
-        normalize_local_scores=normalize_local_scores)
+    # If local scores were generated, plot them AND spectrogram
+    if (local_scores is not None):
+        local_line_graph(
+                local_scores,
+                clip_path,
+                SAMPLE_RATE,
+                SIGNAL,
+                automated_df,
+                premade_annotations_df,
+                premade_annotations_label=premade_annotations_label,
+                log_scale=log_scale,
+                save_fig=save_fig,
+                normalize_local_scores=normalize_local_scores)
+    else: 
+        spectrogram_graph(
+            clip_path,
+            SAMPLE_RATE,
+            SIGNAL,
+            automated_df=automated_df,
+            premade_annotations_df=premade_annotations_df,
+            premade_annotations_label=premade_annotations_label,
+            save_fig=save_fig)  
 
 
 def plot_bird_label_scores(automated_df, human_df, save_fig=False):
