@@ -226,15 +226,15 @@ def local_score_visualization(
         weight_path=None,
         premade_annotations_df=None,
         premade_annotations_label="Human Labels",
-        automated_df=False,
+        automated_df=None,
         isolation_parameters=None,
         log_scale=False,
         save_fig=False,
         normalize_local_scores=False):
     """
-    Wrapper function for the local_line_graph function for ease of use.
-    Processes clip for local scores to be used for the local_line_graph
-    function.
+    Wrapper function for the local_line_graph and spectrogram_graph functions
+    for ease of use. Processes clip for local scores to be used for the 
+    local_line_graph function.
 
     Args:
         clip_path (string)
@@ -321,7 +321,7 @@ def local_score_visualization(
             premade_annotations_df = pd.DataFrame()
 
     # Generate labels based on the model
-    if (automated_df):
+    if (automated_df is not None and automated_df != False):
         # For Microfaune
         if (local_scores is not None):
             automated_df = isolate(
@@ -338,6 +338,10 @@ def local_score_visualization(
                 weight_path=weight_path,
                 normalized_sample_rate=SAMPLE_RATE,
                 normalize_local_scores=normalize_local_scores)
+        
+        if (len(automated_df["IN FILE"].to_list()) > 1):
+            print("\nWarning: This function only generates spectrograms for one clip. " + 
+                  "automated_df has annotations for more than one clip.")
     else:
         automated_df = pd.DataFrame()
 
