@@ -16,7 +16,7 @@ def spectrogram_graph(
         premade_annotations_label="Human Labels",
         save_fig=False):
     """
-    Function that produces graphs with just the spectrogram of an audio
+    Function that produces graphs with the spectrogram of an audio
     clip. Now integrated with Pandas so you can visualize human and
     automated annotations.
 
@@ -29,6 +29,16 @@ def spectrogram_graph(
 
         samples (list of ints)
             - Each of the samples from the audio clip.
+
+        automated_df (Dataframe)
+            - Dataframe of automated labelling of the clip.
+
+        premade_annotations_df (Dataframe)
+            - Dataframe labels that have been made outside of the scope of this
+              function.
+
+        premade_annotations_label (string)
+            - Descriptor of premade_annotations_df
 
         save_fig (boolean)
             - Whether the clip should be saved in a directory as a png file.
@@ -321,7 +331,10 @@ def spectrogram_visualization(
             premade_annotations_df = pd.DataFrame()
 
     # Generate labels based on the model
-    if (automated_df is not None and automated_df != False):
+    if (automated_df is not None):
+        if (isinstance(automated_df, bool) and not automated_df):
+            automated_df = pd.DataFrame()
+            pass
         # For Microfaune
         if (local_scores is not None):
             automated_df = isolate(

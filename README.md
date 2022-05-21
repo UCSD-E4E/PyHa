@@ -198,12 +198,12 @@ This function generates labels across a folder of audio clips determined by the 
 | `isolation_parameters` | dict | Python Dictionary that controls the various label creation techniques. |
 | `manual_id` | string | controls the name of the class written to the pandas dataframe |
 | `weight_path` | string | File path of weights to be used by the RNNDetector for determining presence of bird sounds.
-| `Normalized_Sample_Rate` | int | Sampling rate that the audio files should all be normalized to.
+| `normalized_sample_rate` | int | Sampling rate that the audio files should all be normalized to.
 | `normalize_local_scores` | boolean | Set whether or not to normalize the local scores.
 
 This function returns a dataframe of automated labels for the audio clips in audio_dir.
 
-Usage: `generate_automated_labels(audio_dir, isolation_parameters, manual_id, weight_path, Normalized_Sample_Rate, normalize_local_scores)`
+Usage: `generate_automated_labels(audio_dir, isolation_parameters, manual_id, weight_path, normalized_sample_rate, normalize_local_scores)`
 
 
 ### [`generate_automated_labels_microfaune`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)
@@ -217,12 +217,12 @@ This function is called by `generate_automated_labels` if `isolation_parameters[
 | `isolation_parameters` | dict | Python Dictionary that controls the various label creation techniques. |
 | `manual_id` | string | controls the name of the class written to the pandas dataframe |
 | `weight_path` | string | File path of weights to be used by the RNNDetector for determining presence of bird sounds.
-| `Normalized_Sample_Rate` | int | Sampling rate that the audio files should all be normalized to.
+| `normalized_sample_rate` | int | Sampling rate that the audio files should all be normalized to.
 | `normalize_local_scores` | boolean | Set whether or not to normalize the local scores.
 
 This function returns a dataframe of automated labels for the audio clips in audio_dir.
 
-Usage: `generate_automated_labels_microfaune(audio_dir, isolation_parameters, manual_id, weight_path, Normalized_Sample_Rate, normalize_local_scores)`
+Usage: `generate_automated_labels_microfaune(audio_dir, isolation_parameters, manual_id, weight_path, normalized_sample_rate, normalize_local_scores)`
 
 
 ### [`generate_automated_labels_birdnet`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)
@@ -431,6 +431,25 @@ Usage: `class_statistics(clip_statistics)`
 <details>
  <summary>visualizations.py file</summary>
 
+### [`spectrogram_graph`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/visualizations.py)
+*Found in [`visualizations.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/visualizations.py)*
+
+This function produces graphs with the spectrogram of an audio clip. It is now integrated with Pandas so you can visualize human and automated annotations.
+
+| Parameter | Type |  Description |
+| `clip_name`  | string | Directory of the clip. |
+| `sample_rate` | int | Sample rate of the audio clip, usually 44100. |
+| `samples` | list of ints | Each of the samples from the audio clip. |
+| `automated_df` | Dataframe | Dataframe of automated labelling of the clip. |
+| `premade_annotations_df` | Dataframe | Dataframe labels that have been made outside of the scope of this function. |
+| `premade_annotations_label` | string | Descriptor of premade_annotations_df |
+| `save_fig`  | boolean | Whether the clip should be saved in a directory as a png file. |
+
+This function does not return anything.
+
+Usage: `spectrogram_graph(clip_name, sample_rate, samples, automated_df, premade_annotations_df, premade_annotations_label, save_fig, normalize_local_scores)`
+
+
 ### [`local_line_graph`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/visualizations.py)
 *Found in [`visualizations.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/visualizations.py)*
 
@@ -455,7 +474,7 @@ Usage: `local_line_graph(local_scores, clip_name, sample_rate, samples, automate
 ### [`spectrogram_visualization`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/visualizations.py)
 *Found in [`visualizations.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/visualizations.py)*
 
-This is the wrapper function for the local_line_graph function for ease of use. Processes clip for local scores to be used for the local_line_graph function.
+This is the wrapper function for the local_line_graph and spectrogram_graph functions for ease of use. Processes clip for local scores to be used for the local_line_graph function.
 
 | Parameter | Type |  Description |
 | --- | --- | --- |
@@ -487,6 +506,23 @@ This function returns a dataframe with statistics comparing the automated and hu
 
 Usage: `binary_visualization(automated_df,human_df,save_fig)`
 
+### [`annotation_duration_histogram`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/visualizations.py)
+*Found in [`visualizations.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/visualizations.py)*
+
+This function builds a histogram to visualize the length of annotations.
+
+| Parameter | Type |  Description |
+| --- | --- | --- |
+| `annotation_df` | Dataframe | Dataframe of automated or human labels. |
+| `n_bins` | int | Number of histogram bins in the final histogram. |
+| `min_length` | int | Minimum length of the audio clip. |
+| `max_length` | int | Maximum length of the audio clip. |
+| `save_fig` | boolean | Whether or not the plot should be saved within a file. |
+| `filename` | String | Name of the file to save the histogram to. |
+
+This function returns a histogram with the length of the annotations.
+
+Usage: `binary_visualization(annotation_df, n_bins, min_length, max_length, save_fig, filename)`
 </details>
 
 
