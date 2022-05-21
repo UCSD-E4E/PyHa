@@ -16,7 +16,7 @@ def spectrogram_graph(
         premade_annotations_label="Human Labels",
         save_fig=False):
     """
-    Function that produces graphs with just the spectrogram of an audio 
+    Function that produces graphs with just the spectrogram of an audio
     clip. Now integrated with Pandas so you can visualize human and
     automated annotations.
 
@@ -221,7 +221,7 @@ def local_line_graph(
 # takes the automated_df as input same as it does with the manual dataframe.
 
 
-def local_score_visualization(
+def spectrogram_visualization(
         clip_path,
         weight_path=None,
         premade_annotations_df=None,
@@ -233,7 +233,7 @@ def local_score_visualization(
         normalize_local_scores=False):
     """
     Wrapper function for the local_line_graph and spectrogram_graph functions
-    for ease of use. Processes clip for local scores to be used for the 
+    for ease of use. Processes clip for local scores to be used for the
     local_line_graph function.
 
     Args:
@@ -246,7 +246,7 @@ def local_score_visualization(
         premade_annotations_df (Dataframe)
             - Dataframe of annotations to be displayed that have been created
               outside of the function.
-        
+
         premade_annotations_label (string)
             - String that serves as the descriptor for the premade_annotations
               dataframe.
@@ -287,7 +287,7 @@ def local_score_visualization(
     # Converting to Mono if Necessary
     if len(SIGNAL.shape) == 2:
         # averaging the two channels together
-        SIGNAL = SIGNAL.sum(axis=1) / 2 
+        SIGNAL = SIGNAL.sum(axis=1) / 2
 
     # Generate parameters for specific models
     local_scores = None
@@ -315,7 +315,7 @@ def local_score_visualization(
                     "Skipping " +
                     clip_path +
                     " due to error in Microfaune Prediction")
-    
+
     # In the case where the user wants to look at automated bird labels
     if premade_annotations_df is None:
             premade_annotations_df = pd.DataFrame()
@@ -331,16 +331,16 @@ def local_score_visualization(
                     audio_dir = "",
                     filename = "",
                     isolation_parameters=isolation_parameters)
-        else:  
+        else:
             automated_df = generate_automated_labels(
                 audio_dir=clip_path,
                 isolation_parameters=isolation_parameters,
                 weight_path=weight_path,
                 normalized_sample_rate=SAMPLE_RATE,
                 normalize_local_scores=normalize_local_scores)
-        
-        if (len(automated_df["IN FILE"].to_list()) > 1):
-            print("\nWarning: This function only generates spectrograms for one clip. " + 
+
+        if (len(automated_df["IN FILE"].unique()) > 1):
+            print("\nWarning: This function only generates spectrograms for one clip. " +
                   "automated_df has annotations for more than one clip.")
     else:
         automated_df = pd.DataFrame()
@@ -358,7 +358,7 @@ def local_score_visualization(
                 log_scale=log_scale,
                 save_fig=save_fig,
                 normalize_local_scores=normalize_local_scores)
-    else: 
+    else:
         spectrogram_graph(
             clip_path,
             SAMPLE_RATE,
@@ -366,13 +366,13 @@ def local_score_visualization(
             automated_df=automated_df,
             premade_annotations_df=premade_annotations_df,
             premade_annotations_label=premade_annotations_label,
-            save_fig=save_fig)  
+            save_fig=save_fig)
 
 
-def plot_bird_label_scores(automated_df, human_df, save_fig=False):
+def binary_visualization(automated_df, human_df, save_fig=False):
     """
     Function to visualize automated and human annotation scores across an audio
-    clip.
+    clip in the form of multiple binary plots that represent different metrics.
 
     Args:
         automated_df (Dataframe)
@@ -411,7 +411,7 @@ def plot_bird_label_scores(automated_df, human_df, save_fig=False):
                 0))
         bot_arr[minval:maxval] = 1
     for row in human_df.index:
-        
+
         minval = int(round(human_df["OFFSET"][row] * SAMPLE_RATE, 0))
         maxval = int(
             round(
@@ -476,8 +476,8 @@ def annotation_duration_histogram(
     title = "Annotation Length Histogram",
     filename = "annotation_histogram.png"):
     """
-    Function to build a histogram so a user can visually see the length of 
-    the annotations they are working with. 
+    Function to build a histogram so a user can visually see the length of
+    the annotations they are working with.
 
     Args:
         annotation_df (Dataframe)
@@ -486,7 +486,7 @@ def annotation_duration_histogram(
         n_bins (int)
             - number of histogram bins in the final histogram
             - default: 6
-            
+
         min_length (int)
             - minimum length of the audio clip
             - default: 0s
@@ -529,5 +529,5 @@ def annotation_duration_histogram(
     sns_hist.set(xlabel="Annotation Length (s)", ylabel = "Count")
 
     # Save the histogram if specified
-    if save_fig: 
+    if save_fig:
         sns_hist.get_figure().savefig(filename)
