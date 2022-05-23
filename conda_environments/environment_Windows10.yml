@@ -141,10 +141,6 @@ dependencies:
   - setuptools=49.6.0=py37h03978a9_3
   - six=1.15.0=pyh9f0ad1d_0
   - sqlite=3.35.5=h8ffe710_0
-  - tensorboard=1.14.0=py37_0
-  - tensorflow=1.14.0=h1f41ff6_0
-  - tensorflow-base=1.14.0=py37hc8dfbb8_0
-  - tensorflow-estimator=1.14.0=py37h5ca1d4c_0
   - termcolor=1.1.0=py_2
   - terminado=0.9.4=py37h03978a9_0
   - testpath=0.4.4=py_0
@@ -170,4 +166,25 @@ dependencies:
   - zipp=3.4.1=pyhd8ed1ab_0
   - zlib=1.2.11=h62dcd97_1010
   - zstd=1.4.9=h6255e5f_0
+  - pip:
+    - astunparse==1.6.3
+    - cachetools==5.0.0
+    - flatbuffers==2.0
+    - google-auth==2.6.6
+    - google-auth-oauthlib==0.4.6
+    - keras==2.8.0
+    - libclang==14.0.1
+    - oauthlib==3.2.0
+    - opt-einsum==3.3.0
+    - pyasn1==0.4.8
+    - pyasn1-modules==0.2.8
+    - requests-oauthlib==1.3.1
+    - rsa==4.8
+    - seaborn==0.11.2
+    - tensorboard==2.8.0
+    - tensorboard-data-server==0.6.1
+    - tensorboard-plugin-wit==1.8.1
+    - tensorflow==2.8.0
+    - tensorflow-io-gcs-filesystem==0.25.0
+    - tf-estimator-nightly==2.8.0.dev2021122109
 prefix: C:\Users\Jacob\miniconda3\envs\species-id
