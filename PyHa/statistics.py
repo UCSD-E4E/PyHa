@@ -39,9 +39,9 @@ def annotation_duration_statistics(df):
     return pd.DataFrame.from_dict([entry])
 
 
-def bird_label_scores(automated_df, human_df):
+def clip_general(automated_df, human_df):
     """
-    Function to generate a dataframe with statistics relating to the efficiency
+    Function to generate a dataframe with statistics relating to the efficacy
     of the automated label compared to the human label.
     These statistics include true positive, false positive, false negative,
     true negative, union, precision, recall, F1, and Global IoU. For general
@@ -58,6 +58,7 @@ def bird_label_scores(automated_df, human_df):
         Dataframe with general clip overlap statistics comparing the automated
         and human labeling.
     """
+    # This looks at one class across one clip
     clip_class = human_df["MANUAL ID"]
     clip_class = list(dict.fromkeys(clip_class))[0]
     duration = automated_df["CLIP LENGTH"].to_list()[0]
@@ -160,12 +161,8 @@ def automated_labeling_statistics(
     """
     Function that will allow users to easily pass in two dataframes of manual
     labels and automated labels, and a dataframe is returned with statistics
-    examining the efficiency of the automated labelling system compared to the
+    examining the efficacy of the automated labelling system compared to the
     human labels for multiple clips.
-
-    Calls bird_local_scores on corresponding audio clips to generate the
-    efficiency statistics for one specific clip which is then all put into one
-    dataframe of statistics for multiple audio clips.
 
     Args:
         automated_df (Dataframe)
@@ -176,9 +173,20 @@ def automated_labeling_statistics(
 
         stats_type (String)
             - String that determines which type of statistics are of interest
+            - options: "IoU", "general" 
+                - "IoU"
+                    - Compares the intersection over union of automated annotations
+                      with respect to manual annotations for individual clips.
+                - "general"
+                    - Consolidates all automated annotations and compares them to all of
+                      the manual annotations that have been consolidated across a clip.
+            - default: "IoU"
 
         threshold (Float)
-            - Defines a threshold for certain types of statistics such as
+            - Defines a threshold for certain types of statistics such as an
+            IoU threshold for determining true positives, false positives, and
+            false negatives.
+            - default: 0.5
 
     Returns:
         Dataframe of statistics comparing automated labels and human labels for
@@ -196,7 +204,7 @@ def automated_labeling_statistics(
         clip_manual_df = manual_df[manual_df["IN FILE"] == clip]
         try:
             if stats_type == "general":
-                clip_stats_df = bird_label_scores(
+                clip_stats_df = clip_general(
                     clip_automated_df, clip_manual_df)
                 if statistics_df.empty:
                     statistics_df = clip_stats_df
@@ -218,20 +226,23 @@ def automated_labeling_statistics(
     return statistics_df
 
 
-def global_dataset_statistics(statistics_df):
+def global_dataset_statistics(statistics_df, manual_id = "bird"):
     """
-    Function that takes in a dataframe of efficiency statistics for multiple
+    Function that takes in a dataframe of efficacy statistics for multiple
     clips and outputs their global values.
 
     Args:
         statistics_df (Dataframe)
             - Dataframe of statistics value for multiple audio clips as
               returned by the function automated_labelling_statistics.
+        manual_id (String)
+            - String to control the "MANUAL ID" column of the csv file
+              format that is used in PyHa. Defaulted to "bird" since the
+              package started out with binary bird classification.
 
     Returns:
         Dataframe of global statistics for the multiple audio clips' labelling.
     """
-    class_id = statistics_df["MANUAL ID"][0]
     tp_sum = statistics_df["TRUE POSITIVE"].sum()
     fp_sum = statistics_df["FALSE POSITIVE"].sum()
     fn_sum = statistics_df["FALSE NEGATIVE"].sum()
@@ -241,7 +252,7 @@ def global_dataset_statistics(statistics_df):
     recall = tp_sum / (tp_sum + fn_sum)
     f1 = 2 * (precision * recall) / (precision + recall)
     IoU = tp_sum / union_sum
-    entry = {'MANUAL ID': class_id,
+    entry = {'MANUAL ID': manual_id,
              'PRECISION': round(precision, 6),
              'RECALL': round(recall, 6),
              'F1': round(f1, 6),
@@ -371,7 +382,8 @@ def matrix_IoU_Scores(IoU_Matrix, manual_df, threshold):
 
         threshold (float)
             - IoU threshold for determining true positives, false
-                            positives, and false negatives.
+              positives, and false negatives.
+            - default: 0.5
 
     Returns:
         Dataframe of clip statistics such as True Positive, False Negative,
@@ -581,7 +593,8 @@ def clip_catch(automated_df, manual_df):
 #    IoU_Statistics.reset_index(inplace = True, drop = True)
 #    return IoU_Statistics
 
-def global_IoU_Statistics(statistics_df):
+# Consider adding in a new manual_id parameter here
+def global_statistics(statistics_df, manual_id = 'N/A'):
     """
     Function that takes the output of dataset_IoU Statistics and outputs a
     global count of true positives and false positives, as well as computing \
@@ -590,6 +603,11 @@ def global_IoU_Statistics(statistics_df):
     Args:
         statistics_df (Dataframe)
             - Dataframe of matrix IoU scores for multiple clips.
+        
+        manual_id (String)
+            - String to control the "MANUAL ID" column of the csv file
+              format that is used in PyHa.
+            - default: "N/A"
 
     Returns:
         Dataframe of global IoU statistics which include the number of true
@@ -597,7 +615,7 @@ def global_IoU_Statistics(statistics_df):
         Recall, and F1 metrics as well
     """
 
-    data_class = statistics_df["MANUAL ID"][0]
+    #data_class = statistics_df["MANUAL ID"][0]
     # taking the sum of the number of true positives and false positives.
     tp_sum = statistics_df["TRUE POSITIVE"].sum()
     fn_sum = statistics_df["FALSE NEGATIVE"].sum()
@@ -614,7 +632,7 @@ def global_IoU_Statistics(statistics_df):
         recall = 0
         f1 = 0
     # building a dictionary of the above calculations
-    entry = {'MANUAL ID': data_class,
+    entry = {'MANUAL ID': manual_id,
              'TRUE POSITIVE': tp_sum,
              'FALSE NEGATIVE': fn_sum,
              'FALSE POSITIVE': fp_sum,
@@ -666,34 +684,100 @@ def dataset_Catch(automated_df, manual_df):
     return manual_df_with_Catch
 
 
-# I am going to wait on showing off this function since we don't have any
-# multi-class classifiers yet.
-def dataset_IoU_Statistics(automated_df, manual_df, threshold=0.5):
+def clip_statistics(
+        automated_df,
+        manual_df, 
+        stats_type = "IoU", 
+        threshold = 0.5):
+    """
+    Function to generate a dataframe containing efficacy statistics of automated
+    labeling compared to human labels for multiple classes.
 
-    # finding the number of unique classes.
-    class_list = manual_df["MANUAL ID"].to_list()
-    class_list = list(dict.fromkeys(class_list))
+    Calls automated_labeling_statistics on individual classes to identify
+    the overlapping human and automated labels, then concats the dataframes.
 
-    # initializing the output dataframes
-    master_clip_stats_df = pd.DataFrame()
-    master_global_stats_df = pd.DataFrame()
+    Args: 
+        automated_df (Dataframe)
+            - Dataframe of automated labels for multiple classes.
 
-    # Looping through each class
-    for class_id in class_list:
-        # Isolating the class from the
-        class_automated_df = automated_df[
-                                automated_df[
-                                    "MANUAL_ID"] == class_id]
-        class_manual_df = manual_df[manual_df["MANUAL ID"] == class_id]
-        class_stats_df = class_IoU_Statistics(
-            class_automated_df, class_manual_df, threshold=threshold)
-        class_global_stats_df = global_IoU_Statistics(class_stats_df)
-        if master_clip_stats_df.empty:
-            master_clips_stats_df = class_stats_df
-        if master_global_stats_df.empty:
-            master_global_stats_df = class_global_stats_df
+        manual_df (Dataframe)
+            - Dataframe of human labels for multiple classes.
+        
+        stats_type (String)
+            - String that determines which type of statistics are of interest
+            - options: "IoU", "general" 
+                - "IoU"
+                    - Compares the intersection over union of automated annotations
+                      with respect to manual annotations for individual clips.
+                - "general"
+                    - Consolidates all automated annotations and compares them to all of
+                      the manual annotations that have been consolidated across a clip.
+            - default: "IoU"
+
+        threshold (Float)
+            - Defines a threshold for certain types of statistics such as an
+              IoU threshold for determining true positives, false positives, and
+              false negatives.
+            - default: 0.5
+    
+    Returns: 
+        Dataframe with clip overlap statistics comparing automated and human 
+        labeling for multiple classes.
+    """
+    # Creating a list of classes from the automated dataframe
+    automated_class_list = automated_df["MANUAL ID"].to_list()
+    automated_class_list = list(dict.fromkeys(automated_class_list))
+    # Creating a list of classes from the manual dataframe
+    manual_class_list = manual_df["MANUAL ID"].to_list()
+    manual_class_list = list(dict.fromkeys(manual_class_list))
+    # Finding the intersection between the manual and automated classes
+    class_list = np.intersect1d(automated_class_list,manual_class_list)
+    
+    # Initializing the output dataframe
+    clip_statistics = pd.DataFrame()
+    # Looping through each class and comparing the automated labels to the manual labels
+    for class_ in class_list:
+        #print(class_)
+        # isolating the current class of interest
+        temp_manual_class_df = manual_df[manual_df["MANUAL ID"] == class_]
+        temp_automated_class_df = automated_df[automated_df["MANUAL ID"] == class_]
+        # The case if clip_statistics hasn't been filled yet
+        if clip_statistics.empty:
+            clip_statistics = automated_labeling_statistics(temp_automated_class_df, temp_manual_class_df, stats_type = stats_type, threshold = threshold)
         else:
-            master_clip_stats_df = master_clip_stats_df.append(class_stats_df)
-            master_global_stats_df = master_global_stats_df.append(
-                class_global_stats_df)
-    return master_clip_stats_df, master_global_stats_df
+            temp_df = automated_labeling_statistics(temp_automated_class_df, temp_manual_class_df, stats_type = stats_type, threshold = threshold)
+            clip_statistics = clip_statistics.append(temp_df)
+    clip_statistics.reset_index(inplace=True,drop=True)
+    return clip_statistics
+
+def class_statistics(clip_statistics):
+    """
+    Function that takes in a dataframe of efficacy statistics for multiple 
+    classes and outputs global efficacy values for each class.
+
+    Calls global_statistics on individual classes, then concats the dataframes.
+
+    Args: 
+        clip_statistics (Dataframe)
+            - Dataframe of multi-class statistics values for audio clips as 
+              returned by the function clip_statistics.
+    
+    Returns:
+        Dataframe of global efficacy statistics for multiple classes.
+    """
+    # Initializing the output dataframe
+    class_statistics = pd.DataFrame()
+    # creating a list of the unique classes being passed in.
+    class_list = clip_statistics["MANUAL ID"].to_list()
+    class_list = list(dict.fromkeys(class_list))
+    for class_ in class_list:
+        #print(class_)
+        # isolating the current class of interest
+        class_df = clip_statistics[clip_statistics["MANUAL ID"] == class_]
+        if class_statistics.empty:
+            class_statistics = global_statistics(class_df, manual_id = class_)
+        else:
+            temp_df = global_statistics(class_df, manual_id = class_)
+            class_statistics = class_statistics.append(temp_df)
+    class_statistics.reset_index(inplace=True,drop=True)
+    return class_statistics
