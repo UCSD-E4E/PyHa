@@ -714,7 +714,7 @@ def generate_automated_labels(
             detector = RNNDetector(weight_path)
     elif ml_model == "tweetynet":
         device = torch.device('cpu')
-        detector = TweetyNetModel(2, (1, 86, 43), 43, device, binary = False)
+        detector = TweetyNetModel(2, (1, 86, 86), 86, device, binary = False)
     else:
         print("model \"{}\" does not exist".format(ml_model))
         return None
@@ -807,7 +807,6 @@ def generate_automated_labels(
     annotations.reset_index(inplace=True, drop=True)
     return annotations
 
-
 def kaleidoscope_conversion(df):
     """
     Function that strips away Pandas Dataframe columns necessary for PyHa
@@ -858,3 +857,146 @@ def kaleidoscope_conversion(df):
 
 
 #        annotation = annotation + annotation_chain_count - 1
+
+def generate_automated_labels_final(audio_dir,
+        isolation_parameters,
+        tweety_output = False,
+        manual_id="bird",
+        weight_path=None,
+        Normalized_Sample_Rate=44100,
+        normalize_local_scores=False):
+    return generate_automated_labels_tweetynet(
+        audio_dir,
+        isolation_parameters,
+        tweety_output,
+        manual_id,
+        weight_path,
+        Normalized_Sample_Rate,
+        normalize_local_scores)
+
+def generate_automated_labels_tweetynet(
+        audio_dir,
+        isolation_parameters,
+        tweety_output = False,
+        manual_id="bird",
+        weight_path=None,
+        Normalized_Sample_Rate=44100,
+        normalize_local_scores=False):
+    """
+    Function that applies isolation technique determined by
+    isolation_parameters dictionary across a folder of audio clips.
+
+    Args:
+        audio_dir (string)
+            - Directory with wav audio files.
+
+        isolation_parameters (dict)
+            - Python Dictionary that controls the various label creation
+              techniques.
+        
+        tweety_output (boolean) # may want to incorporate into isolation parameters
+            - True to use tweetynet's original output, or False to use 
+              isolation techniques.
+
+        manual_id (string)
+            - controls the name of the class written to the pandas dataframe.
+
+        weight_path (string)
+            - File path of weights to be used by TweetyNet for
+              determining presence of bird sounds.
+
+        Normalized_Sample_Rate (int)
+            - Sampling rate that the audio files should all be normalized to.
+
+        normalize_local_scores (boolean) # may want to incorporate into isolation parameters
+            - Flag to normalize the local scores.
+
+    Returns:
+        Dataframe of automated labels for the audio clips in audio_dir.
+    """
+
+    # init detector
+    # Use Default Microfaune Detector
+    # TODO
+    # Expand to neural networks beyond just microfaune
+    #Add flag to work for creating tweetynet model.
+    device = torch.device('cpu')
+    detector = TweetyNetModel(2, (1, 86, 86), 86, device)
+
+    # init labels dataframe
+    annotations = pd.DataFrame()
+    # generate local scores for every bird file in chosen directory
+    for audio_file in os.listdir(audio_dir):
+        # skip directories
+        if os.path.isdir(audio_dir + audio_file):
+            continue
+
+        # It is a bit awkward here to be relying on Microfaune's wave file
+        # reading when we want to expand to other frameworks,
+        # Likely want to change that in the future. Librosa had some troubles.
+
+        # Reading in the wave audio files
+        try:
+            SAMPLE_RATE, SIGNAL = audio.load_wav(audio_dir + audio_file)
+        except BaseException:
+            print("Failed to load", audio_file)
+            continue
+
+        # downsample the audio if the sample rate isn't 44.1 kHz
+        # Force everything into the human hearing range.
+        # May consider reworking this function so that it upsamples as well
+        if SAMPLE_RATE != Normalized_Sample_Rate:
+            rate_ratio = Normalized_Sample_Rate / SAMPLE_RATE
+            SIGNAL = scipy_signal.resample(
+                SIGNAL, int(len(SIGNAL) * rate_ratio))
+            SAMPLE_RATE = Normalized_Sample_Rate
+            # resample produces unreadable float32 array so convert back
+            # SIGNAL = np.asarray(SIGNAL, dtype=np.int16)
+
+        # convert stereo to mono if needed
+        # Might want to compare to just taking the first set of data.
+        if len(SIGNAL.shape) == 2:
+            SIGNAL = SIGNAL.sum(axis=1) / 2
+        # detection
+        try:
+            #Add flag to work with creating features for tweetynet.
+            tweetynet_features = compute_features([SIGNAL])
+            predictions, local_scores = detector.predict(tweetynet_features, model_weights=weight_path)
+        except BaseException as e:
+            print("Error in detection, skipping", audio_file)
+            print(e)
+            continue
+
+        try:
+            # Running moment to moment algorithm and appending to a master
+            # dataframe.
+            #Add tweetynet without isolation functions here 
+            if tweety_output:
+                new_entry = predictions_to_kaleidoscope(
+                    predictions, 
+                    SIGNAL, 
+                    audio_dir, 
+                    audio_file, 
+                    manual_id, 
+                    SAMPLE_RATE)
+            else:
+                new_entry = isolate(
+                    local_scores[0],
+                    SIGNAL,
+                    SAMPLE_RATE,
+                    audio_dir,
+                    audio_file,
+                    isolation_parameters,
+                    manual_id=manual_id,
+                    normalize_local_scores=normalize_local_scores)
+            # print(new_entry)
+            if annotations.empty:
+                annotations = new_entry
+            else:
+                annotations = annotations.append(new_entry)
+        except BaseException:
+            print("Error in isolating bird calls from", audio_file)
+            continue
+    # Quick fix to indexing
+    annotations.reset_index(inplace=True, drop=True)
+    return annotations

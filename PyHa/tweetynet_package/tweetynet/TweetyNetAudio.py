@@ -6,9 +6,27 @@ from math import *
 import scipy.signal as scipy_signal
 
 def downsampled_mono_audio(signal, sample_rate, normalized_sample_rate):
+    """downsample and mono audio
+
+        Parameters
+        ----------
+        signal: array-like
+            1-Dimendional array of the audio.
+        sample_rate: int
+            Sampling frequency in Hz of the signal.
+        normalized_sample_rate: int
+            Sampling frequency in Hz of the intended downsampled sample rate. 
+
+        Returns
+        -------
+        sample_rate: int
+            Sampling frequency in Hz of the downsampled signal. 
+        signal: array-like
+            1-Dimendional array of the downsampled audio.
+        
+    """
     if sample_rate > normalized_sample_rate:
         rate_ratio = normalized_sample_rate / sample_rate
-        print(rate_ratio)
         signal = scipy_signal.resample(
                 signal, int(len(signal)*rate_ratio))
         sample_rate = normalized_sample_rate
@@ -17,12 +35,6 @@ def downsampled_mono_audio(signal, sample_rate, normalized_sample_rate):
     if len(signal.shape) == 2:
         signal = signal[0]
     return sample_rate, signal
-
-def get_frames(x, hop_length):
-    return ((x) / hop_length) + 1#(x - frame_size)/hop_length + 1
-
-def get_time(frames, hop_length,sr): # outputs starttime of the frame
-    return float(((frames) * hop_length ))/sr
 
 def load_wav(path, decimate=None):
     """Load audio data.
@@ -43,18 +55,13 @@ def load_wav(path, decimate=None):
     fs, data = wavfile.read(path)
 
     data = data.astype(np.float32)
-    # print(data.shape)
     if len(data.shape) > 1: # stereo
-        # print(f'before mono {data.shape}')
         data = np.mean(data,axis = 1)
-        # print(f'post mono {data.shape}')
 
     if decimate is not None:
-        # print('decimate is not None')
         data = signal.decimate(data, decimate) # returns downsampled signal
         fs /= decimate
     else:
-        # print('decimate is None')
         pass
 
     return fs, data

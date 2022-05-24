@@ -224,7 +224,7 @@ def local_score_visualization(
                 return
     elif ml_model == "tweetynet":
         device = torch.device('cpu')
-        detector = TweetyNetModel(2, (1, 86, 43), 43, device, binary = False)
+        detector = TweetyNetModel(2, (1, 86, 86), 86, device, binary = False)
     else:
         print("model \"{}\" does not exist".format(ml_model))
         return None
@@ -276,6 +276,123 @@ def local_score_visualization(
         log_scale=log_scale,
         save_fig=save_fig,
         normalize_local_scores=normalize_local_scores)
+
+def local_score_visualization_tweetynet(
+        clip_path,
+        tweety_output=False,
+        weight_path=None,
+        premade_annotations_df=None,
+        premade_annotations_label="Human Labels",
+        automated_df=False,
+        isolation_parameters=None,
+        log_scale=False,
+        save_fig=False,
+        normalize_local_scores=False):
+    """
+    Wrapper function for the local_line_graph function for ease of use.
+    Processes clip for local scores to be used for the local_line_graph
+    function.
+
+    Args:
+        clip_path (string)
+            - Path to an audio clip.
+
+        tweety_output (boolean) # may want to incorporate into isolation parameters
+            - True to use tweetynet's original output, or False to use 
+
+        weight_path (string)
+            - Weights to be used for RNNDetector.
+
+        premade_annotations_df (Dataframe)
+            - Dataframe of annotations to be displayed that have been created
+              outside of the function.
+        premade_annotations_label (string)
+            - String that serves as the descriptor for the premade_annotations
+              dataframe.
+
+        automated_df (Dataframe)
+            - Whether the audio clip should be labelled by the isolate function
+              and subsequently plotted.
+
+        log_scale (boolean)
+            - Whether the axis for local scores should be logarithmically
+              scaled on the plot.
+
+        save_fig (boolean)
+            - Whether the plots should be saved in a directory as a png file.
+
+    Returns:
+        None
+    """
+
+    # Loading in the clip with Microfaune's built-in loading function
+    try:
+        SAMPLE_RATE, SIGNAL = audio.load_wav(clip_path)
+    except BaseException:
+        print("Failure in loading", clip_path)
+        return
+    # downsample the audio if the sample rate > 44.1 kHz
+    # Force everything into the human hearing range.
+    try:
+        if SAMPLE_RATE > 44100:
+            rate_ratio = 44100 / SAMPLE_RATE
+            SIGNAL = scipy_signal.resample(
+                SIGNAL, int(len(SIGNAL) * rate_ratio))
+            SAMPLE_RATE = 44100
+    except BaseException:
+        print("Failure in downsampling", clip_path)
+        return
+
+    # Converting to Mono if Necessary
+    if len(SIGNAL.shape) == 2:
+        # averaging the two channels together
+        SIGNAL = SIGNAL.sum(axis=1) / 2
+
+    # Initializing the detector to baseline or with retrained weights
+    device = torch.device('cpu')
+    detector = TweetyNetModel(2, (1, 86, 86), 86, device, binary = False)
+
+    try:
+        #need a function to convert a signal into a spectrogram and then window it
+        tweetynet_features = compute_features([SIGNAL])
+        predictions, local_score = detector.predict(tweetynet_features, model_weights=weight_path)
+    except BaseException:
+        print(
+            "Skipping " +
+            clip_path +
+            " due to error in Microfaune Prediction")
+
+    # In the case where the user wants to look at automated bird labels
+    if premade_annotations_df is None:
+        premade_annotations_df = pd.DataFrame()
+    if automated_df:
+        if tweety_output:
+            automated_df = predictions_to_kaleidoscope(predictions, SIGNAL, "Doesn't", "Doesn't", "Matter", SAMPLE_RATE)
+        else:
+            automated_df = isolate(
+                local_score[0],
+                SIGNAL,
+                SAMPLE_RATE,
+                "Doesn't",
+                "Matter",
+                isolation_parameters,
+                normalize_local_scores=normalize_local_scores)
+    else:
+        automated_df = pd.DataFrame()
+
+    local_line_graph(
+        local_score[0].tolist(),
+        clip_path,
+        SAMPLE_RATE,
+        SIGNAL,
+        automated_df,
+        premade_annotations_df,
+        premade_annotations_label=premade_annotations_label,
+        log_scale=log_scale,
+        save_fig=save_fig,
+        normalize_local_scores=normalize_local_scores)
+
+
 
 
 def plot_bird_label_scores(automated_df, human_df, save_fig=False):
