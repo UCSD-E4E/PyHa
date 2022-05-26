@@ -360,7 +360,8 @@ def local_score_visualization_tweetynet(
         print(
             "Skipping " +
             clip_path +
-            " due to error in Microfaune Prediction")
+            " due to error in TweetyNet Prediction")
+        return None
 
     # In the case where the user wants to look at automated bird labels
     if premade_annotations_df is None:
