@@ -18,7 +18,11 @@ PyHa = Python + Piha (referring to a bird species of our interest known as the s
 1. Navigate to a desired folder and clone the repository onto your local machine. `git clone https://github.com/UCSD-E4E/PyHa.git`
 2. Install [Miniconda](https://docs.conda.io/en/latest/miniconda.html) or [Miniforge](https://github.com/conda-forge/miniforge).
 3. Install the conda environment by running `conda env create --file conda_environments/{filename}`, where `filename` is the name of the yaml containing the environment for your OS.
+ 
 4. Run `conda activate species-id` to activate the conda environment used to develop the package.
+    * For MacOS users: If you are running into an error like `Could not find conda environment: species-id`, than there is an issue with the yaml file for MacOS. We recommend you replace the current file with our [updated yaml file](https://github.com/UCSD-E4E/PyHa/tree/TweetyNet_integrations_2_main/conda_environments).
+    * ( If you are still running into issues such as `CondaValueError: Value Error: prefix already` we recommend you change the name of basic to another name in the [updated yaml file](https://github.com/UCSD-E4E/PyHa/tree/TweetyNet_integrations_2_main/conda_environments). 
+    
 5. Here you can download the Xeno-canto Screaming Piha test set used in our demos: https://drive.google.com/drive/u/0/folders/1lIweB8rF9JZhu6imkuTg_No0i04ClDh1
 6. Run `jupyter notebook` while in the proper folder to activate the PyHa_Tutorial.ipynb notebook and make sure PyHa is running properly. Make sure the paths are properly aligned to the TEST folder in the notebook as well as in the ScreamingPiha_Manual_Labels.csv file
 
