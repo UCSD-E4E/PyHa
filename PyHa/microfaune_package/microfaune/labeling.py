@@ -246,7 +246,7 @@ def extract_labels(json_path, start_time, duration):
         Returns
         -------
             labels: list
-                List of labelson the audio extract, each label is a dictionary with keys 'id', 'start', 'end' and 'annotation'
+                List of labels on the audio extract, each label is a dictionary with keys 'id', 'start', 'end' and 'annotation'
         """
     data_dict = read_json_file(json_path)
     labels = []

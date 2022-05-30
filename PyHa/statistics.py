@@ -367,7 +367,7 @@ def clip_IoU(automated_df, manual_df):
 
 def matrix_IoU_Scores(IoU_Matrix, manual_df, threshold):
     """
-    Function that takes in the IoU Matrix from the clip_IoU function and ouputs
+    Function that takes in the IoU Matrix from the clip_IoU function and outputs
     the number of true positives and false positives, as well as calculating
     the precision, recall, and f1 metrics.
 
