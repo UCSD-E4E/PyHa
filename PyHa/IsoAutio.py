@@ -792,7 +792,10 @@ def generate_automated_labels_microfaune(
 
         # Reading in the wave audio files
         try:
-            SAMPLE_RATE, SIGNAL = audio.load_wav(audio_dir + audio_file)
+            if audio_file[-3:] == "wav":
+                SAMPLE_RATE, SIGNAL = audio.load_wav(audio_dir + audio_file)
+            elif audio_file[-3:] == "mp3":
+                SAMPLE_RATE, SIGNAL = audio.load_mp3(audio_dir + audio_file)
         except BaseException:
             print("Failed to load", audio_file)
             continue

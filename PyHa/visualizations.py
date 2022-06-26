@@ -281,7 +281,10 @@ def spectrogram_visualization(
 
     # Loading in the clip with Microfaune's built-in loading function
     try:
-        SAMPLE_RATE, SIGNAL = audio.load_wav(clip_path)
+        if clip_path[-3:] == "wav":
+            SAMPLE_RATE, SIGNAL = audio.load_wav(clip_path)
+        elif clip_path[-3:] == "mp3":
+            SAMPLE_RATE, SIGNAL = audio.load_mp3(clip_path)
     except BaseException:
         print("Failure in loading", clip_path)
         return
