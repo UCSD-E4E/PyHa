@@ -477,6 +477,7 @@ Usage: `class_statistics(clip_statistics)`
 This function produces graphs with the spectrogram of an audio clip. It is now integrated with Pandas so you can visualize human and automated annotations.
 
 | Parameter | Type |  Description |
+| --- | --- | --- |
 | `clip_name`  | string | Directory of the clip. |
 | `sample_rate` | int | Sample rate of the audio clip, usually 44100. |
 | `samples` | list of ints | Each of the samples from the audio clip. |
