@@ -160,7 +160,7 @@ def create_spec(data, fs, n_mels=32, n_fft=2048, hop_len=1024):
     """
     # Calculate spectrogram
     S = librosa.feature.melspectrogram(
-      data, sr=fs, n_fft=n_fft, hop_length=hop_len, n_mels=n_mels)
+      y=data, sr=fs, n_fft=n_fft, hop_length=hop_len, n_mels=n_mels)
     S = S.astype(np.float32)
 
     # Convert power to dB
