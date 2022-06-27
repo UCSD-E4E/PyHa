@@ -1,5 +1,8 @@
 from .microfaune_package.microfaune.detection import RNNDetector
 from .microfaune_package.microfaune import audio
+from .tweetynet_package.tweetynet.TweetyNetModel import TweetyNetModel
+from .tweetynet_package.tweetynet.Load_data_functions import compute_features
+import torch
 import matplotlib.pyplot as plt
 import pandas as pd
 import scipy.signal as scipy_signal
@@ -175,6 +178,7 @@ def local_line_graph(
     fig.suptitle("Spectrogram and Local Scores for " + clip_name)
     # score line plot - top plot
     axs[0].plot(time_stamps, local_scores)
+    #Look into this and their relation.
     axs[0].set_xlim(0, duration)
     if log_scale:
         axs[0].set_yscale('log')
@@ -229,7 +233,6 @@ def local_line_graph(
 
 # TODO rework function so that instead of generating the automated labels, it
 # takes the automated_df as input same as it does with the manual dataframe.
-
 
 def spectrogram_visualization(
         clip_path,
@@ -328,6 +331,22 @@ def spectrogram_visualization(
                     "Skipping " +
                     clip_path +
                     " due to error in Microfaune Prediction")
+        elif (isolation_parameters["model"] == 'tweetynet'):
+            # Initializing the detector to baseline or with retrained weights
+            device = torch.device('cpu')
+            detector = TweetyNetModel(2, (1, 86, 86), 86, device, binary = False)
+
+            try:
+                #need a function to convert a signal into a spectrogram and then window it
+                tweetynet_features = compute_features([SIGNAL])
+                predictions, local_score = detector.predict(tweetynet_features, model_weights=weight_path)
+                local_scores = local_score[0].tolist()
+            except BaseException:
+                print(
+                    "Skipping " +
+                    clip_path +
+                    " due to error in TweetyNet Prediction")
+                return None
 
     # In the case where the user wants to look at automated bird labels
     if premade_annotations_df is None:
@@ -338,15 +357,28 @@ def spectrogram_visualization(
         if (isinstance(automated_df, bool) and not automated_df):
             automated_df = pd.DataFrame()
             pass
-        # For Microfaune
+        # Check if Microfaune or TweetyNET was used to generate local scores
         if (local_scores is not None):
-            automated_df = isolate(
-                    local_score[0],
-                    SIGNAL,
-                    SAMPLE_RATE,
-                    audio_dir = "",
-                    filename = "",
-                    isolation_parameters=isolation_parameters)
+            # TweetyNET techniques and output
+            if (isolation_parameters["model"] == "tweetynet"
+                and isolation_parameters["tweety_output"]):
+                automated_df = predictions_to_kaleidoscope(
+                                predictions, 
+                                SIGNAL, 
+                                "Doesn't", 
+                                "Doesn't", 
+                                "Matter", 
+                                SAMPLE_RATE)
+            # Isolation techniques
+            else: 
+                automated_df = isolate(
+                        local_score[0],
+                        SIGNAL,
+                        SAMPLE_RATE,
+                        audio_dir = "",
+                        filename = "",
+                        isolation_parameters=isolation_parameters)
+        # Catch, generate the labels for other models
         else:
             automated_df = generate_automated_labels(
                 audio_dir=clip_path,
@@ -383,7 +415,6 @@ def spectrogram_visualization(
             premade_annotations_df=premade_annotations_df,
             premade_annotations_label=premade_annotations_label,
             save_fig=save_fig)
-
 
 def binary_visualization(automated_df, human_df, save_fig=False):
     """

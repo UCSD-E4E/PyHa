@@ -31,7 +31,30 @@ PyHa = Python + Piha (referring to a bird species of our interest known as the s
 
 Many of the functions take in the `isolation_parameters` argument, and as such it will be defined globally here.
 
-The `isolation_parameters` dictionary definition depends on the model used. The currently supported models are Microfaune and BirdNET-Lite.  
+The `isolation_parameters` dictionary definition depends on the model used. The currently supported models are BirdNET-Lite, Microfaune, and TweetyNET.
+
+
+The BirdNET-Lite `isolation_parameters` dictionary is as follows:
+
+``` python
+isolation_parameters = {
+    "model" : "birdnet",
+    "output_path" : "",
+    "lat" : 0.0,
+    "lon" : 0.0,
+    "week" : 0,
+    "overlap" : 0.0,
+    "sensitivity" : 0.0,
+    "min_conf" : 0.0,
+    "custom_list" : "",
+    "filetype" : "",
+    "num_predictions" : 0,
+    "write_to_csv" : False
+}
+```
+
+<br>
+
 
 The Microfaune `isolation_parameters` dictionary is as follows:
 
@@ -54,24 +77,22 @@ The remaining parameters are floats representing their respective values.
 
 <br>
 
-The BirdNET-Lite `isolation_parameters` dictionary is as follows:
+The TweetyNET `isolation_parameters` dictionary is as follows:
 
-``` python
+```python
 isolation_parameters = {
-    "model" : "birdnet",
-    "output_path" : "",
-    "lat" : 0.0,
-    "lon" : 0.0,
-    "week" : 0,
-    "overlap" : 0.0,
-    "sensitivity" : 0.0,
-    "min_conf" : 0.0,
-    "custom_list" : "",
-    "filetype" : "",
-    "num_predictions" : 0,
-    "write_to_csv" : False
+    "model" : "tweetynet",
+    "tweety_output": False,
+    "technique" : "",
+    "threshold_type" : "",
+    "threshold_const" : 0.0,
+    "threshold_min" : 0.0,
+    "window_size" : 0.0,
+    "chunk_size" : 0.0,
 }
 ```
+
+The `tweety_output` parameter sets whether to use TweetyNET's original output or isolation techniques.
 
 <!-- IsoAutio.py file -->
 
@@ -205,6 +226,20 @@ This function returns a dataframe of automated labels for the audio clips in aud
 
 Usage: `generate_automated_labels(audio_dir, isolation_parameters, manual_id, weight_path, normalized_sample_rate, normalize_local_scores)`
 
+### [`generate_automated_labels_birdnet`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)
+*Found in [`IsoAutio.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)*
+
+This function is called by `generate_automated_labels` if `isolation_parameters["model"]` is set to `birdnet`. It generates bird labels across a folder of audio clips using BirdNET-Lite given the isolation parameters.
+
+| Parameter | Type |  Description |
+| --- | --- | --- |
+| `audio_dir` | string | Directory with wav audio files |
+| `isolation_parameters` | dict | Python Dictionary that controls the various label creation techniques. |
+
+This function returns a dataframe of automated labels for the audio clips in audio_dir.
+
+Usage: `generate_automated_labels_birdnet(audio_dir, isolation_parameters)`
+
 
 ### [`generate_automated_labels_microfaune`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)
 *Found in [`IsoAutio.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)*
@@ -225,19 +260,24 @@ This function returns a dataframe of automated labels for the audio clips in aud
 Usage: `generate_automated_labels_microfaune(audio_dir, isolation_parameters, manual_id, weight_path, normalized_sample_rate, normalize_local_scores)`
 
 
-### [`generate_automated_labels_birdnet`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)
+### [`generate_automated_labels_tweetynet`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)
 *Found in [`IsoAutio.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)*
 
-This function is called by `generate_automated_labels` if `isolation_parameters["model"]` is set to `birdnet`. It generates bird labels across a folder of audio clips using BirdNET-Lite given the isolation parameters.
+This function is called by `generate_automated_labels` if `isolation_parameters["model"]` is set to `tweetynet`. It applies the isolation technique determined by the `isolation_parameters` dictionary across a whole folder of audio clips.
 
 | Parameter | Type |  Description |
 | --- | --- | --- |
 | `audio_dir` | string | Directory with wav audio files |
 | `isolation_parameters` | dict | Python Dictionary that controls the various label creation techniques. |
+| `manual_id` | string | controls the name of the class written to the pandas dataframe |
+| `weight_path` | string | File path of weights to be used by the RNNDetector for determining presence of bird sounds.
+| `normalized_sample_rate` | int | Sampling rate that the audio files should all be normalized to.
+| `normalize_local_scores` | boolean | Set whether or not to normalize the local scores.
 
 This function returns a dataframe of automated labels for the audio clips in audio_dir.
 
-Usage: `generate_automated_labels_birdnet(audio_dir, isolation_parameters)`
+Usage: `generate_automated_labels_tweetynet(audio_dir, isolation_parameters, manual_id, weight_path, normalized_sample_rate, normalize_local_scores)`
+
 
 
 ### [`kaleidoscope_conversion`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)
