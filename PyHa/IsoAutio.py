@@ -20,14 +20,14 @@ def build_isolation_parameters_microfaune(
         window_size=1.0,
         chunk_size=2.0):
     """
-    Wrapper function for all of Microfaune's audio isolation techniques 
-    (Steinberg, Simple, Stack, Chunk). Will call the respective function 
-    of each technique based on isolation_parameters "technique" key.
+    Wrapper function for all audio isolation techniques (Steinberg, Simple, 
+    Stack, Chunk). Will call the respective function of each technique
+    based on isolation_parameters "technique" key.
 
     Args:
         technique (string)
             - Chooses which of the four isolation techniques to deploy
-            - options: "steinberg", "chunk", "stack", "simple"
+            - options: "steinberg", "simple", "stack", "chunk"
 
         threshold_type (string)
             - Chooses how to derive a threshold from local score arrays
@@ -875,7 +875,7 @@ def generate_automated_labels_tweetynet(
               techniques. The only unique key to TweetyNET is tweety_output:
               - tweety_output (bool)
                 - Set whether or not to use TweetyNET's original output. 
-                - False uses isolation techniques.
+                - If set to `False`, TweetyNET will use the specified `technique` parameter.
                 - default: True
 
         manual_id (string)

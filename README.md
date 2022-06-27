@@ -92,7 +92,7 @@ isolation_parameters = {
 }
 ```
 
-The `tweety_output` parameter sets whether to use TweetyNET's original output or isolation techniques.
+The `tweety_output` parameter sets whether to use TweetyNET's original output or isolation techniques. If set to `False`, TweetyNET will use the specified `technique` parameter.
 
 <!-- IsoAutio.py file -->
 
@@ -102,7 +102,7 @@ The `tweety_output` parameter sets whether to use TweetyNET's original output or
 ### [`isolate`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)
 *Found in [`IsoAutio.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)*
 
-This function is the wrapper function for all of Microfaune's audio isolation techniques, and will call the respective function based on `isolation_parameters` "technique" key.
+This function is the wrapper function for audio isolation techniques, and will call the respective function based on `isolation_parameters` "technique" key.
 
 | Parameter | Type |  Description |
 | --- | --- | --- |
