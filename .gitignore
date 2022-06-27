@@ -2,3 +2,7 @@
 PyHa/__pycache__
 PyHa/microfaune_package/microfaune/__pycache__
 PyHa/tweetynet_package/tweetynet/__pycache__
+TEST/*
+/mixed_bird/*
+TEST/ScreamingPiha1.wav
+TEST/ScreamingPiha1.wav

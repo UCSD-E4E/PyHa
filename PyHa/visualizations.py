@@ -552,11 +552,13 @@ def annotation_duration_histogram(
     """
     # Create the initial histogram
     duration = annotation_df["DURATION"].to_list()
+    fig, ax = plt.subplots()
     sns_hist = sns.histplot(
         data=duration,
         bins=n_bins,
         line_kws=dict(edgecolor="k", linewidth=2),
-        stat="count")
+        stat="count",
+        ax=ax)
 
     # Modify the length of the x-axis as specified
     if max_length is not None and min_length is not None:

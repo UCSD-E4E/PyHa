@@ -477,6 +477,7 @@ Usage: `class_statistics(clip_statistics)`
 This function produces graphs with the spectrogram of an audio clip. It is now integrated with Pandas so you can visualize human and automated annotations.
 
 | Parameter | Type |  Description |
+| --- | --- | --- |
 | `clip_name`  | string | Directory of the clip. |
 | `sample_rate` | int | Sample rate of the audio clip, usually 44100. |
 | `samples` | list of ints | Each of the samples from the audio clip. |
@@ -569,6 +570,8 @@ Usage: `binary_visualization(annotation_df, n_bins, min_length, max_length, save
 All files in the `microfaune_package` directory are from the [microfaune repository](https://github.com/microfaune/microfaune), and their associated documentation can be found there.  
 
 All files in the `birdnet_lite` directory are from a [modified version](https://github.com/UCSD-E4E/BirdNET-Lite) of the [BirdNET Lite repository](https://github.com/kahst/BirdNET-Lite), and their associated documentation can be found there.  
+
+All files in the `tweetynet` directory are from the [tweetynet repository](https://github.com/yardencsGitHub/tweetynet), and their associated documentation can be found there.  
 
 ## Examples
 *These examples were created on an Ubuntu 16.04 machine. Results may vary between different Operating Systems and Tensorflow versions.*
