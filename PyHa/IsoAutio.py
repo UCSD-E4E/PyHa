@@ -1,13 +1,18 @@
+#from PyHa.tweetynet_package.tweetynet.network import TweetyNet
 from .microfaune_package.microfaune.detection import RNNDetector
 from .microfaune_package.microfaune import audio
+from .tweetynet_package.tweetynet.TweetyNetModel import TweetyNetModel
+from .tweetynet_package.tweetynet.Load_data_functions import compute_features, predictions_to_kaleidoscope
+import torch
 import pandas as pd
 import scipy.signal as scipy_signal
 import numpy as np
 import math
 import os
+from .birdnet_lite.analyze import analyze
+from copy import deepcopy
 
-
-def build_isolation_parameters(
+def build_isolation_parameters_microfaune(
         technique,
         threshold_type,
         threshold_const,
@@ -15,14 +20,14 @@ def build_isolation_parameters(
         window_size=1.0,
         chunk_size=2.0):
     """
-    Wrapper function for all of the audio isolation techniques (Steinberg,
-    Simple, Stack, Chunk). Will call the respective function of
-    each technique based on isolation_parameters "technique" key.
+    Wrapper function for all audio isolation techniques (Steinberg, Simple, 
+    Stack, Chunk). Will call the respective function of each technique
+    based on isolation_parameters "technique" key.
 
     Args:
         technique (string)
             - Chooses which of the four isolation techniques to deploy
-            - options: "steinberg", "chunk", "stack", "simple"
+            - options: "steinberg", "simple", "stack", "chunk"
 
         threshold_type (string)
             - Chooses how to derive a threshold from local score arrays
@@ -52,7 +57,7 @@ def build_isolation_parameters(
     """
     isolation_parameters = {
         "technique": technique,
-        "treshold_type": threshold_type,
+        "threshold_type": threshold_type,
         "threshold_const": threshold_const,
         "threshold_min": threshold_min,
         "window_size": window_size,
@@ -79,9 +84,9 @@ def isolate(
         manual_id="bird",
         normalize_local_scores=False):
     """
-    Wrapper function for all of the audio isolation techniques (Steinberg,
-    Simple, Stack, Chunk). Will call the respective function of
-    each technique based on isolation_parameters "technique" key.
+    Wrapper function for all of Microfaune's audio isolation techniques 
+    (Steinberg, Simple, Stack, Chunk). Will call the respective function of each technique based on 
+    isolation_parameters "technique" key.
 
     Args:
         local_scores (list of floats)
@@ -110,10 +115,10 @@ def isolate(
     """
 
     # normalize the local scores so that the max value is 1.
-    if normalize_local_scores:
-        local_scores_max = max(local_scores)
-        for ndx in range(len(local_scores)):
-            local_scores[ndx] = local_scores[ndx] / local_scores_max
+    #if normalize_local_scores:
+    #    local_scores_max = max(local_scores)
+    #    for ndx in range(len(local_scores)):
+    #        local_scores[ndx] = local_scores[ndx] / local_scores_max
     # initializing the output dataframe that will contain labels across a
     # single clip
     isolation_df = pd.DataFrame()
@@ -128,7 +133,7 @@ def isolate(
             audio_dir,
             filename,
             isolation_parameters,
-            manual_id="bird")
+            manual_id=manual_id)
     elif isolation_parameters["technique"] == "steinberg":
         isolation_df = steinberg_isolate(
             local_scores,
@@ -137,7 +142,7 @@ def isolate(
             audio_dir,
             filename,
             isolation_parameters,
-            manual_id="bird")
+            manual_id=manual_id)
     elif isolation_parameters["technique"] == "stack":
         isolation_df = stack_isolate(
             local_scores,
@@ -146,7 +151,7 @@ def isolate(
             audio_dir,
             filename,
             isolation_parameters,
-            manual_id="bird")
+            manual_id=manual_id)
     elif isolation_parameters["technique"] == "chunk":
         isolation_df = chunk_isolate(
             local_scores,
@@ -155,7 +160,7 @@ def isolate(
             audio_dir,
             filename,
             isolation_parameters,
-            manual_id="bird")
+            manual_id=manual_id)
 
     return isolation_df
 
@@ -255,7 +260,6 @@ def steinberg_isolate(
     """
     # calculate original duration
     old_duration = len(SIGNAL) / SAMPLE_RATE
-
     # create entry for audio clip
     entry = {'FOLDER': audio_dir,
              'IN FILE': filename,
@@ -268,7 +272,6 @@ def steinberg_isolate(
     # calculating threshold that will define how labels are created in current
     # audio clip
     thresh = threshold(local_scores, isolation_parameters)
-
     # how many samples one local score represents
     samples_per_score = len(SIGNAL) // len(local_scores)
 
@@ -315,19 +318,17 @@ def steinberg_isolate(
             # sub-clip numpy array
             isolated_samples = np.append(
                 isolated_samples, SIGNAL[lo_idx:hi_idx])
-
     entry = pd.DataFrame.from_dict(entry)
     # TODO, when you go through the process of rebuilding this isolate function
     # as a potential optimization problem
     # rework the algorithm so that it builds the dataframe correctly to save
     # time.
-    OFFSET = entry['OFFSET'].str[0]
-    DURATION = entry['OFFSET'].str[1]
-    DURATION = DURATION - OFFSET
-    # Adding a new "DURATION" Column
-    # Making compatible with Kaleidoscope
-    entry.insert(6, "DURATION", DURATION)
-    entry["OFFSET"] = OFFSET
+
+    #Spilt offset array so entry is in kaledoscope format
+    entry = entry.assign(
+        OFFSET=entry['OFFSET'].apply(lambda arr: arr[0]),
+        DURATION=entry['OFFSET'].apply(lambda arr: arr[1]-arr[0])
+    )
     return entry
 
 
@@ -535,7 +536,7 @@ def stack_isolate(
             # increasing this stack counter will be referred to as "pushing"
             stack_counter = stack_counter + 1
 
-        # when a score is below the treshold
+        # when a score is below the threshold
         else:
             # the case where it is the end of an annotation
             if stack_counter == 0 and annotation_start == 1:
@@ -650,7 +651,7 @@ def chunk_isolate(
         chunk_end = min((ndx + 1) * local_scores_per_chunk, len(local_scores))
         # breaking up the local_score array into a chunk.
         chunk = local_scores[int(chunk_start):int(chunk_end)]
-        # comparing the largest local score value to the treshold.
+        # comparing the largest local score value to the threshold.
         # the case for if we label the chunk as an annotation
         if max(chunk) >= thresh and max(
                 chunk) >= isolation_parameters["threshold_min"]:
@@ -664,16 +665,85 @@ def chunk_isolate(
     return pd.DataFrame.from_dict(entry)
 
 
-def generate_automated_labels(
+def generate_automated_labels_birdnet(audio_dir, isolation_parameters):
+    """
+    Function that generates the bird labels for an audio file or across a
+    folder using the BirdNet-Lite model
+
+    Args:
+        audio_dir (string)
+            - Directory with wav audio files. Can be an individual file
+              as well.
+
+        isolation_parameters (dict)
+            - Python Dictionary that controls the various label creation
+              techniques. The keys it accepts are :
+              - output_path (string)
+                - Path to output folder. By default results are written into 
+                  the input folder
+                - default: None
+
+              - lat (float)
+                - Recording location latitude
+                - default: -1 (ignore)
+
+              - lon (float)
+                - Recording location longitude
+                - default: -1 (ignore)
+
+              - week (int)
+                - Week of the year when the recording was made
+                - Values in [1, 48] (4 weeks per month) 
+                - default: -1 (ignore)
+
+              - overlap (float)
+                - Overlap in seconds between extracted spectrograms
+                - Values in [0.5, 1.5]
+                - default: 0.0
+
+              - sensitivity (float)
+                - Detection sensitivity. Higher values result in higher sensitivity
+                - Values in [0.5, 1.5] 
+                - default: 1.0
+
+              - min_conf (float)
+                - Minimum confidence threshold
+                - Values in [0.01, 0.99]
+                - default: 0.1
+
+              - custom_list (string)
+                - Path to text file containing a list of species
+                - default: '' (not used if not provided)
+
+              - filetype (string)
+                - Filetype of soundscape recordings
+                - default: 'wav'
+
+              - num_predictions (int)
+                - Defines maximum number of written predictions in a given 3s segment
+                - default: 10
+
+              - write_to_csv (bool)
+                - Set whether or not to write output to CSV
+                - default: False
+
+    Returns:
+        Dataframe of automated labels for the audio clip(s) in audio_dir.
+    """
+    annotations = analyze(audio_path=audio_dir, **isolation_parameters)
+    return annotations
+
+def generate_automated_labels_microfaune(
         audio_dir,
         isolation_parameters,
         manual_id="bird",
         weight_path=None,
-        Normalized_Sample_Rate=44100,
+        normalized_sample_rate=44100,
         normalize_local_scores=False):
     """
-    Function that applies isolation technique determined by
-    isolation_parameters dictionary across a folder of audio clips.
+    Function that applies isolation technique on the local scores generated
+    by the Microfaune mode across a folder of audio clips. It is determined
+    by the isolation_parameters dictionary.
 
     Args:
         audio_dir (string)
@@ -690,7 +760,7 @@ def generate_automated_labels(
             - File path of weights to be used by the RNNDetector for
               determining presence of bird sounds.
 
-        Normalized_Sample_Rate (int)
+        normalized_sample_rate (int)
             - Sampling rate that the audio files should all be normalized to.
 
     Returns:
@@ -701,6 +771,7 @@ def generate_automated_labels(
     # Use Default Microfaune Detector
     # TODO
     # Expand to neural networks beyond just microfaune
+    #Add flag to work for creating tweetynet model.
     if weight_path is None:
         detector = RNNDetector()
     # Use Custom weights for Microfaune Detector
@@ -730,11 +801,11 @@ def generate_automated_labels(
         # Force everything into the human hearing range.
         # May consider reworking this function so that it upsamples as well
         try:
-            if SAMPLE_RATE != Normalized_Sample_Rate:
-                rate_ratio = Normalized_Sample_Rate / SAMPLE_RATE
+            if SAMPLE_RATE != normalized_sample_rate:
+                rate_ratio = normalized_sample_rate / SAMPLE_RATE
                 SIGNAL = scipy_signal.resample(
                     SIGNAL, int(len(SIGNAL) * rate_ratio))
-                SAMPLE_RATE = Normalized_Sample_Rate
+                SAMPLE_RATE = normalized_sample_rate
         except:
             print("Failed to Downsample" + audio_file)
             # resample produces unreadable float32 array so convert back
@@ -745,13 +816,13 @@ def generate_automated_labels(
         # Might want to compare to just taking the first set of data.
         if len(SIGNAL.shape) == 2:
             SIGNAL = SIGNAL.sum(axis=1) / 2
-
         # detection
         try:
             microfaune_features = detector.compute_features([SIGNAL])
             global_score, local_scores = detector.predict(microfaune_features)
-        except BaseException:
+        except BaseException as e:
             print("Error in detection, skipping", audio_file)
+            print(e)
             continue
 
         # get duration of clip
@@ -774,13 +845,208 @@ def generate_automated_labels(
                 annotations = new_entry
             else:
                 annotations = annotations.append(new_entry)
-        except BaseException:
+        except BaseException as e:
             print("Error in isolating bird calls from", audio_file)
+            print(e)
             continue
     # Quick fix to indexing
     annotations.reset_index(inplace=True, drop=True)
     return annotations
 
+def generate_automated_labels_tweetynet(
+        audio_dir,
+        isolation_parameters,
+        manual_id="bird",
+        weight_path=None,
+        normalized_sample_rate=44100,
+        normalize_local_scores=False):
+    """
+    Function that applies isolation technique determined by
+    isolation_parameters dictionary across a folder of audio clips.
+
+    Args:
+        audio_dir (string)
+            - Directory with wav audio files.
+
+        isolation_parameters (dict)
+            - Python Dictionary that controls the various label creation
+              techniques. The only unique key to TweetyNET is tweety_output:
+              - tweety_output (bool)
+                - Set whether or not to use TweetyNET's original output. 
+                - If set to `False`, TweetyNET will use the specified `technique` parameter.
+                - default: True
+
+        manual_id (string)
+            - controls the name of the class written to the pandas dataframe.
+
+        weight_path (string)
+            - File path of weights to be used by TweetyNet for
+              determining presence of bird sounds.
+
+        normalized_sample_rate (int)
+            - Sampling rate that the audio files should all be normalized to.
+
+        normalize_local_scores (bool) # may want to incorporate into isolation parameters
+            - Flag to normalize the local scores.
+
+    Returns:
+        Dataframe of automated labels for the audio clips in audio_dir.
+    """
+
+    # init detector
+    device = torch.device('cpu')
+    detector = TweetyNetModel(2, (1, 86, 86), 86, device)
+
+    # init labels dataframe
+    annotations = pd.DataFrame()
+    # generate local scores for every bird file in chosen directory
+    for audio_file in os.listdir(audio_dir):
+        # skip directories
+        if os.path.isdir(audio_dir + audio_file):
+            continue
+
+        # It is a bit awkward here to be relying on Microfaune's wave file
+        # reading when we want to expand to other frameworks,
+        # Likely want to change that in the future. Librosa had some troubles.
+
+        # Reading in the wave audio files
+        try:
+            SAMPLE_RATE, SIGNAL = audio.load_wav(audio_dir + audio_file)
+        except BaseException:
+            print("Failed to load", audio_file)
+            continue
+
+        # downsample the audio if the sample rate isn't 44.1 kHz
+        # Force everything into the human hearing range.
+        # May consider reworking this function so that it upsamples as well
+        try:
+            if SAMPLE_RATE != normalized_sample_rate:
+                rate_ratio = normalized_sample_rate / SAMPLE_RATE
+                SIGNAL = scipy_signal.resample(
+                    SIGNAL, int(len(SIGNAL) * rate_ratio))
+                SAMPLE_RATE = normalized_sample_rate
+        except:
+            print("Failed to Downsample" + audio_file)
+
+        # convert stereo to mono if needed
+        # Might want to compare to just taking the first set of data.
+        if len(SIGNAL.shape) == 2:
+            SIGNAL = SIGNAL.sum(axis=1) / 2
+        # detection
+        try:
+            tweetynet_features = compute_features([SIGNAL])
+            predictions, local_scores = detector.predict(tweetynet_features, model_weights=weight_path, norm=normalize_local_scores)
+        except BaseException as e:
+            print("Error in detection, skipping", audio_file)
+            print(e)
+            continue
+
+        try:
+            # Running moment to moment algorithm and appending to a master
+            # dataframe. 
+            if isolation_parameters["tweety_output"]:
+                new_entry = predictions_to_kaleidoscope(
+                    predictions, 
+                    SIGNAL, 
+                    audio_dir, 
+                    audio_file, 
+                    manual_id, 
+                    SAMPLE_RATE)
+            else:
+                new_entry = isolate(
+                    local_scores[0],
+                    SIGNAL,
+                    SAMPLE_RATE,
+                    audio_dir,
+                    audio_file,
+                    isolation_parameters,
+                    manual_id=manual_id,
+                    normalize_local_scores=normalize_local_scores)
+            # print(new_entry)
+            if annotations.empty:
+                annotations = new_entry
+            else:
+                annotations = annotations.append(new_entry)
+        except BaseException as e:
+            print("Error in isolating bird calls from", audio_file)
+            print(e)
+            continue
+    # Quick fix to indexing
+    annotations.reset_index(inplace=True, drop=True)
+    return annotations
+
+
+def generate_automated_labels(
+        audio_dir,
+        isolation_parameters,
+        manual_id="bird",
+        weight_path=None,
+        normalized_sample_rate=44100,
+        normalize_local_scores=False):
+    """
+    Function that generates the bird labels across a folder of audio clips
+    given the isolation_parameters
+
+    Args:
+        audio_dir (string)
+            - Directory with wav audio files.
+
+        isolation_parameters (dict)
+            - Python Dictionary that controls the various label creation
+              techniques.
+
+        manual_id (string)
+            - controls the name of the class written to the pandas dataframe
+
+        weight_path (string)
+            - File path of weights to be used by the model for
+              determining presence of bird sounds.
+
+        normalized_sample_rate (int)
+            - Sampling rate that the audio files should all be normalized to.
+              Used only for the Microfaune model.
+        
+        normalize_local_scores (bool)
+            - Set whether or not to normalize the local scores.
+
+    Returns:
+        Dataframe of automated labels for the audio clips in audio_dir.
+    """
+
+    #try:
+    if(isolation_parameters["model"] == 'microfaune'):
+        annotations = generate_automated_labels_microfaune(
+                        audio_dir=audio_dir,
+                        isolation_parameters=isolation_parameters,
+                        manual_id=manual_id,
+                        weight_path=weight_path,
+                        normalized_sample_rate=normalized_sample_rate,
+                        normalize_local_scores=normalize_local_scores)
+    elif(isolation_parameters["model"] == 'birdnet'):
+        # We need to delete the some keys from the isolation_parameters
+        # because we are unpacking the other arguments
+        birdnet_parameters = deepcopy(isolation_parameters)
+        keys_to_delete = ['model', 'technique', 'threshold_type',
+            'threshold_const', 'chunk_size']
+        for key in keys_to_delete:
+            birdnet_parameters.pop(key, None)
+        annotations = generate_automated_labels_birdnet(
+                        audio_dir, birdnet_parameters)
+    elif(isolation_parameters['model'] == 'tweetynet'):
+        annotations = generate_automated_labels_tweetynet(
+                        audio_dir=audio_dir,
+                        isolation_parameters=isolation_parameters,
+                        manual_id=manual_id,
+                        weight_path=weight_path,
+                        normalized_sample_rate=normalized_sample_rate,
+                        normalize_local_scores=normalize_local_scores)
+    else:
+        print("{model_name} model does not exist"\
+            .format(model_name=isolation_parameters["model"]))
+    # except:
+    #     print("Error. Check your isolation_parameters")
+    #     return None
+    return annotations
 
 def kaleidoscope_conversion(df):
     """
