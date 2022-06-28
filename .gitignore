@@ -14,4 +14,8 @@ PyHa/birdnet_lite/__pycache__/analyze.cpython-37.pyc
 PyHa/IsoAutio.py
 *.wav
 *.pyc
+PyHa_Model_Comparison.ipynb
+PyHa_Testing-Copy1.ipynb
+PyHa_Testing.ipynb
+
 
