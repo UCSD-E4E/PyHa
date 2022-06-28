@@ -219,8 +219,9 @@ def automated_labeling_statistics(
                 else:
                     statistics_df = statistics_df.append(clip_stats_df)
 
-        except BaseException:
+        except BaseException as e:
             print("Something went wrong with: " + clip)
+            print(e)
             continue
     statistics_df.reset_index(inplace=True, drop=True)
     return statistics_df
