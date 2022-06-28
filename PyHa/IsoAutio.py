@@ -921,13 +921,14 @@ def generate_automated_labels_tweetynet(
         # downsample the audio if the sample rate isn't 44.1 kHz
         # Force everything into the human hearing range.
         # May consider reworking this function so that it upsamples as well
-        if SAMPLE_RATE != normalized_sample_rate:
-            rate_ratio = normalized_sample_rate / SAMPLE_RATE
-            SIGNAL = scipy_signal.resample(
-                SIGNAL, int(len(SIGNAL) * rate_ratio))
-            SAMPLE_RATE = normalized_sample_rate
-            # resample produces unreadable float32 array so convert back
-            # SIGNAL = np.asarray(SIGNAL, dtype=np.int16)
+        try:
+            if SAMPLE_RATE != normalized_sample_rate:
+                rate_ratio = normalized_sample_rate / SAMPLE_RATE
+                SIGNAL = scipy_signal.resample(
+                    SIGNAL, int(len(SIGNAL) * rate_ratio))
+                SAMPLE_RATE = normalized_sample_rate
+        except:
+            print("Failed to Downsample" + audio_file)
 
         # convert stereo to mono if needed
         # Might want to compare to just taking the first set of data.
@@ -936,7 +937,7 @@ def generate_automated_labels_tweetynet(
         # detection
         try:
             tweetynet_features = compute_features([SIGNAL])
-            predictions, local_scores = detector.predict(tweetynet_features, model_weights=weight_path)
+            predictions, local_scores = detector.predict(tweetynet_features, model_weights=weight_path, norm=normalize_local_scores)
         except BaseException as e:
             print("Error in detection, skipping", audio_file)
             print(e)

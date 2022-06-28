@@ -138,8 +138,10 @@ class TweetyNetModel:
             """
         norm_arr = []
         diff = t_max - t_min
-        diff_arr = max(arr) - min(arr)
+        arr_min = min(arr)
+        diff_arr = max(arr) - arr_min
         for i in arr:
-            temp = (((i - min(arr))*diff)/diff_arr) + t_min
+            temp = (((i - arr_min)*diff)/diff_arr) + t_min
             norm_arr.append(temp)
+        print(max(norm_arr))
         return norm_arr
