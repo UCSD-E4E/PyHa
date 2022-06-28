@@ -323,15 +323,27 @@ def steinberg_isolate(
     # as a potential optimization problem
     # rework the algorithm so that it builds the dataframe correctly to save
     # time.
-
-    OFFSET = entry['OFFSET'].str[0]
-    DURATION = entry['OFFSET'].str[1]
-    DURATION = DURATION - OFFSET
+    entry.assign(
+        OFFSET=entry['OFFSET'].apply(get_offset),
+        DURATION=entry['OFFSET'].apply(get_duration)
+    )
+    
+    #OFFSET = entry['OFFSET'].str[0] #OFFSET = entry['OFFSET'].str[0]
+    #DURATION = entry['OFFSET'].str[1]   #DURATION = entry['OFFSET'].str[1]
+    #DURATION = DURATION - OFFSET
     # Adding a new "DURATION" Column
     # Making compatible with Kaleidoscope
-    entry.insert(6, "DURATION", DURATION)
-    entry["OFFSET"] = OFFSET
+    #entry.insert(6, "DURATION", DURATION)
+    #entry["OFFSET"] = OFFSET
     return entry
+
+## STEINBURG HELPER FUNCTIONS
+def get_offset(arr):
+    return arr[0]
+
+def get_duration(arr):
+    return arr[1] - arr[0]
+
 
 
 def simple_isolate(
@@ -969,8 +981,9 @@ def generate_automated_labels_tweetynet(
                 annotations = new_entry
             else:
                 annotations = annotations.append(new_entry)
-        except BaseException:
+        except BaseException as e:
             print("Error in isolating bird calls from", audio_file)
+            print(e)
             continue
     # Quick fix to indexing
     annotations.reset_index(inplace=True, drop=True)
