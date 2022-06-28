@@ -4,6 +4,7 @@ from .microfaune_package.microfaune import audio
 from .tweetynet_package.tweetynet.TweetyNetModel import TweetyNetModel
 from .tweetynet_package.tweetynet.Load_data_functions import compute_features, predictions_to_kaleidoscope
 import torch
+import librosa
 import pandas as pd
 import scipy.signal as scipy_signal
 import numpy as np
@@ -794,10 +795,11 @@ def generate_automated_labels_microfaune(
 
         # Reading in the wave audio files
         try:
-            if audio_file[-3:] == "wav":
-                SAMPLE_RATE, SIGNAL = audio.load_wav(audio_dir + audio_file)
-            elif audio_file[-3:] == "mp3":
-                SAMPLE_RATE, SIGNAL = audio.load_mp3(audio_dir + audio_file)
+            # if audio_file[-3:] == "wav":
+            #     SAMPLE_RATE, SIGNAL = audio.load_wav(audio_dir + audio_file)
+            # elif audio_file[-3:] == "mp3":
+            #     SAMPLE_RATE, SIGNAL = audio.load_mp3(audio_dir + audio_file)
+            SIGNAL, SAMPLE_RATE = librosa.load(audio_dir + audio_file, sr=44100)
         except BaseException:
             print("Failed to load", audio_file)
             continue
@@ -916,7 +918,8 @@ def generate_automated_labels_tweetynet(
 
         # Reading in the wave audio files
         try:
-            SAMPLE_RATE, SIGNAL = audio.load_wav(audio_dir + audio_file)
+            # SAMPLE_RATE, SIGNAL = audio.load_audio(audio_dir + audio_file)
+            SIGNAL, SAMPLE_RATE = librosa.load(audio_dir + audio_file, sr=44100)
         except BaseException:
             print("Failed to load", audio_file)
             continue
