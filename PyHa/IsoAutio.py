@@ -115,10 +115,10 @@ def isolate(
     """
 
     # normalize the local scores so that the max value is 1.
-    if normalize_local_scores:
-        local_scores_max = max(local_scores)
-        for ndx in range(len(local_scores)):
-            local_scores[ndx] = local_scores[ndx] / local_scores_max
+    #if normalize_local_scores:
+    #    local_scores_max = max(local_scores)
+    #    for ndx in range(len(local_scores)):
+    #        local_scores[ndx] = local_scores[ndx] / local_scores_max
     # initializing the output dataframe that will contain labels across a
     # single clip
     isolation_df = pd.DataFrame()
