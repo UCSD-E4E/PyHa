@@ -323,7 +323,9 @@ def steinberg_isolate(
     # as a potential optimization problem
     # rework the algorithm so that it builds the dataframe correctly to save
     # time.
-    entry.assign(
+
+    #Spilt offset to get into kaledoscope
+    entry = entry.assign(
         OFFSET=entry['OFFSET'].apply(get_offset),
         DURATION=entry['OFFSET'].apply(get_duration)
     )

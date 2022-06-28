@@ -12,11 +12,6 @@ mixed_bird_manual.csv
 outputs/result.csv
 PyHa/birdnet_lite/__pycache__/analyze.cpython-37.pyc
 PyHa/IsoAutio.py
-PyHa/tweetynet_package/tweetynet/__pycache__/__init__.cpython-37.pyc
-PyHa/tweetynet_package/tweetynet/__pycache__/CustomAudioDataset.cpython-37.pyc
-PyHa/tweetynet_package/tweetynet/__pycache__/Load_data_functions.cpython-37.pyc
-PyHa/tweetynet_package/tweetynet/__pycache__/network.cpython-37.pyc
-PyHa/tweetynet_package/tweetynet/__pycache__/TweetyNetAudio.cpython-37.pyc
-PyHa/tweetynet_package/tweetynet/__pycache__/TweetyNetModel.cpython-37.pyc
 *.wav
 *.pyc
+
