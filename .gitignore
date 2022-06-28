@@ -11,7 +11,6 @@ PyHa/tweetynet_package/tweetynet/__pycache__/
 mixed_bird_manual.csv
 outputs/result.csv
 PyHa/birdnet_lite/__pycache__/analyze.cpython-37.pyc
-PyHa/IsoAutio.py
 *.wav
 *.pyc
 PyHa_Model_Comparison.ipynb
