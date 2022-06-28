@@ -566,6 +566,27 @@ This function returns a histogram with the length of the annotations.
 Usage: `binary_visualization(annotation_df, n_bins, min_length, max_length, save_fig, filename)`
 </details>
 
+<!-- annotation_post_processing.py file -->
+
+<details>
+ <summary>annotation_post_processing.py files</summary>
+
+### [`annotation_chunker`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/annotation_post_processing.py)
+*Found in [`visualizations.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/annotation_post_processing.py)*
+
+Convert a dataframe of Kaleidoscope format containing annotations to uniform chunk_length second chunks.
+Drops any annotation that less than chunk_length.
+
+| Parameter | Type |  Description |
+| --- | --- | --- |
+| `kaleidoscope_df` | Dataframe | Dataframe of automated or human labels in kaleidoscope format |
+| `chunk_length` | int | duration in seconds of each annotation chunk |
+
+This function returns a dataframe with annotations converted to uniform second chunks.
+
+Usage: `annotation_chunker(kaleidoscope_df, chunk_length)`
+</details>
+
 
 All files in the `microfaune_package` directory are from the [microfaune repository](https://github.com/microfaune/microfaune), and their associated documentation can be found there.  
 

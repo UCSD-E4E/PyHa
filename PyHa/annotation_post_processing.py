@@ -3,6 +3,26 @@ import numpy as np
 
 
 def annotation_chunker(kaleidoscope_df, chunk_length):
+    """
+    Convert a dataframe of Kaleidoscope format containing annotations to uniform
+    chunk_length second chunks.
+
+    Note: if all or part of an annotation covers the last < chunk_length seconds of a clip
+    it will be ignored. If two annotations overlap in the same 3 second chunk, both are represented in that
+    chunk
+
+    Args:
+        kaleidoscope_df (dataframe)
+            - dataframe of annotations in kaleidoscope format
+
+        chunk_length (int)
+            - duration to set all annotation chunks
+    Returns:
+        Dataframe of labels with chunk_length duration 
+        (elements in "OFFSET" are divisible by chunk_length).
+    """
+
+    #Init list of clips to cycle through and output dataframe
     clips = kaleidoscope_df["IN FILE"].unique()
     df_columns = {'IN FILE' :'str', 'CLIP LENGTH' : 'float64', 'CHANNEL' : 'int64', 'OFFSET' : 'float64',
                 'DURATION' : 'float64', 'SAMPLE RATE' : 'int64','MANUAL ID' : 'str'}
@@ -16,6 +36,7 @@ def annotation_chunker(kaleidoscope_df, chunk_length):
         clip_len = clip_df["CLIP LENGTH"].unique()[0]
 
         # quick data sanitization to remove very short clips
+        # do not consider any chunk that is less than chunk_length
         if clip_len < chunk_length:
             continue
         potential_annotation_count = int(clip_len)//int(chunk_length)
