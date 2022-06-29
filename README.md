@@ -94,10 +94,31 @@ isolation_parameters = {
 
 The `tweety_output` parameter sets whether to use TweetyNET's original output or isolation techniques. If set to `False`, TweetyNET will use the specified `technique` parameter.
 
+<!-- annotation_post_processing.py file -->
+
+<details>
+ <summary>annotation_post_processing.py file</summary>
+
+### [`annotation_chunker`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/annotation_post_processing.py)
+*Found in [`annotation_post_processing.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/annotation_post_processing.py)*
+
+This function converts a Kaleidoscope-formatted Dataframe containing annotations to uniform chunks of `chunk_length`. Drops any annotation that less than chunk_length.
+
+| Parameter | Type |  Description |
+| --- | --- | --- |
+| `kaleidoscope_df` | Dataframe | Dataframe of automated or human labels in Kaleidoscope format |
+| `chunk_length` | int | Duration in seconds of each annotation chunk |
+
+This function returns a dataframe with annotations converted to uniform second chunks.
+
+Usage: `annotation_chunker(kaleidoscope_df, chunk_length)`
+</details>
+
+
 <!-- IsoAutio.py file -->
 
 <details>
- <summary>IsoAutio.py files</summary>
+ <summary>IsoAutio.py file</summary>
 
 ### [`isolate`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)
 *Found in [`IsoAutio.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)*
@@ -566,17 +587,16 @@ This function returns a histogram with the length of the annotations.
 Usage: `binary_visualization(annotation_df, n_bins, min_length, max_length, save_fig, filename)`
 </details>
 
-
-All files in the `microfaune_package` directory are from the [microfaune repository](https://github.com/microfaune/microfaune), and their associated documentation can be found there.  
-
 All files in the `birdnet_lite` directory are from a [modified version](https://github.com/UCSD-E4E/BirdNET-Lite) of the [BirdNET Lite repository](https://github.com/kahst/BirdNET-Lite), and their associated documentation can be found there.  
+
+All files in the `microfaune_package` directory are from the [microfaune repository](https://github.com/microfaune/microfaune), and their associated documentation can be found there.    
 
 All files in the `tweetynet` directory are from the [tweetynet repository](https://github.com/yardencsGitHub/tweetynet), and their associated documentation can be found there.  
 
 ## Examples
 *These examples were created on an Ubuntu 16.04 machine. Results may vary between different Operating Systems and Tensorflow versions.*
 
-Examples using Microfaune were created using this dictionary for the `isolation_parameters`:
+Examples using Microfaune were created using the following dictionary for `isolation_parameters`:
 
 ```json
 isolation_parameters = {
@@ -607,6 +627,11 @@ annotation_duration_statistics(manual_df)
 ```
 ![image](https://user-images.githubusercontent.com/44332326/127575181-9ce49439-5396-425d-a1d5-148ef47db373.png)
 
+### Function that converts annotations into 3 second chunks
+```python
+annotation_chunker(automated_df, 3)
+```
+![annotation chunker](https://user-images.githubusercontent.com/33042752/176480538-671b731d-89ad-402c-a603-8a0ee35124f6.png)
 
 ### Helper function to convert to kaleidoscope-compatible format
 ```python
