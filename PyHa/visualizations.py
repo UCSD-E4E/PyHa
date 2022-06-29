@@ -3,6 +3,7 @@ from .microfaune_package.microfaune import audio
 from .tweetynet_package.tweetynet.TweetyNetModel import TweetyNetModel
 from .tweetynet_package.tweetynet.Load_data_functions import compute_features
 import torch
+import librosa
 import matplotlib.pyplot as plt
 import pandas as pd
 import scipy.signal as scipy_signal
@@ -285,7 +286,9 @@ def spectrogram_visualization(
         #     SAMPLE_RATE, SIGNAL = audio.load_wav(clip_path)
         # elif clip_path[-3:] == "mp3":
         #     SAMPLE_RATE, SIGNAL = audio.load_mp3(clip_path)
-        SIGNAL, SAMPLE_RATE = librosa.load(clip_path, sr=44100)
+        # SIGNAL, SAMPLE_RATE = librosa.load(clip_path, sr=None, mono=True)
+        SIGNAL, SAMPLE_RATE = torchaudio.load(clip_path, normalize = True, channels_first = False)
+        SIGNAL = SIGNAL.numpy()
     except BaseException:
         print("Failure in loading", clip_path)
         return
