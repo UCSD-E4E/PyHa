@@ -4,16 +4,16 @@ import numpy as np
 
 def annotation_chunker(kaleidoscope_df, chunk_length):
     """
-    Convert a dataframe of Kaleidoscope format containing annotations to uniform
-    chunk_length second chunks.
+    Function that converts a Kaleidoscope-formatted Dataframe containing 
+    annotations to uniform chunks of chunk_length.
 
-    Note: if all or part of an annotation covers the last < chunk_length seconds of a clip
-    it will be ignored. If two annotations overlap in the same 3 second chunk, both are represented in that
-    chunk
+    Note: if all or part of an annotation covers the last < chunk_length
+    seconds of a clip it will be ignored. If two annotations overlap in 
+    the same 3 second chunk, both are represented in that chunk
 
     Args:
-        kaleidoscope_df (dataframe)
-            - dataframe of annotations in kaleidoscope format
+        kaleidoscope_df (Dataframe)
+            - Dataframe of annotations in kaleidoscope format
 
         chunk_length (int)
             - duration to set all annotation chunks
