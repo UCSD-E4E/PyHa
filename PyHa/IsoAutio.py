@@ -4,6 +4,7 @@ from .microfaune_package.microfaune import audio
 from .tweetynet_package.tweetynet.TweetyNetModel import TweetyNetModel
 from .tweetynet_package.tweetynet.Load_data_functions import compute_features, predictions_to_kaleidoscope
 import torch
+import torchaudio
 import librosa
 import pandas as pd
 import scipy.signal as scipy_signal
@@ -799,7 +800,10 @@ def generate_automated_labels_microfaune(
             #     SAMPLE_RATE, SIGNAL = audio.load_wav(audio_dir + audio_file)
             # elif audio_file[-3:] == "mp3":
             #     SAMPLE_RATE, SIGNAL = audio.load_mp3(audio_dir + audio_file)
-            SIGNAL, SAMPLE_RATE = librosa.load(audio_dir + audio_file, sr=44100)
+            # SIGNAL, SAMPLE_RATE = librosa.load(audio_dir + audio_file, sr=None, mono=True)
+            SIGNAL, SAMPLE_RATE = torchaudio.load(audio_dir + audio_file, channels_first=False, normalize = True)
+            SIGNAL = SIGNAL.numpy()
+            print(SIGNAL)
         except BaseException:
             print("Failed to load", audio_file)
             continue
@@ -919,7 +923,9 @@ def generate_automated_labels_tweetynet(
         # Reading in the wave audio files
         try:
             # SAMPLE_RATE, SIGNAL = audio.load_audio(audio_dir + audio_file)
-            SIGNAL, SAMPLE_RATE = librosa.load(audio_dir + audio_file, sr=44100)
+            # SIGNAL, SAMPLE_RATE = librosa.load(audio_dir + audio_file, sr=None, mono=True)
+            SIGNAL, SAMPLE_RATE = torchaudio.load(audio_dir + audio_file, channels_first=False, normalize = True)
+            SIGNAL = SIGNAL.numpy()
         except BaseException:
             print("Failed to load", audio_file)
             continue
