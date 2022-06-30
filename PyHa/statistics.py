@@ -127,8 +127,7 @@ def clip_general(automated_df, human_df):
         f1 = 2 * (recall * precision) / (recall + precision)
         IoU = true_positive_count / union_count
     except BaseException:
-        print('''Error calculating statistics, likely due
-        to zero division, setting values to zero''')
+        # print('''Error calculating statistics, likely due to zero division, setting values to zero''')
         f1 = 0
         precision = 0
         recall = 0
@@ -224,13 +223,15 @@ def automated_labeling_statistics(
                     statistics_df = clip_stats_df
                 else:
                     statistics_df = statistics_df.append(clip_stats_df)
-
         except BaseException as e:
+            num_errors += 1
             #print("Something went wrong with: " + clip)
             #print(e)
             continue
+        if clip_stats_df['F1'] == 0:
+            num_errors += 1
         if num_processed % 100 == 0:
-            print("processed " + str(num_processed) + " clips")
+            print("processed " + str(num_processed) + " clips"
     print("Something went wrong with " + str(num_errors) + " clips out of " + str(len(clips)) + " clips")
     statistics_df.reset_index(inplace=True, drop=True)
     return statistics_df
