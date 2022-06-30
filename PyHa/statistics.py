@@ -202,7 +202,7 @@ def automated_labeling_statistics(
     for clip in clips:
         clip_automated_df = automated_df[automated_df["IN FILE"] == clip]
         # In case the extension for manual_df is different from the clip extension, just check the name before the extension
-        clip_manual_df = manual_df[manual_df["IN FILE"].str[:-4] == clip[:-4]]
+        clip_manual_df = manual_df[manual_df["IN FILE"].str.startswith(".".join(clip.split(".")[:-1]))]
         try:
             if stats_type == "general":
                 clip_stats_df = clip_general(
