@@ -1,6 +1,5 @@
 name: species-id
 channels:
-  - pytorch
   - conda-forge
   - defaults
 dependencies:
@@ -22,6 +21,7 @@ dependencies:
   - backports=1.0=py_2
   - backports.functools_lru_cache=1.6.4=pyhd8ed1ab_0
   - beautifulsoup4=4.11.1=pyha770c72_0
+  - blas=1.0=mkl
   - bleach=5.0.1=pyhd8ed1ab_0
   - blinker=1.4=py_1
   - brotli=1.0.9=h5eb16cf_7
@@ -30,8 +30,6 @@ dependencies:
   - bzip2=1.0.8=h0d85af4_4
   - c-ares=1.18.1=h0d85af4_0
   - ca-certificates=2022.6.15=h033912b_0
-  - cached-property=1.5.2=hd8ed1ab_1
-  - cached_property=1.5.2=pyha770c72_1
   - cachetools=5.0.0=pyhd8ed1ab_0
   - certifi=2022.6.15=py310h2ec42d9_0
   - cffi=1.15.0=py310hcc37b68_0
@@ -44,11 +42,12 @@ dependencies:
   - defusedxml=0.7.1=pyhd8ed1ab_0
   - entrypoints=0.4=pyhd8ed1ab_0
   - executing=0.8.3=pyhd8ed1ab_0
-  - ffmpeg=5.0.1=gpl_h0bbc480_105
+  - ffmpeg=4.4.2=gpl_h0bbc480_102
   - flit-core=3.7.1=pyhd8ed1ab_0
   - fonttools=4.33.3=py310h6c45266_0
   - freetype=2.10.4=h4cff582_1
   - frozenlist=1.3.0=py310h1961e1f_1
+  - future=0.18.2=py310h2ec42d9_5
   - gast=0.5.3=pyhd8ed1ab_0
   - gettext=0.19.8.1=hd1a6beb_1008
   - giflib=5.2.1=hbcb3906_2
@@ -59,12 +58,13 @@ dependencies:
   - google-pasta=0.2.0=pyh8c360ce_0
   - grpc-cpp=1.45.2=h360b188_4
   - grpcio=1.45.0=py310h1da61bb_0
-  - h5py=3.7.0=nompi_py310haa22bcd_100
-  - hdf5=1.12.1=nompi_ha60fbc9_104
+  - h5py=3.6.0=py310h6c517f8_0
+  - hdf5=1.10.6=hdbbcd12_0
   - icu=70.1=h96cf925_0
   - idna=3.3=pyhd8ed1ab_0
   - importlib-metadata=4.11.4=py310h2ec42d9_0
   - importlib_resources=5.8.0=pyhd8ed1ab_0
+  - intel-openmp=2022.0.0=hecd8cb5_3615
   - ipykernel=6.15.0=pyh736e0ef_0
   - ipython=8.4.0=py310h2ec42d9_0
   - ipython_genutils=0.2.0=py_1
@@ -72,7 +72,7 @@ dependencies:
   - jinja2=3.1.2=pyhd8ed1ab_1
   - joblib=1.1.0=pyhd8ed1ab_0
   - jpeg=9e=h5eb16cf_1
-  - jsonschema=4.6.0=pyhd8ed1ab_0
+  - jsonschema=4.6.1=pyhd8ed1ab_0
   - jupyter_client=7.3.4=pyhd8ed1ab_0
   - jupyter_core=4.10.0=py310h2ec42d9_0
   - jupyterlab_pygments=0.2.2=pyhd8ed1ab_0
@@ -83,11 +83,9 @@ dependencies:
   - lame=3.100=h35c211d_1001
   - lcms2=2.12=h577c468_0
   - lerc=3.0=he49afe7_0
-  - libblas=3.9.0=15_osx64_mkl
   - libbrotlicommon=1.0.9=h5eb16cf_7
   - libbrotlidec=1.0.9=h5eb16cf_7
   - libbrotlienc=1.0.9=h5eb16cf_7
-  - libcblas=3.9.0=15_osx64_mkl
   - libcurl=7.83.1=h372c54d_0
   - libcxx=14.0.6=hce7ea42_0
   - libdeflate=1.12=hac89ed1_0
@@ -95,15 +93,12 @@ dependencies:
   - libev=4.33=haf1e3a3_1
   - libffi=3.4.2=h0d85af4_5
   - libflac=1.3.4=h96cf925_0
-  - libgfortran=5.0.0=9_3_0_h6c81a4c_23
-  - libgfortran5=9.3.0=h6c81a4c_23
+  - libgfortran=3.0.1=0
   - libiconv=1.16=haf1e3a3_0
   - libidn2=2.3.2=h0d85af4_0
-  - liblapack=3.9.0=15_osx64_mkl
   - libllvm11=11.1.0=hd011deb_3
   - libnghttp2=1.47.0=h942079c_0
   - libogg=1.3.4=h35c211d_1
-  - libopenblas=0.3.20=openmp_hb3cd9ec_0
   - libopus=1.3.1=hc929b4f_1
   - libpng=1.6.37=h7cec526_2
   - libprotobuf=3.20.1=h2292cb8_0
@@ -129,7 +124,10 @@ dependencies:
   - matplotlib-base=3.5.2=py310h4510841_0
   - matplotlib-inline=0.1.3=pyhd8ed1ab_0
   - mistune=0.8.4=py310he24745e_1005
-  - mkl=2022.1.0=h860c996_928
+  - mkl=2021.4.0=h89fa619_689
+  - mkl-service=2.4.0=py310hec3eae3_0
+  - mkl_fft=1.3.1=py310h9c6a5af_1
+  - mkl_random=1.2.2=py310hc081a56_0
   - multidict=6.0.2=py310h1961e1f_1
   - munkres=1.1.4=pyh9f0ad1d_0
   - nbclient=0.6.4=pyhd8ed1ab_1
@@ -143,7 +141,8 @@ dependencies:
   - ninja=1.11.0=h1b54a9f_0
   - notebook=6.4.12=pyha770c72_0
   - numba=0.55.2=py310hab1bff6_0
-  - numpy=1.22.4=py310hed37afb_0
+  - numpy=1.22.3=py310hdcd3fac_0
+  - numpy-base=1.22.3=py310hfd2de13_0
   - oauthlib=3.2.0=pyhd8ed1ab_0
   - openh264=2.2.0=h2292cb8_0
   - openjpeg=2.4.0=h6e7aa92_1
@@ -171,6 +170,7 @@ dependencies:
   - pyasn1=0.4.8=py_0
   - pyasn1-modules=0.2.7=py_0
   - pycparser=2.21=pyhd8ed1ab_0
+  - pydub=0.25.1=pyhd8ed1ab_0
   - pygments=2.12.0=pyhd8ed1ab_0
   - pyjwt=2.4.0=pyhd8ed1ab_0
   - pyopenssl=22.0.0=pyhd8ed1ab_0
@@ -183,7 +183,6 @@ dependencies:
   - python-fastjsonschema=2.15.3=pyhd8ed1ab_0
   - python-flatbuffers=2.0=pyhd8ed1ab_0
   - python_abi=3.10=2_cp310
-  - pytorch=1.11.0=cpu_py310h5ac1a50_2
   - pytz=2022.1=pyhd8ed1ab_0
   - pyu2f=0.1.5=pyhd8ed1ab_0
   - pyzmq=23.2.0=py310h85fb675_0
@@ -193,16 +192,16 @@ dependencies:
   - requests-oauthlib=1.3.1=pyhd8ed1ab_0
   - resampy=0.2.2=py_0
   - rsa=4.8=pyhd8ed1ab_0
-  - scikit-learn=1.1.1=py310hfc06b38_0
-  - scipy=1.8.1=py310h1f9c157_0
+  - scikit-learn=1.0.2=py310hc081a56_0
+  - scipy=1.7.3=py310h3dd3380_0
   - seaborn=0.11.2=hd8ed1ab_0
   - seaborn-base=0.11.2=pyhd8ed1ab_0
   - send2trash=1.8.0=pyhd8ed1ab_0
   - setuptools=62.6.0=py310h2ec42d9_0
   - six=1.16.0=pyh6c4a22f_0
-  - sleef=3.5.1=h6db0672_2
   - snappy=1.1.9=h6e38e02_1
   - soupsieve=2.3.1=pyhd8ed1ab_0
+  - soxr=0.1.3=had99412_2
   - sqlite=3.39.0=hd9f0692_0
   - stack_data=0.3.0=pyhd8ed1ab_0
   - statsmodels=0.13.2=py310h1bbcd0e_0
@@ -219,8 +218,7 @@ dependencies:
   - threadpoolctl=3.1.0=pyh8a188c0_0
   - tinycss2=1.1.1=pyhd8ed1ab_0
   - tk=8.6.12=h5dbffcc_0
-  - torchaudio=0.11.0=py310_cpu
-  - torchvision=0.12.0=py310_cpu
+  - torchvision=0.12.0=cpu_py310hf2a3774_1
   - tornado=6.1=py310h1961e1f_3
   - traitlets=5.3.0=pyhd8ed1ab_0
   - typing-extensions=4.2.0=hd8ed1ab_1
@@ -243,4 +241,8 @@ dependencies:
   - zipp=3.8.0=pyhd8ed1ab_0
   - zlib=1.2.12=hfe4f2af_1
   - zstd=1.5.2=ha9df2e0_1
+  - pip:
+    - samplerate==0.1.0
+    - torch==1.12.0
+    - torchaudio==0.12.0
 prefix: /Users/pranjalchatterjee/anaconda3/envs/species-id
