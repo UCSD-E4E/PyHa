@@ -230,8 +230,8 @@ def automated_labeling_statistics(
             #print(e)
             continue
         if num_processed % 100 == 0:
-            print("processed " + num_processed + " clips")
-    print("Something went wrong with " + num_errors + " clips out of " + len(clips) + " clips")
+            print("processed " + str(num_processed) + " clips")
+    print("Something went wrong with " + str(num_errors) + " clips out of " + str(len(clips)) + " clips")
     statistics_df.reset_index(inplace=True, drop=True)
     return statistics_df
 
