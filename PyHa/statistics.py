@@ -215,6 +215,8 @@ def automated_labeling_statistics(
                     statistics_df = clip_stats_df
                 else:
                     statistics_df = statistics_df.append(clip_stats_df)
+                    if clip_stats_df['F1'][0] == 0:
+                        num_errors += 1
             elif stats_type == "IoU":
                 IoU_Matrix = clip_IoU(clip_automated_df, clip_manual_df)
                 clip_stats_df = matrix_IoU_Scores(
@@ -228,8 +230,6 @@ def automated_labeling_statistics(
             #print("Something went wrong with: " + clip)
             #print(e)
             continue
-        if clip_stats_df['F1'] == 0:
-            num_errors += 1
         if num_processed % 100 == 0:
             print("processed " + str(num_processed) + " clips")
     print("Something went wrong with " + str(num_errors) + " clips out of " + str(len(clips)) + " clips")
