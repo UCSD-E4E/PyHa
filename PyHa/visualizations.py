@@ -287,8 +287,15 @@ def spectrogram_visualization(
         # elif clip_path[-3:] == "mp3":
         #     SAMPLE_RATE, SIGNAL = audio.load_mp3(clip_path)
         # SIGNAL, SAMPLE_RATE = librosa.load(clip_path, sr=None, mono=True)
-        SIGNAL, SAMPLE_RATE = torchaudio.load(clip_path, normalize = True, channels_first = False)
-        SIGNAL = SIGNAL.numpy()
+        # SIGNAL, SAMPLE_RATE = torchaudio.load(clip_path, normalize = True, channels_first = False)
+        # SIGNAL = SIGNAL.numpy()
+        if (clip_path.split(".")[-1].lower() == "wav"):
+                SAMPLE_RATE, SIGNAL = audio.load_wav(clip_path)
+        else:
+            sound = AudioSegment.from_file(clip_path, clip_path.split(".")[-1].lower())
+            sound.export(".".join(clip_path.split(".")[:-1]) + ".wav", "wav")
+            SAMPLE_RATE, SIGNAL = audio.load_wav(".".join(clip_path.split(".")[:-1]) + ".wav")
+            os.remove(".".join(clip_path.split(".")[:-1]) + ".wav")
     except BaseException:
         print("Failure in loading", clip_path)
         return

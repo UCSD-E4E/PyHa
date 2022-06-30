@@ -201,7 +201,7 @@ def automated_labeling_statistics(
     # Looping through each audio clip
     for clip in clips:
         clip_automated_df = automated_df[automated_df["IN FILE"] == clip]
-        clip_manual_df = manual_df[manual_df["IN FILE"].str[:-3] == clip[:-3]]
+        clip_manual_df = manual_df[manual_df["IN FILE"].str[:-4] == clip[:-4]]
         try:
             if stats_type == "general":
                 clip_stats_df = clip_general(
