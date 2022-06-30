@@ -192,14 +192,20 @@ def automated_labeling_statistics(
         Dataframe of statistics comparing automated labels and human labels for
         multiple clips.
     """
+    
     # Getting a list of clips
     clips = automated_df["IN FILE"].to_list()
     # Removing duplicates
     clips = list(dict.fromkeys(clips))
+
+    num_errors = 0
+    num_processed = 0
+    
     # Initializing the returned dataframe
     statistics_df = pd.DataFrame()
     # Looping through each audio clip
     for clip in clips:
+        num_processed += 1
         clip_automated_df = automated_df[automated_df["IN FILE"] == clip]
         clip_manual_df = manual_df[manual_df["IN FILE"] == clip]
         try:
@@ -220,9 +226,12 @@ def automated_labeling_statistics(
                     statistics_df = statistics_df.append(clip_stats_df)
 
         except BaseException as e:
-            print("Something went wrong with: " + clip)
-            print(e)
+            #print("Something went wrong with: " + clip)
+            #print(e)
             continue
+        if num_processed % 100 == 0:
+            print("processed " + num_processed + " clips")
+    print("Something went wrong with " + num_errors + " clips out of " + len(clips) + " clips")
     statistics_df.reset_index(inplace=True, drop=True)
     return statistics_df
 
