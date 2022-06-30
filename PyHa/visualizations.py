@@ -282,14 +282,9 @@ def spectrogram_visualization(
 
     # Loading in the clip with Microfaune's built-in loading function
     try:
-        # if clip_path[-3:] == "wav":
-        #     SAMPLE_RATE, SIGNAL = audio.load_wav(clip_path)
-        # elif clip_path[-3:] == "mp3":
-        #     SAMPLE_RATE, SIGNAL = audio.load_mp3(clip_path)
         SIGNAL, SAMPLE_RATE = librosa.load(clip_path, sr=None, mono=True)
         SIGNAL = SIGNAL * 32768
-        # SIGNAL, SAMPLE_RATE = torchaudio.load(clip_path, normalize = True, channels_first = False)
-        # SIGNAL = SIGNAL.numpy()
+        # Another method using temporary audio files
         # if (clip_path.split(".")[-1].lower() == "wav"):
         #         SAMPLE_RATE, SIGNAL = audio.load_wav(clip_path)
         # else:
