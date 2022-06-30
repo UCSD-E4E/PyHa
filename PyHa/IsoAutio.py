@@ -809,8 +809,9 @@ def generate_automated_labels_microfaune(
                 SAMPLE_RATE, SIGNAL = audio.load_wav(audio_dir + audio_file)
             else:
                 sound = AudioSegment.from_file(audio_dir + audio_file, audio_file.split(".")[-1].lower())
-                sound.export(audio_dir + ".".join(audio_file.split(".")[:-1]) + "wav", "wav")
-                SAMPLE_RATE, SIGNAL = audio.load_wav(audio_dir + ".".join(audio_file.split(".")[:-1]) + "wav")
+                sound.export(audio_dir + ".".join(audio_file.split(".")[:-1]) + ".wav", "wav")
+                SAMPLE_RATE, SIGNAL = audio.load_wav(audio_dir + ".".join(audio_file.split(".")[:-1]) + ".wav")
+                os.remove(audio_dir + ".".join(audio_file.split(".")[:-1]) + ".wav")
         except BaseException:
             print("Failed to load", audio_file)
             continue
