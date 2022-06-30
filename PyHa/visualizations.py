@@ -280,18 +280,12 @@ def spectrogram_visualization(
         None
     """
 
-    # Loading in the clip with Microfaune's built-in loading function
+    # Reading in the audio file using librosa, converting to single channeled data with original sample rate
+    # Reason for the factor for the signal is explained here: https://stackoverflow.com/questions/53462062/pyaudio-bytes-data-to-librosa-floating-point-time-series
+    # Librosa scales down to [-1, 1], but the models require the range [-32768, 32767], so the multiplication is required
     try:
         SIGNAL, SAMPLE_RATE = librosa.load(clip_path, sr=None, mono=True)
         SIGNAL = SIGNAL * 32768
-        # Another method using temporary audio files
-        # if (clip_path.split(".")[-1].lower() == "wav"):
-        #         SAMPLE_RATE, SIGNAL = audio.load_wav(clip_path)
-        # else:
-        #     sound = AudioSegment.from_file(clip_path, clip_path.split(".")[-1].lower())
-        #     sound.export(".".join(clip_path.split(".")[:-1]) + ".wav", "wav")
-        #     SAMPLE_RATE, SIGNAL = audio.load_wav(".".join(clip_path.split(".")[:-1]) + ".wav")
-        #     os.remove(".".join(clip_path.split(".")[:-1]) + ".wav")
     except BaseException:
         print("Failure in loading", clip_path)
         return

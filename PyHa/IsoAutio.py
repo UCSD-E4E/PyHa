@@ -792,22 +792,12 @@ def generate_automated_labels_microfaune(
         if os.path.isdir(audio_dir + audio_file):
             continue
 
-        # It is a bit awkward here to be relying on Microfaune's wave file
-        # reading when we want to expand to other frameworks,
-        # Likely want to change that in the future. Librosa had some troubles.
-
-        # Reading in the wave audio files
+        # Reading in the audio files using librosa, converting to single channeled data with original sample rate
+        # Reason for the factor for the signal is explained here: https://stackoverflow.com/questions/53462062/pyaudio-bytes-data-to-librosa-floating-point-time-series
+        # Librosa scales down to [-1, 1], but the models require the range [-32768, 32767]
         try:
             SIGNAL, SAMPLE_RATE = librosa.load(audio_dir + audio_file, sr=None, mono=True)
             SIGNAL = SIGNAL * 32768
-            # Another method using temporary audio files
-            # if (audio_file.split(".")[-1].lower() == "wav"):
-            #     SAMPLE_RATE, SIGNAL = audio.load_wav(audio_dir + audio_file)
-            # else:
-            #     sound = AudioSegment.from_file(audio_dir + audio_file, audio_file.split(".")[-1].lower())
-            #     sound.export(audio_dir + ".".join(audio_file.split(".")[:-1]) + ".wav", "wav")
-            #     SAMPLE_RATE, SIGNAL = audio.load_wav(audio_dir + ".".join(audio_file.split(".")[:-1]) + ".wav")
-            #     os.remove(audio_dir + ".".join(audio_file.split(".")[:-1]) + ".wav")
         except BaseException:
             print("Failed to load", audio_file)
             continue
@@ -920,22 +910,12 @@ def generate_automated_labels_tweetynet(
         if os.path.isdir(audio_dir + audio_file):
             continue
 
-        # It is a bit awkward here to be relying on Microfaune's wave file
-        # reading when we want to expand to other frameworks,
-        # Likely want to change that in the future. Librosa had some troubles.
-
-        # Reading in the wave audio files
+        # Reading in the audio files using librosa, converting to single channeled data with original sample rate
+        # Reason for the factor for the signal is explained here: https://stackoverflow.com/questions/53462062/pyaudio-bytes-data-to-librosa-floating-point-time-series
+        # Librosa scales down to [-1, 1], but the models require the range [-32768, 32767], so the multiplication is required
         try:
             SIGNAL, SAMPLE_RATE = librosa.load(audio_dir + audio_file, sr=None, mono=True)
             SIGNAL = SIGNAL * 32768
-            # Another method using temporary audio files
-            # if (audio_file.split(".")[-1].lower() == "wav"):
-            #     SAMPLE_RATE, SIGNAL = audio.load_wav(audio_dir + audio_file)
-            # else:
-            #     sound = AudioSegment.from_file(audio_dir + audio_file, audio_file.split(".")[-1].lower())
-            #     sound.export(audio_dir + ".".join(audio_file.split(".")[:-1]) + ".wav", "wav")
-            #     SAMPLE_RATE, SIGNAL = audio.load_wav(audio_dir + ".".join(audio_file.split(".")[:-1]) + ".wav")
-            #     os.remove(audio_dir + ".".join(audio_file.split(".")[:-1]) + ".wav")
         except BaseException:
             print("Failed to load", audio_file)
             continue
