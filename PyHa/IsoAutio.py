@@ -802,16 +802,17 @@ def generate_automated_labels_microfaune(
             #     SAMPLE_RATE, SIGNAL = audio.load_wav(audio_dir + audio_file)
             # elif audio_file[-3:] == "mp3":
             #     SAMPLE_RATE, SIGNAL = audio.load_mp3(audio_dir + audio_file)
-            # SIGNAL, SAMPLE_RATE = librosa.load(audio_dir + audio_file, sr=None, mono=True)
+            SIGNAL, SAMPLE_RATE = librosa.load(audio_dir + audio_file, sr=None, mono=True)
+            SIGNAL = SIGNAL * 32768
             # SIGNAL, SAMPLE_RATE = torchaudio.load(audio_dir + audio_file, channels_first=False, normalize = True)
             # SIGNAL = SIGNAL.numpy()
-            if (audio_file.split(".")[-1].lower() == "wav"):
-                SAMPLE_RATE, SIGNAL = audio.load_wav(audio_dir + audio_file)
-            else:
-                sound = AudioSegment.from_file(audio_dir + audio_file, audio_file.split(".")[-1].lower())
-                sound.export(audio_dir + ".".join(audio_file.split(".")[:-1]) + ".wav", "wav")
-                SAMPLE_RATE, SIGNAL = audio.load_wav(audio_dir + ".".join(audio_file.split(".")[:-1]) + ".wav")
-                os.remove(audio_dir + ".".join(audio_file.split(".")[:-1]) + ".wav")
+            # if (audio_file.split(".")[-1].lower() == "wav"):
+            #     SAMPLE_RATE, SIGNAL = audio.load_wav(audio_dir + audio_file)
+            # else:
+            #     sound = AudioSegment.from_file(audio_dir + audio_file, audio_file.split(".")[-1].lower())
+            #     sound.export(audio_dir + ".".join(audio_file.split(".")[:-1]) + ".wav", "wav")
+            #     SAMPLE_RATE, SIGNAL = audio.load_wav(audio_dir + ".".join(audio_file.split(".")[:-1]) + ".wav")
+            #     os.remove(audio_dir + ".".join(audio_file.split(".")[:-1]) + ".wav")
         except BaseException:
             print("Failed to load", audio_file)
             continue
@@ -931,16 +932,17 @@ def generate_automated_labels_tweetynet(
         # Reading in the wave audio files
         try:
             # SAMPLE_RATE, SIGNAL = audio.load_audio(audio_dir + audio_file)
-            # SIGNAL, SAMPLE_RATE = librosa.load(audio_dir + audio_file, sr=None, mono=True)
+            SIGNAL, SAMPLE_RATE = librosa.load(audio_dir + audio_file, sr=None, mono=True)
+            SIGNAL = SIGNAL * 32768
             # SIGNAL, SAMPLE_RATE = torchaudio.load(audio_dir + audio_file, channels_first=False, normalize = True)
             # SIGNAL = SIGNAL.numpy()
-            if (audio_file.split(".")[-1].lower() == "wav"):
-                SAMPLE_RATE, SIGNAL = audio.load_wav(audio_dir + audio_file)
-            else:
-                sound = AudioSegment.from_file(audio_dir + audio_file, audio_file.split(".")[-1].lower())
-                sound.export(audio_dir + ".".join(audio_file.split(".")[:-1]) + ".wav", "wav")
-                SAMPLE_RATE, SIGNAL = audio.load_wav(audio_dir + ".".join(audio_file.split(".")[:-1]) + ".wav")
-                os.remove(audio_dir + ".".join(audio_file.split(".")[:-1]) + ".wav")
+            # if (audio_file.split(".")[-1].lower() == "wav"):
+            #     SAMPLE_RATE, SIGNAL = audio.load_wav(audio_dir + audio_file)
+            # else:
+            #     sound = AudioSegment.from_file(audio_dir + audio_file, audio_file.split(".")[-1].lower())
+            #     sound.export(audio_dir + ".".join(audio_file.split(".")[:-1]) + ".wav", "wav")
+            #     SAMPLE_RATE, SIGNAL = audio.load_wav(audio_dir + ".".join(audio_file.split(".")[:-1]) + ".wav")
+            #     os.remove(audio_dir + ".".join(audio_file.split(".")[:-1]) + ".wav")
         except BaseException:
             print("Failed to load", audio_file)
             continue
