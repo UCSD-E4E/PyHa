@@ -4,6 +4,7 @@ PyHa/microfaune_package/microfaune/__pycache__/*
 PyHa/tweetynet_package/tweetynet/__pycache__/*
 PyHa/birdnet_lite/__pycache__/*
 TEST/*
+TESTmp3/*
 /mixed_bird/*
 mixed_bird_manual.csv
 outputs/result.csv
@@ -19,3 +20,5 @@ OFF0/*
 OFF0mp3/*
 XCTESTFILESwav/*
 XCTESTFILESmp3/*
+*.csv
+!ScreamingPiha_Manual_Labels.csv
