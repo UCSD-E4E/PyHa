@@ -7,6 +7,8 @@ TEST/*
 TESTmp3/*
 FIELDwav/*
 FIELDmp3/*
+XCTESTFILEwav/*
+XCTESTFILESmp3/*
 /mixed_bird/*
 mixed_bird_manual.csv
 outputs/result.csv
