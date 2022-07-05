@@ -27,7 +27,8 @@ def loadModel():
 
     # Load TFLite model and allocate tensors.
     SCRIPT_DIRECTORY_PATH = os.path.abspath(os.path.dirname(__file__))
-    interpreter = tflite.Interpreter(os.path.join(SCRIPT_DIRECTORY_PATH,"model/BirdNET_6K_GLOBAL_MODEL.tflite" ))
+    # interpreter = tflite.Interpreter(os.path.join(SCRIPT_DIRECTORY_PATH,"model/BirdNET_6K_GLOBAL_MODEL.tflite" ))
+    interpreter = tflite.Interpreter(os.path.join(SCRIPT_DIRECTORY_PATH,"model/BirdNET_GLOBAL_2K_V2.1_Model_FP32.tflite"))
     interpreter.allocate_tensors()
 
     # Get input and output tensors.
