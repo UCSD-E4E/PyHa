@@ -1,461 +1,315 @@
 import os
-import sys
-import json
-import operator
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+os.environ['CUDA_VISIBLE_DEVICES'] = ''
+
+try:
+    import tflite_runtime.interpreter as tflite
+except:
+    from tensorflow import lite as tflite
+
 import argparse
-import datetime
-import traceback
-
-from multiprocessing import Pool, freeze_support
-
+import operator
+import librosa
 import numpy as np
+import math
+import time
+import pandas as pd
+from sys import exit
 
-import config as cfg
-import audio
-import model
+def loadModel():
 
-def clearErrorLog():
+    global INPUT_LAYER_INDEX
+    global OUTPUT_LAYER_INDEX
+    global MDATA_INPUT_INDEX
+    global CLASSES
 
-    if os.path.isfile(cfg.ERROR_LOG_FILE):
-        os.remove(cfg.ERROR_LOG_FILE)
+    print('LOADING TF LITE MODEL...', end=' ')
 
-def writeErrorLog(msg):
+    # Load TFLite model and allocate tensors.
+    SCRIPT_DIRECTORY_PATH = os.path.abspath(os.path.dirname(__file__))
+    interpreter = tflite.Interpreter(os.path.join(SCRIPT_DIRECTORY_PATH,"model/BirdNET_6K_GLOBAL_MODEL.tflite" ))
+    #interpreter = tflite.Interpreter(os.path.join(SCRIPT_DIRECTORY_PATH,"model/BirdNET_GLOBAL_2K_V2.1_Model_FP32.tflite"))
+    interpreter.allocate_tensors()
 
-    with open(cfg.ERROR_LOG_FILE, 'a') as elog:
-        elog.write(msg + '\n')
+    # Get input and output tensors.
+    input_details = interpreter.get_input_details()
+    output_details = interpreter.get_output_details()
 
-def parseInputFiles(path, allowed_filetypes=['wav', 'flac', 'mp3', 'ogg', 'm4a']):
+    # Get input tensor index
+    INPUT_LAYER_INDEX = input_details[0]['index']
+    MDATA_INPUT_INDEX = input_details[1]['index']
+    OUTPUT_LAYER_INDEX = output_details[0]['index']
 
-    # Add backslash to path if not present
-    if not path.endswith(os.sep):
-        path += os.sep
-
-    # Get all files in directory with os.walk
-    files = []
-    for root, dirs, flist in os.walk(path):
-        for f in flist:
-            if len(f.rsplit('.', 1)) > 1 and f.rsplit('.', 1)[1].lower() in allowed_filetypes:
-                files.append(os.path.join(root, f))
-
-    print('Found {} files to analyze'.format(len(files)))
-
-    return sorted(files)
-
-def loadCodes():
-
-    with open(cfg.CODES_FILE, 'r') as cfile:
-        codes = json.load(cfile)
-
-    return codes
-
-def loadLabels(labels_file):
-
-    labels = []
-    with open(labels_file, 'r') as lfile:
+    # Load labels
+    CLASSES = []
+    with open(os.path.join(SCRIPT_DIRECTORY_PATH,"model/labels.txt" ), 'r') as lfile:
         for line in lfile.readlines():
-            labels.append(line.replace('\n', ''))    
+            CLASSES.append(line.replace('\n', ''))
 
-    return labels
+    print('DONE!')
 
-def loadSpeciesList(fpath):
+    return interpreter
+
+def loadCustomSpeciesList(path):
 
     slist = []
-    if not fpath == None:
-        with open(fpath, 'r') as sfile:
-            for line in sfile.readlines():
-                species = line.replace('\r', '').replace('\n', '')
-                slist.append(species)
+    if os.path.isfile(path):
+        with open(path, 'r') as csfile:
+            for line in csfile.readlines():
+                slist.append(line.replace('\r', '').replace('\n', ''))
 
     return slist
 
-def predictSpeciesList():
+def splitSignal(sig, rate, overlap, seconds=3.0, minlen=1.5):
 
-    l_filter = model.explore(cfg.LATITUDE, cfg.LONGITUDE, cfg.WEEK)
-    cfg.SPECIES_LIST_FILE = None
-    cfg.SPECIES_LIST = []
-    for s in l_filter:
-        if s[0] >= cfg.LOCATION_FILTER_THRESHOLD:
-            cfg.SPECIES_LIST.append(s[1])
+    # Split signal with overlap
+    sig_splits = []
+    for i in range(0, len(sig), int((seconds - overlap) * rate)):
+        split = sig[i:i + int(seconds * rate)]
 
-def saveResultFile(r, path, afile_path):
-
-    # Make folder if it doesn't exist
-    if len(os.path.dirname(path)) > 0 and not os.path.exists(os.path.dirname(path)):
-        os.makedirs(os.path.dirname(path))
-
-    # Selection table
-    out_string = ''
-
-    if cfg.RESULT_TYPE == 'table':
-
-        # Raven selection header
-        header = 'Selection\tView\tChannel\tBegin Time (s)\tEnd Time (s)\tLow Freq (Hz)\tHigh Freq (Hz)\tSpecies Code\tCommon Name\tConfidence\n'
-        selection_id = 0
-
-        # Write header
-        out_string += header
+        # End of signal?
+        if len(split) < int(minlen * rate):
+            break
         
-        # Extract valid predictions for every timestamp
-        for timestamp in getSortedTimestamps(r):
-            rstring = ''
-            start, end = timestamp.split('-')
-            for c in r[timestamp]:
-                if c[1] > cfg.MIN_CONFIDENCE and c[0] in cfg.CODES and (c[0] in cfg.SPECIES_LIST or len(cfg.SPECIES_LIST) == 0):
-                    selection_id += 1
-                    label = cfg.TRANSLATED_LABELS[cfg.LABELS.index(c[0])]
-                    rstring += '{}\tSpectrogram 1\t1\t{}\t{}\t{}\t{}\t{}\t{}\t{:.4f}\n'.format(
-                        selection_id, 
-                        start, 
-                        end, 
-                        150, 
-                        12000, 
-                        cfg.CODES[c[0]], 
-                        label.split('_')[1], 
-                        c[1])
+        # Signal chunk too short? Fill with zeros.
+        if len(split) < int(rate * seconds):
+            temp = np.zeros((int(rate * seconds)))
+            temp[:len(split)] = split
+            split = temp
+        
+        sig_splits.append(split)
 
-            # Write result string to file
-            if len(rstring) > 0:
-                out_string += rstring
+    return sig_splits
 
-    elif cfg.RESULT_TYPE == 'audacity':
+def readAudioData(path, overlap, sample_rate=48000):
 
-        # Audacity timeline labels
-        for timestamp in getSortedTimestamps(r):
-            rstring = ''
-            for c in r[timestamp]:
-                if c[1] > cfg.MIN_CONFIDENCE and c[0] in cfg.CODES and (c[0] in cfg.SPECIES_LIST or len(cfg.SPECIES_LIST) == 0):
-                    label = cfg.TRANSLATED_LABELS[cfg.LABELS.index(c[0])]
-                    rstring += '{}\t{}\t{:.4f}\n'.format(
-                        timestamp.replace('-', '\t'), 
-                        label.replace('_', ', '), 
-                        c[1])
+    #print('READING AUDIO DATA...', end=' ', flush=True)
 
-            # Write result string to file
-            if len(rstring) > 0:
-                out_string += rstring
+    # Open file with librosa (uses ffmpeg or libav)
+    try:
+        sig, rate = librosa.load(path, sr=sample_rate, mono=True, res_type='kaiser_fast')
+        clip_length = librosa.get_duration(y=sig, sr=rate)
+    except:
+        return 0
+    # Split audio into 3-second chunks
+    chunks = splitSignal(sig, rate, overlap)
 
-    elif cfg.RESULT_TYPE == 'r':
+    #print('DONE! READ', str(len(chunks)), 'CHUNKS.')
 
-        # Output format for R
-        header = 'filepath,start,end,scientific_name,common_name,confidence,lat,lon,week,overlap,sensitivity,min_conf,species_list,model'
-        out_string += header
+    return chunks, clip_length
 
-        for timestamp in getSortedTimestamps(r):
-            rstring = ''
-            start, end = timestamp.split('-')
-            for c in r[timestamp]:
-                if c[1] > cfg.MIN_CONFIDENCE and c[0] in cfg.CODES and (c[0] in cfg.SPECIES_LIST or len(cfg.SPECIES_LIST) == 0):                    
-                    label = cfg.TRANSLATED_LABELS[cfg.LABELS.index(c[0])]
-                    rstring += '\n{},{},{},{},{},{:.4f},{:.4f},{:.4f},{},{},{},{},{},{}'.format(
-                        afile_path,
-                        start,
-                        end,
-                        label.split('_')[0],
-                        label.split('_')[1],
-                        c[1],
-                        cfg.LATITUDE,
-                        cfg.LONGITUDE,
-                        cfg.WEEK,
-                        cfg.SIG_OVERLAP,
-                        (1.0 - cfg.SIGMOID_SENSITIVITY) + 1.0,
-                        cfg.MIN_CONFIDENCE,
-                        cfg.SPECIES_LIST_FILE,
-                        os.path.basename(cfg.MODEL_PATH)
-                    )
-            # Write result string to file
-            if len(rstring) > 0:
-                out_string += rstring
+def convertMetadata(m):
 
+    # Convert week to cosine
+    if m[2] >= 1 and m[2] <= 48:
+        m[2] = math.cos(math.radians(m[2] * 7.5)) + 1 
     else:
+        m[2] = -1
 
-        # CSV output file
-        header = 'Start (s),End (s),Scientific name,Common name,Confidence\n'
+    # Add binary mask
+    mask = np.ones((3,))
+    if m[0] == -1 or m[1] == -1:
+        mask = np.zeros((3,))
+    if m[2] == -1:
+        mask[2] = 0.0
 
-        # Write header
-        out_string += header
+    return np.concatenate([m, mask])
 
-        for timestamp in getSortedTimestamps(r):
-            rstring = ''
-            for c in r[timestamp]:                
-                start, end = timestamp.split('-')
-                if c[1] > cfg.MIN_CONFIDENCE and c[0] in cfg.CODES and (c[0] in cfg.SPECIES_LIST or len(cfg.SPECIES_LIST) == 0):
-                    label = cfg.TRANSLATED_LABELS[cfg.LABELS.index(c[0])]
-                    rstring += '{},{},{},{},{:.4f}\n'.format(
-                        start,
-                        end,
-                        label.split('_')[0],
-                        label.split('_')[1],
-                        c[1])
+def custom_sigmoid(x, sensitivity=1.0):
+    return 1 / (1.0 + np.exp(-sensitivity * x))
 
-            # Write result string to file
-            if len(rstring) > 0:
-                out_string += rstring
+def predict(sample, interpreter, sensitivity, num_predictions):
 
-    # Save as file
-    with open(path, 'w') as rfile:
-        rfile.write(out_string)
+    # Make a prediction
+    interpreter.set_tensor(INPUT_LAYER_INDEX, np.array(sample[0], dtype='float32'))
+    interpreter.set_tensor(MDATA_INPUT_INDEX, np.array(sample[1], dtype='float32'))
+    interpreter.invoke()
+    prediction = interpreter.get_tensor(OUTPUT_LAYER_INDEX)[0]
+
+    # Apply custom sigmoid
+    p_sigmoid = custom_sigmoid(prediction, sensitivity)
+
+    # Get label and scores for pooled predictions
+    p_labels = dict(zip(CLASSES, p_sigmoid))
+
+    # Sort by score
+    p_sorted = sorted(p_labels.items(), key=operator.itemgetter(1), reverse=True)
+
+    # Remove species that are on blacklist
+    for i in range(min(num_predictions, len(p_sorted))):
+        if p_sorted[i][0] in ['Human_Human', 'Non-bird_Non-bird', 'Noise_Noise']:
+            p_sorted[i] = (p_sorted[i][0], 0.0)
+
+    # Only return first the top ten results
+    return p_sorted[:num_predictions]
+
+def analyzeAudioData(chunks, lat, lon, week, sensitivity, overlap, interpreter, num_predictions):
+
+    detections = {}
+    start = time.time()
+    # print('ANALYZING AUDIO...', end=' ', flush=True)
+
+    # Convert and prepare metadata
+    mdata = convertMetadata(np.array([lat, lon, week]))
+    mdata = np.expand_dims(mdata, 0)
+
+    # Parse every chunk
+    pred_start = 0.0
+    for c in chunks:
+
+        # Prepare as input signal
+        sig = np.expand_dims(c, 0)
+
+        # Make prediction
+        p = predict([sig, mdata], interpreter, sensitivity, num_predictions)
+
+        # Save result and timestamp
+        pred_end = pred_start + 3.0
+        detections[str(pred_start) + ';' + str(pred_end)] = p
+        pred_start = pred_end - overlap
+
+    # print('DONE! Time', int((time.time() - start) * 10) / 10.0, 'SECONDS')
+
+    return detections
+
+def writeResultsToDf(df, detections, min_conf, output_metadata):
+
+    rcnt = 0
+    row = pd.DataFrame(output_metadata, index = [0])
+    
+    for d in detections:
+        for entry in detections[d]:
+            if entry[1] >= min_conf and (entry[0] in WHITE_LIST or len(WHITE_LIST) == 0):
+                time_interval = d.split(';')
+                row['OFFSET'] = float(time_interval[0])
+                row['DURATION'] = float(time_interval[1])-float(time_interval[0])
+                row['MANUAL ID'] = entry[0].split('_')[0]
+                df = pd.concat([df,row], ignore_index=True)
+                rcnt += 1
+    print('DONE! WROTE', rcnt, 'RESULTS.')
+    return df
 
 
-def getSortedTimestamps(results):
-    return sorted(results, key=lambda t: float(t.split('-')[0]))
+def parseTestSet(path, file_type='wav'):
 
+    # Find all soundscape files
+    dataset = []
+    if os.path.isfile(path):
+        dataset.append(path)
+    else:
+        for dirpath, _, filenames in os.walk(path):
+            for f in filenames:
+                if f.rsplit('.', 1)[-1].lower() == file_type:
+                    dataset.append(os.path.abspath(os.path.join(dirpath, f)))
+    return dataset
 
-def getRawAudioFromFile(fpath):
+def analyze(audio_path, output_path = None, lat=-1, lon=-1, week=-1, overlap=0.0,
+    sensitivity=1.0, min_conf=0.1, custom_list='', filetype='wav', num_predictions=10,
+    write_to_csv=False):
+    
+    global WHITE_LIST
+    
+    # Load model
+    interpreter = loadModel()
+    dataset = parseTestSet(audio_path, filetype)
+    
+    if not custom_list == '':
+        WHITE_LIST = loadCustomSpeciesList(custom_list)
+    else:
+        WHITE_LIST = []
+    
+    # Write detections to output file
+    min_conf = max(0.01, min(min_conf, 0.99))
+    
+    # Process audio data and get detections
+    week = max(1, min(week, 48))
+    sensitivity = max(0.5, min(1.0 - (sensitivity - 1.0), 1.5))
+    sample_rate = 48000
+    df_columns = {'FOLDER' : 'str', 'IN FILE' :'str', 'CLIP LENGTH' : 'float64', 'CHANNEL' : 'int64', 'OFFSET' : 'float64',
+                'DURATION' : 'float64', 'SAMPLE RATE' : 'int64','MANUAL ID' : 'str'}
+    df = pd.DataFrame({c: pd.Series(dtype=t) for c, t in df_columns.items()})
+    output_metadata = {}
+    output_metadata['CHANNEL'] = 0 # Setting channel to 0 by default
+    output_metadata['SAMPLE RATE'] = sample_rate
+    output_file = os.path.join(audio_path, 'result.csv')
 
-    # Open file
-    sig, rate = audio.openAudioFile(fpath, cfg.SAMPLE_RATE)
-
-    # Split into raw audio chunks
-    chunks = audio.splitSignal(sig, rate, cfg.SIG_LENGTH, cfg.SIG_OVERLAP, cfg.SIG_MINLEN)
-
-    return chunks
-
-def predict(samples):
-
-    # Prepare sample and pass through model
-    data = np.array(samples, dtype='float32')
-    prediction = model.predict(data)
-
-    # Logits or sigmoid activations?
-    if cfg.APPLY_SIGMOID:
-        prediction = model.flat_sigmoid(np.array(prediction), sensitivity=-cfg.SIGMOID_SENSITIVITY)
-
-    return prediction
-
-def analyzeFile(item):
-
-    # Get file path and restore cfg
-    fpath = item[0]
-    cfg.setConfig(item[1])
-
-    # Start time
-    start_time = datetime.datetime.now()
-
-    # Status
-    print('Analyzing {}'.format(fpath), flush=True)
-
-    # Open audio file and split into 3-second chunks
-    chunks = getRawAudioFromFile(fpath)
-
-    # If no chunks, show error and skip
-    if len(chunks) == 0:
-        msg = 'Error: Cannot open audio file {}'.format(fpath)
-        print(msg, flush=True)
-        writeErrorLog(msg)
-        return False
-
-    # Process each chunk
-    try:
-        start, end = 0, cfg.SIG_LENGTH
-        results = {}
-        samples = []
-        timestamps = []
-        for c in range(len(chunks)):
-
-            # Add to batch
-            samples.append(chunks[c])
-            timestamps.append([start, end])
-
-            # Advance start and end
-            start += cfg.SIG_LENGTH - cfg.SIG_OVERLAP
-            end = start + cfg.SIG_LENGTH
-
-            # Check if batch is full or last chunk        
-            if len(samples) < cfg.BATCH_SIZE and c < len(chunks) - 1:
-                continue
-
-            # Predict
-            p = predict(samples)
-
-            # Add to results
-            for i in range(len(samples)):
-
-                # Get timestamp
-                s_start, s_end = timestamps[i]
-
-                # Get prediction
-                pred = p[i]
-
-                # Assign scores to labels
-                p_labels = dict(zip(cfg.LABELS, pred))
-
-                # Sort by score
-                p_sorted =  sorted(p_labels.items(), key=operator.itemgetter(1), reverse=True)
-
-                # Store top 5 results and advance indicies
-                results[str(s_start) + '-' + str(s_end)] = p_sorted
-
-            # Clear batch
-            samples = []
-            timestamps = []  
-    except:
-        # Print traceback
-        print(traceback.format_exc(), flush=True)
-
-        # Write error log
-        msg = 'Error: Cannot analyze audio file {}.\n{}'.format(fpath, traceback.format_exc())
-        print(msg, flush=True)
-        writeErrorLog(msg)
-        return False     
-
-    # Save as selection table
-    try:
-
-        # We have to check if output path is a file or directory
-        if not cfg.OUTPUT_PATH.rsplit('.', 1)[-1].lower() in ['txt', 'csv']:
-
-            rpath = fpath.replace(cfg.INPUT_PATH, '')
-            rpath = rpath[1:] if rpath[0] in ['/', '\\'] else rpath
-
-            # Make target directory if it doesn't exist
-            rdir = os.path.join(cfg.OUTPUT_PATH, os.path.dirname(rpath))
-            if not os.path.exists(rdir):
-                os.makedirs(rdir, exist_ok=True)
-
-            if cfg.RESULT_TYPE == 'table':
-                rtype = '.BirdNET.selection.table.txt' 
-            elif cfg.RESULT_TYPE == 'audacity':
-                rtype = '.BirdNET.results.txt'
+    if len(dataset) == 1:
+        try:
+            datafile = dataset[0]
+            output_metadata['FOLDER']  = os.path.join('.', os.path.relpath(os.path.split(datafile)[0], os.getcwd())) + os.path.sep
+            output_metadata['IN FILE'] =  os.path.split(datafile)[1]
+            audioData, clip_length = readAudioData(datafile, overlap, sample_rate)
+            output_metadata['CLIP LENGTH'] = clip_length
+            detections = analyzeAudioData(audioData, lat, lon, week, sensitivity, overlap, interpreter, num_predictions)
+            if output_path is None:
+                output_file = os.path.join(output_metadata['FOLDER'], 'result.csv')
+                output_file = os.path.abspath(output_file)
             else:
-                rtype = '.BirdNET.results.csv'
-            saveResultFile(results, os.path.join(cfg.OUTPUT_PATH, rpath.rsplit('.', 1)[0] + rtype), fpath)
+                output_directory = os.path.abspath(output_path) 
+                if not os.path.exists(output_directory): 
+                    os.makedirs(output_directory)
+                output_file = os.path.join(output_directory, 'result.csv')
+            df = writeResultsToDf(df, detections, min_conf, output_metadata)
+        except:
+             print("Error processing file: {}".format(datafile))
+    elif len(dataset) > 0:
+        for datafile in dataset:         
+            try:
+                # Read audio data
+                audioData, clip_length = readAudioData(datafile, overlap, sample_rate)
+                if audioData == 0:
+                    continue
+                detections = analyzeAudioData(audioData, lat, lon, week, sensitivity, overlap, interpreter,  num_predictions)
+                output_metadata['FOLDER']  = os.path.join('.', os.path.relpath(os.path.split(datafile)[0], os.getcwd())) + os.path.sep
+                output_metadata['IN FILE'] = os.path.split(datafile)[1]
+                output_metadata['CLIP LENGTH'] = clip_length
+                df = writeResultsToDf(df, detections, min_conf, output_metadata)
+            except:
+                print("Error in processing file: {}".format(datafile)) 
+        if output_path is None:
+            output_file = os.path.join(audio_path, 'result.csv')
+            output_file = os.path.abspath(output_file)
         else:
-            saveResultFile(results, cfg.OUTPUT_PATH, fpath)        
-    except:
+            output_directory = os.path.abspath(output_path) 
+            if not os.path.exists(output_directory): 
+                os.makedirs(output_directory)
+            output_file = os.path.join(output_directory, 'result.csv')
+    else:
+        print("No input file/folder passed")
+        exit()
+    if write_to_csv:
+        print('WRITING RESULTS TO', output_file, '...', end=' ')
+        df.to_csv(output_file, index=False)
+    return df
 
-        # Print traceback
-        print(traceback.format_exc(), flush=True)
 
-        # Write error log
-        msg = 'Error: Cannot save result for {}.\n{}'.format(fpath, traceback.format_exc())
-        print(msg, flush=True)
-        writeErrorLog(msg)
-        return False
+def main():
 
-    delta_time = (datetime.datetime.now() - start_time).total_seconds()
-    print('Finished {} in {:.2f} seconds'.format(fpath, delta_time), flush=True)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--i', help='Path to input folder/input file. All the nested folders will also be processed.')
+    parser.add_argument('--o', default='result.csv', help='Absolute path to output folder. By default results are written into the input folder.')
+    parser.add_argument('--lat', type=float, default=-1, help='Recording location latitude. Set -1 to ignore.')
+    parser.add_argument('--lon', type=float, default=-1, help='Recording location longitude. Set -1 to ignore.')
+    parser.add_argument('--week', type=int, default=-1, help='Week of the year when the recording was made. Values in [1, 48] (4 weeks per month). Set -1 to ignore.')
+    parser.add_argument('--overlap', type=float, default=0.0, help='Overlap in seconds between extracted spectrograms. Values in [0.0, 2.9]. Defaults tp 0.0.')
+    parser.add_argument('--sensitivity', type=float, default=1.0, help='Detection sensitivity; Higher values result in higher sensitivity. Values in [0.5, 1.5]. Defaults to 1.0.')
+    parser.add_argument('--min_conf', type=float, default=0.1, help='Minimum confidence threshold. Values in [0.01, 0.99]. Defaults to 0.1.')   
+    parser.add_argument('--custom_list', default='', help='Path to text file containing a list of species. Not used if not provided.')
+    parser.add_argument('--filetype', default='wav', help='Filetype of soundscape recordings. Defaults to \'wav\'.')
+    parser.add_argument('--num_predictions', type=int, default=10, help='Defines maximum number of written predictions in a given 3s segment. Defaults to 10')
+    args = parser.parse_args()
 
-    return True
+    df = analyze(
+        audio_path=args.i, output_path=args.o, lat=args.lat, lon=args.lon,
+        week=args.week, overlap=args.overlap, sensitivity=args.sensitivity,
+        min_conf=args.min_conf, custom_list=args.custom_list, filetype=args.filetype,
+        num_predictions=args.num_predictions, write_to_csv=True
+    )  
 
 if __name__ == '__main__':
 
-    # Freeze support for excecutable
-    freeze_support()
+    main()
 
-    # Clear error log
-    #clearErrorLog()
-
-    # Parse arguments
-    parser = argparse.ArgumentParser(description='Analyze audio files with BirdNET')
-    parser.add_argument('--i', default='example/', help='Path to input file or folder. If this is a file, --o needs to be a file too.')
-    parser.add_argument('--o', default='example/', help='Path to output file or folder. If this is a file, --i needs to be a file too.')
-    parser.add_argument('--lat', type=float, default=-1, help='Recording location latitude. Set -1 to ignore.')
-    parser.add_argument('--lon', type=float, default=-1, help='Recording location longitude. Set -1 to ignore.')
-    parser.add_argument('--week', type=int, default=-1, help='Week of the year when the recording was made. Values in [1, 48] (4 weeks per month). Set -1 for year-round species list.')
-    parser.add_argument('--slist', default='', help='Path to species list file or folder. If folder is provided, species list needs to be named \"species_list.txt\". If lat and lon are provided, this list will be ignored.')
-    parser.add_argument('--sensitivity', type=float, default=1.0, help='Detection sensitivity; Higher values result in higher sensitivity. Values in [0.5, 1.5]. Defaults to 1.0.')
-    parser.add_argument('--min_conf', type=float, default=0.1, help='Minimum confidence threshold. Values in [0.01, 0.99]. Defaults to 0.1.')
-    parser.add_argument('--overlap', type=float, default=0.0, help='Overlap of prediction segments. Values in [0.0, 2.9]. Defaults to 0.0.')
-    parser.add_argument('--rtype', default='table', help='Specifies output format. Values in [\'table\', \'audacity\', \'r\', \'csv\']. Defaults to \'table\' (Raven selection table).')
-    parser.add_argument('--threads', type=int, default=4, help='Number of CPU threads.')
-    parser.add_argument('--batchsize', type=int, default=1, help='Number of samples to process at the same time. Defaults to 1.')
-    parser.add_argument('--locale', default='en', help='Locale for translated species common names. Values in [\'af\', \'de\', \'it\', ...] Defaults to \'en\'.')
-    parser.add_argument('--sf_thresh', type=float, default=0.03, help='Minimum species occurrence frequency threshold for location filter. Values in [0.01, 0.99]. Defaults to 0.03.')
-
-    args = parser.parse_args()
-
-    # Set paths relative to script path (requested in #3)
-    cfg.MODEL_PATH = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), cfg.MODEL_PATH)
-    cfg.LABELS_FILE = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), cfg.LABELS_FILE)
-    cfg.TRANSLATED_LABELS_PATH = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), cfg.TRANSLATED_LABELS_PATH)
-    cfg.MDATA_MODEL_PATH = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), cfg.MDATA_MODEL_PATH)
-    cfg.CODES_FILE = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), cfg.CODES_FILE)
-    cfg.ERROR_LOG_FILE = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), cfg.ERROR_LOG_FILE)
-
-    # Load eBird codes, labels
-    cfg.CODES = loadCodes()
-    cfg.LABELS = loadLabels(cfg.LABELS_FILE)
-
-    # Load translated labels
-    lfile = os.path.join(cfg.TRANSLATED_LABELS_PATH, os.path.basename(cfg.LABELS_FILE).replace('.txt', '_{}.txt'.format(args.locale)))
-    if not args.locale in ['en'] and os.path.isfile(lfile):
-        cfg.TRANSLATED_LABELS = loadLabels(lfile)
-    else:
-        cfg.TRANSLATED_LABELS = cfg.LABELS   
-
-    ### Make sure to comment out appropriately if you are not using args. ###
-
-    # Load species list from location filter or provided list
-    cfg.LATITUDE, cfg.LONGITUDE, cfg.WEEK = args.lat, args.lon, args.week
-    cfg.LOCATION_FILTER_THRESHOLD = max(0.01, min(0.99, float(args.sf_thresh)))
-    if cfg.LATITUDE == -1 and cfg.LONGITUDE == -1:
-        if len(args.slist) == 0:
-            cfg.SPECIES_LIST_FILE = None
-        else:
-            cfg.SPECIES_LIST_FILE = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), args.slist)
-            if os.path.isdir(cfg.SPECIES_LIST_FILE):
-                cfg.SPECIES_LIST_FILE = os.path.join(cfg.SPECIES_LIST_FILE, 'species_list.txt')
-        cfg.SPECIES_LIST = loadSpeciesList(cfg.SPECIES_LIST_FILE)
-    else:
-        predictSpeciesList()
-    if len(cfg.SPECIES_LIST) == 0:
-        print('Species list contains {} species'.format(len(cfg.LABELS)))
-    else:        
-        print('Species list contains {} species'.format(len(cfg.SPECIES_LIST)))
-
-    # Set input and output path    
-    cfg.INPUT_PATH = args.i
-    cfg.OUTPUT_PATH = args.o
-
-    # Parse input files
-    if os.path.isdir(cfg.INPUT_PATH):
-        cfg.FILE_LIST = parseInputFiles(cfg.INPUT_PATH)  
-    else:
-        cfg.FILE_LIST = [cfg.INPUT_PATH]
-
-    # Set confidence threshold
-    cfg.MIN_CONFIDENCE = max(0.01, min(0.99, float(args.min_conf)))
-
-    # Set sensitivity
-    cfg.SIGMOID_SENSITIVITY = max(0.5, min(1.0 - (float(args.sensitivity) - 1.0), 1.5))
-
-    # Set overlap
-    cfg.SIG_OVERLAP = max(0.0, min(2.9, float(args.overlap)))
-
-    # Set result type
-    cfg.RESULT_TYPE = args.rtype.lower()    
-    if not cfg.RESULT_TYPE in ['table', 'audacity', 'r', 'csv']:
-        cfg.RESULT_TYPE = 'table'
-
-    # Set number of threads
-    if os.path.isdir(cfg.INPUT_PATH):
-        cfg.CPU_THREADS = max(1, int(args.threads))
-        cfg.TFLITE_THREADS = 1
-    else:
-        cfg.CPU_THREADS = 1
-        cfg.TFLITE_THREADS = max(1, int(args.threads))
-
-    # Set batch size
-    cfg.BATCH_SIZE = max(1, int(args.batchsize))
-
-    # Add config items to each file list entry.
-    # We have to do this for Windows which does not
-    # support fork() and thus each process has to
-    # have its own config. USE LINUX!
-    flist = []
-    for f in cfg.FILE_LIST:
-        flist.append((f, cfg.getConfig()))
-
-    # Analyze files   
-    if cfg.CPU_THREADS < 2:
-        for entry in flist:
-            analyzeFile(entry)
-    else:
-        with Pool(cfg.CPU_THREADS) as p:
-            p.map(analyzeFile, flist)
-
-
-    # A few examples to test
-    # python3 analyze.py --i example/ --o example/ --slist example/ --min_conf 0.5 --threads 4
-    # python3 analyze.py --i example/soundscape.wav --o example/soundscape.BirdNET.selection.table.txt --slist example/species_list.txt --threads 8
-    # python3 analyze.py --i example/ --o example/ --lat 42.5 --lon -76.45 --week 4 --sensitivity 1.0 --rtype table --locale de
+    # Example calls
+    # python3 analyze.py --i 'example/XC558716 - Soundscape.mp3' --lat 35.4244 --lon -120.7463 --week 18
+    # python3 analyze.py --i 'example/XC563936 - Soundscape.mp3' --lat 47.6766 --lon -122.294 --week 11 --overlap 1.5 --min_conf 0.25 --sensitivity 1.25 --custom_list 'example/custom_species_list.txt'

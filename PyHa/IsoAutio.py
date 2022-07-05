@@ -9,7 +9,8 @@ import scipy.signal as scipy_signal
 import numpy as np
 import math
 import os
-from .birdnet_lite.analyze import analyze
+#from .birdnet_lite.analyze import analyze
+from .birdnet_analyzer.analyze import analyze
 from copy import deepcopy
 
 def build_isolation_parameters_microfaune(
