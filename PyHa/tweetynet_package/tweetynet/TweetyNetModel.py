@@ -85,7 +85,9 @@ class TweetyNetModel:
         batch_size=1
         window_size=2
 
-        if model_weights != None:
+        if model_weights == "retraining":
+            pass
+        elif model_weights != None:
             self.load_weights(model_weights)
         else:
             self.load_weights(os.path.join("PyHa","tweetynet_package","tweetynet","config","tweetynet_weights.h5"))
@@ -104,8 +106,11 @@ class TweetyNetModel:
                 inputs, labels, uids = data
                 inputs, labels = inputs.to(self.device), labels.to(self.device)
                 output = self.model(inputs, inputs.shape[0], inputs.shape[0])
+                #print(output)
+                #print(output[0,1])
                 local_score.extend([x for x in output[0, 1, :]])
                 pred = torch.argmax(output, dim=1)
+                #print(pred)
                 pred = pred.reshape(pred.shape[1])
                 labels = labels.reshape(labels.shape[1])
                 bins = st_time + (int(uids[0].split("_")[0])*window_size)

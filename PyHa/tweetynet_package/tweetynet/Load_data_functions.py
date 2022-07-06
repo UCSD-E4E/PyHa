@@ -205,19 +205,32 @@ def predictions_to_kaleidoscope(predictions, SIGNAL, audio_dir, audio_file, manu
     Returns:
         Pandas Dataframe of automated labels for the audio clipmin Kaliedoscope format.
     """
+    #print(predictions)
+    
     time_bin_seconds = predictions.iloc[1]["time_bins"]
     zero_sorted_filtered_df = predictions[predictions["pred"] == 0]
+
+    #print("=============================================")
+    #print("labels", predictions[predictions["label"] == 1])
+    #print("labels", predictions[predictions["label"] == 1])
+
     offset = zero_sorted_filtered_df["time_bins"]
     duration = zero_sorted_filtered_df["time_bins"].diff().shift(-1)    
     intermediary_df = pd.DataFrame({"OFFSET": offset, "DURATION": duration})
     kaliedoscope_df = []
 
+    #print(offset)
+    #print(offset)
+
+    if (offset.empty):
+        return pd.DataFrame(columns = ["FOLDER", "IN FILE", "CHANNEL", "CLIP LENGTH", "SAMPLE RATE", "MANUAL ID", "OFFSET", "DURATION"])
     if offset.iloc[0] != 0:
         kaliedoscope_df.append(pd.DataFrame({"OFFSET": [0], "DURATION": [offset.iloc[0]]}))
     kaliedoscope_df.append(intermediary_df[intermediary_df["DURATION"] >= 2*time_bin_seconds])
     if offset.iloc[-1] < predictions.iloc[-1]["time_bins"]:
         kaliedoscope_df.append(pd.DataFrame({"OFFSET": [offset.iloc[-1]], "DURATION": [predictions.iloc[-1]["time_bins"] + 
                                 predictions.iloc[1]["time_bins"]]}))
+
 
     kaliedoscope_df = pd.concat(kaliedoscope_df)
     kaliedoscope_df = kaliedoscope_df.reset_index(drop=True)

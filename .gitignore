@@ -5,6 +5,7 @@ PyHa/tweetynet_package/tweetynet/__pycache__/*
 PyHa/birdnet_lite/__pycache__/*
 TEST/*
 /mixed_bird/*
+/tweetynet_configs/*
 mixed_bird_manual.csv
 outputs/result.csv
 *.wav
