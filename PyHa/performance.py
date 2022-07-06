@@ -20,6 +20,8 @@ from PyHa.IsoAutio import generate_automated_labels
 import pandas as pd
 import timeit
 isolation_parameters = {
+    "model" : "microfaune",
+    "window_size" : 2.0,
     "technique" : "steinberg",
     "threshold_type" : "median",
     "threshold_const" : 2.0,
@@ -42,6 +44,8 @@ from PyHa.IsoAutio import generate_automated_labels
 import pandas as pd
 import timeit
 isolation_parameters = {
+    "model" : "microfaune",
+    "window_size" : 2.0,
     "technique" : "simple",
     "threshold_type" : "median",
     "threshold_const" : 2.0,
@@ -67,6 +71,8 @@ from PyHa.IsoAutio import generate_automated_labels
 import pandas as pd
 import timeit
 isolation_parameters = {
+    "model" : "microfaune",
+    "window_size" : 2.0,
     "technique" : "stack",
     "threshold_type" : "median",
     "threshold_const" : 2.0,
@@ -90,6 +96,8 @@ from PyHa.IsoAutio import generate_automated_labels
 import pandas as pd
 import timeit
 isolation_parameters = {
+    "model" : "microfaune",
+    "window_size" : 2.0,
     "technique" : "chunk",
     "threshold_type" : "median",
     "threshold_const" : 2.0,
@@ -115,6 +123,8 @@ from PyHa.statistics import bird_label_scores
 import pandas as pd
 import timeit
 isolation_parameters = {
+    "model" : "microfaune",
+    "window_size" : 2.0,
     "technique" : "chunk",
     "threshold_type" : "median",
     "threshold_const" : 2.0,
@@ -147,6 +157,8 @@ from PyHa.statistics import automated_labeling_statistics
 import pandas as pd
 import timeit
 isolation_parameters = {
+    "model" : "microfaune",
+    "window_size" : 2.0,
     "technique" : "chunk",
     "threshold_type" : "median",
     "threshold_const" : 2.0,
@@ -176,6 +188,8 @@ from PyHa.statistics import clip_IoU
 import pandas as pd
 import timeit
 isolation_parameters = {
+    "model" : "microfaune",
+    "window_size" : 2.0,
     "technique" : "chunk",
     "threshold_type" : "median",
     "threshold_const" : 2.0,
@@ -209,6 +223,8 @@ from PyHa.statistics import matrix_IoU_Scores
 import pandas as pd
 import timeit
 isolation_parameters = {
+    "model" : "microfaune",
+    "window_size" : 2.0,
     "technique" : "chunk",
     "threshold_type" : "median",
     "threshold_const" : 2.0,
@@ -241,6 +257,8 @@ from PyHa.statistics import automated_labeling_statistics
 import pandas as pd
 import timeit
 isolation_parameters = {
+    "model" : "microfaune",
+    "window_size" : 2.0,
     "technique" : "chunk",
     "threshold_type" : "median",
     "threshold_const" : 2.0,
