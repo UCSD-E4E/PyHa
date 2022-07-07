@@ -282,10 +282,11 @@ def steinberg_isolate(
 
         diff_scores = thresh_scores - rolled_scores
 
-        entry['OFFSET'] = np.where(diff_scores == 1)[0] * time_per_score * 1.0
-        entry['DURATION'] = np.where(diff_scores == -1)[0] * time_per_score - entry['OFFSET']
+        entry['OFFSET'] = np.where(diff_scores == 1)[0] * samples_per_score / SAMPLE_RATE * 1.0
+        entry['DURATION'] = np.where(diff_scores == -1)[0] * samples_per_score / SAMPLE_RATE * 1.0 - entry['OFFSET']
         entry['MANUAL ID'] = np.full(entry['OFFSET'].shape, manual_id)
     else:
+        entry['OFFSET'] = np.where(thresh_scores == 1)[0]  * 1.0 - int(isolation_parameters["window_size"]) / 2 * SAMPLE_RATE
         
     
     return pd.DataFrame.from_dict(entry)
