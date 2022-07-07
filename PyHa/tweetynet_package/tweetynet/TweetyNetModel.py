@@ -110,7 +110,7 @@ class TweetyNetModel:
                 #print(output[0,1])
                 local_score.extend([x for x in output[0, 1, :]])
                 pred = torch.argmax(output, dim=1)
-                #print(pred)
+                print(pred)
                 pred = pred.reshape(pred.shape[1])
                 labels = labels.reshape(labels.shape[1])
                 bins = st_time + (int(uids[0].split("_")[0])*window_size)

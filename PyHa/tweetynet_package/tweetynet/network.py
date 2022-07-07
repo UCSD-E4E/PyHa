@@ -199,5 +199,5 @@ class TweetyNet(nn.Module):
         rnn_output = rnn_output.permute(1, 0, 2)
         logits = self.fc(rnn_output)
         # permute yet again so that dimension order is (batch, classes, time steps)
-        # because this is order that loss function expects
+        # because this is order that loss function expectszz
         return logits.permute(0, 2, 1)

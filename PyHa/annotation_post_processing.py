@@ -23,14 +23,17 @@ def annotation_chunker(kaleidoscope_df, chunk_length):
     """
 
     #Init list of clips to cycle through and output dataframe
-    clips = kaleidoscope_df["IN FILE"].unique()
-    df_columns = {'IN FILE' :'str', 'CLIP LENGTH' : 'float64', 'CHANNEL' : 'int64', 'OFFSET' : 'float64',
+    kaleidoscope_df["FILEPATH"] =  kaleidoscope_df["FOLDER"] + kaleidoscope_df["IN FILE"] 
+    clips = kaleidoscope_df["FILEPATH"].unique()
+    df_columns = {'FOLDER': 'str', 'IN FILE' :'str', 'CLIP LENGTH' : 'float64', 'CHANNEL' : 'int64', 'OFFSET' : 'float64',
                 'DURATION' : 'float64', 'SAMPLE RATE' : 'int64','MANUAL ID' : 'str'}
     output_df = pd.DataFrame({c: pd.Series(dtype=t) for c, t in df_columns.items()})
     
     # going through each clip
     for clip in clips:
-        clip_df = kaleidoscope_df[kaleidoscope_df["IN FILE"] == clip]
+        clip_df = kaleidoscope_df[kaleidoscope_df["FILEPATH"] == clip]
+        path = clip_df["FOLDER"].unique()[0]
+        file = clip_df["IN FILE"].unique()[0]
         birds = clip_df["MANUAL ID"].unique()
         sr = clip_df["SAMPLE RATE"].unique()[0]
         clip_len = clip_df["CLIP LENGTH"].unique()[0]
@@ -68,7 +71,8 @@ def annotation_chunker(kaleidoscope_df, chunk_length):
                     row = pd.DataFrame(index = [0])
                     annotation_start = chunk_start / 1000
                     #updating the dictionary
-                    row["IN FILE"] = clip
+                    row["FOLDER"] = path
+                    row["IN FILE"] = file
                     row["CLIP LENGTH"] = clip_len
                     row["OFFSET"] = annotation_start
                     row["DURATION"] = chunk_length
