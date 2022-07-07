@@ -403,34 +403,45 @@ def simple_isolate(
     # local_score * samples_per_score / sample_rate
     time_per_score = samples_per_score / SAMPLE_RATE
 
-    annotation_start = 0
-    call_start = 0
-    call_stop = 0
-    # looping through all of the local scores
-    for ndx in range(len(local_scores)):
-        current_score = local_scores[ndx]
-        # Start of a new sequence.
-        if (current_score >= thresh and
-                annotation_start == 0 and
-                current_score >= isolation_parameters["threshold_min"]):
-            # signal a start of a new sequence.
-            annotation_start = 1
-            call_start = float(ndx * time_per_score)
-            # print("Call Start",call_start)
-        # End of a sequence
-        elif current_score < thresh and annotation_start == 1:
-            # signal the end of a sequence
-            annotation_start = 0
-            #
-            call_end = float(ndx * time_per_score)
-            # print("Call End",call_end)
-            entry['OFFSET'].append(call_start)
-            entry['DURATION'].append(call_end - call_start)
-            entry['MANUAL ID'].append(manual_id)
-            call_start = 0
-            call_end = 0
-        else:
-            continue
+    thresh_scores = local_scores > max(thresh, isolation_parameters["threshold_min"])
+    thresh_scores = np.append(thresh_scores, [0])
+    rolled_scores = np.roll(thresh_scores, 1)
+    rolled_scores[0] = 0
+    
+    diff_scores = thresh_scores - rolled_scores
+    
+    entry['OFFSET'] = np.where(diff_scores == 1)[0] * time_per_score * 1.0
+    entry['DURATION'] = np.where(diff_scores == -1)[0] * time_per_score - entry['OFFSET']
+    entry['MANUAL ID'] = np.full(entry['OFFSET'].shape, manual_id)
+    
+    # annotation_start = 0
+    # call_start = 0
+    # call_stop = 0
+    # # looping through all of the local scores
+    # for ndx in range(len(local_scores)):
+    #     current_score = local_scores[ndx]
+    #     # Start of a new sequence.
+    #     if (current_score >= thresh and
+    #             annotation_start == 0 and
+    #             current_score >= isolation_parameters["threshold_min"]):
+    #         # signal a start of a new sequence.
+    #         annotation_start = 1
+    #         call_start = float(ndx * time_per_score)
+    #         # print("Call Start",call_start)
+    #     # End of a sequence
+    #     elif current_score < thresh and annotation_start == 1:
+    #         # signal the end of a sequence
+    #         annotation_start = 0
+    #         #
+    #         call_end = float(ndx * time_per_score)
+    #         # print("Call End",call_end)
+    #         entry['OFFSET'].append(call_start)
+    #         entry['DURATION'].append(call_end - call_start)
+    #         entry['MANUAL ID'].append(manual_id)
+    #         call_start = 0
+    #         call_end = 0
+    #     else:
+    #         continue
     return pd.DataFrame.from_dict(entry)
 
 
