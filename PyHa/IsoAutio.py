@@ -732,8 +732,16 @@ def generate_automated_labels_birdnet(audio_dir, isolation_parameters):
     Returns:
         Dataframe of automated labels for the audio clip(s) in audio_dir.
     """
-    annotations = analyze.analyze(audio_path=audio_dir, **isolation_parameters)
-    return annotations
+    #Get automated labels in birdnet format
+    annotations = analyze.analyze(audio_dir, isolation_parameters)
+
+    if (annotations.empty): return annotations
+
+    #Configure to kaledoscope format
+    #annotations = annotations.drop(["Selection", "View", "Channel", "Low Freq (Hz)", "High Freq (Hz)"])
+    annotations
+
+    return annotations[["FOLDER", "IN FILE", "CLIP LENGTH", "CHANNEL","OFFSET", "DURATION", "SAMPLE RATE", "MANUAL ID"]]
 
 def generate_automated_labels_microfaune(
         audio_dir,
