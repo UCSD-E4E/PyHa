@@ -1,6 +1,6 @@
 import numpy as np
 
-import config as cfg
+import PyHa.birdnet_analyzer.config as cfg
 
 RANDOM = np.random.RandomState(cfg.RANDOM_SEED)
 
