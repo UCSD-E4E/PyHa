@@ -312,20 +312,11 @@ def analyzeFile(item, folder="", filename=""):
     #print(results)
     # Save as selection table
     try:
+        print("hello")
 
         # We have to check if output path is a file or directory
         if not cfg.OUTPUT_PATH.rsplit('.', 1)[-1].lower() in ['txt', 'csv']:
-
-            rpath = fpath.replace(cfg.INPUT_PATH, '')
-            rpath = rpath[1:] if rpath[0] in ['/', '\\'] else rpath
-
-            # Make target directory if it doesn't exist
-            rdir = os.path.join(cfg.OUTPUT_PATH, os.path.dirname(rpath))
-            if not os.path.exists(rdir):
-                os.makedirs(rdir, exist_ok=True)
-
             cfg.RESULT_TYPE == "CSV"
-            rtype = '.BirdNET.results.csv'
             saveResultFile(results, 'PyHa/birdnet_analyzer/output/result.csv', '')        
             
 
@@ -342,6 +333,19 @@ def analyzeFile(item, folder="", filename=""):
             return_df["CHANNEL"] = return_df["Channel"]
         else:
             saveResultFile(results, 'PyHa/birdnet_analyzer/output/result.csv', '')        
+
+            duration =  librosa.get_duration(sig)
+
+            return_df = pd.read_csv('PyHa/birdnet_analyzer/output/result.csv', delimiter="\t")
+            return_df["FOLDER"] = return_df["Selection"].apply(lambda x: folder)
+            return_df["IN FILE"] = return_df["Selection"].apply(lambda x: filename)
+            return_df["SAMPLE RATE"] = return_df["Selection"].apply(lambda x: rate)
+            return_df["CLIP LENGTH"] = return_df["Selection"].apply(lambda x: duration)
+            return_df["MANUAL ID"] = return_df["Common Name"]
+            return_df["OFFSET"] = return_df["Begin Time (s)"]
+            return_df["DURATION"] = return_df["End Time (s)"] - return_df["Begin Time (s)"]
+            return_df["CHANNEL"] = return_df["Channel"]
+
             return_df = pd.read_csv('PyHa/birdnet_analyzer/output/result.csv', delimiter="\t")
     except:
 
