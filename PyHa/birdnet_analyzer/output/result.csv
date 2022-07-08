@@ -1,0 +1,13 @@
+Selection	View	Channel	Begin Time (s)	End Time (s)	Low Freq (Hz)	High Freq (Hz)	Species Code	Common Name	Confidence
+1	Spectrogram 1	1	0	3.0	150	12000	scrpih1	Screaming Piha	0.9732
+2	Spectrogram 1	1	3.0	6.0	150	12000	scrpih1	Screaming Piha	0.9994
+3	Spectrogram 1	1	6.0	9.0	150	12000	whnpuf2	White-necked Puffbird	0.1055
+4	Spectrogram 1	1	9.0	12.0	150	12000	scrpih1	Screaming Piha	0.9958
+5	Spectrogram 1	1	12.0	15.0	150	12000	scrpih1	Screaming Piha	0.9986
+6	Spectrogram 1	1	15.0	18.0	150	12000	scrpih1	Screaming Piha	0.8700
+7	Spectrogram 1	1	18.0	21.0	150	12000	whnpuf2	White-necked Puffbird	0.4074
+8	Spectrogram 1	1	21.0	24.0	150	12000	scrpih1	Screaming Piha	0.9574
+9	Spectrogram 1	1	24.0	27.0	150	12000	scrpih1	Screaming Piha	0.9825
+10	Spectrogram 1	1	24.0	27.0	150	12000	blabut1	Black Butcherbird	0.2834
+11	Spectrogram 1	1	27.0	30.0	150	12000	scrpih1	Screaming Piha	0.7350
+12	Spectrogram 1	1	30.0	33.0	150	12000	scrpih1	Screaming Piha	0.9980

@@ -28,6 +28,7 @@ def loadModel():
     # Load TFLite model and allocate tensors.
     SCRIPT_DIRECTORY_PATH = os.path.abspath(os.path.dirname(__file__))
     interpreter = tflite.Interpreter(os.path.join(SCRIPT_DIRECTORY_PATH,"model/BirdNET_6K_GLOBAL_MODEL.tflite" ))
+    #interpreter = tflite.Interpreter(os.path.join(SCRIPT_DIRECTORY_PATH,"model/BirdNET_GLOBAL_2K_V2.1_Model_FP32.tflite"))
     interpreter.allocate_tensors()
 
     # Get input and output tensors.
@@ -82,7 +83,7 @@ def splitSignal(sig, rate, overlap, seconds=3.0, minlen=1.5):
 
 def readAudioData(path, overlap, sample_rate=48000):
 
-    print('READING AUDIO DATA...', end=' ', flush=True)
+    #print('READING AUDIO DATA...', end=' ', flush=True)
 
     # Open file with librosa (uses ffmpeg or libav)
     try:
@@ -93,7 +94,7 @@ def readAudioData(path, overlap, sample_rate=48000):
     # Split audio into 3-second chunks
     chunks = splitSignal(sig, rate, overlap)
 
-    print('DONE! READ', str(len(chunks)), 'CHUNKS.')
+    #print('DONE! READ', str(len(chunks)), 'CHUNKS.')
 
     return chunks, clip_length
 
@@ -146,7 +147,7 @@ def analyzeAudioData(chunks, lat, lon, week, sensitivity, overlap, interpreter, 
 
     detections = {}
     start = time.time()
-    print('ANALYZING AUDIO...', end=' ', flush=True)
+    # print('ANALYZING AUDIO...', end=' ', flush=True)
 
     # Convert and prepare metadata
     mdata = convertMetadata(np.array([lat, lon, week]))
@@ -167,7 +168,7 @@ def analyzeAudioData(chunks, lat, lon, week, sensitivity, overlap, interpreter, 
         detections[str(pred_start) + ';' + str(pred_end)] = p
         pred_start = pred_end - overlap
 
-    print('DONE! Time', int((time.time() - start) * 10) / 10.0, 'SECONDS')
+    # print('DONE! Time', int((time.time() - start) * 10) / 10.0, 'SECONDS')
 
     return detections
 
