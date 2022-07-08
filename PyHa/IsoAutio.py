@@ -906,6 +906,7 @@ def generate_automated_labels_tweetynet(
 
     # init labels dataframe
     annotations = pd.DataFrame()
+    local_score_dir = {}
     # generate local scores for every bird file in chosen directory
     for audio_file in os.listdir(audio_dir):
         # skip directories
@@ -978,9 +979,10 @@ def generate_automated_labels_tweetynet(
             print("Error in isolating bird calls from", audio_file)
             print(e)
             continue
+        local_score_dir[audio_file] = local_scores[0]
     # Quick fix to indexing
     annotations.reset_index(inplace=True, drop=True)
-    return annotations
+    return annotations,local_score_dir
 
 
 def generate_automated_labels(
