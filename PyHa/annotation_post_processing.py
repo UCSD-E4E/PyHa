@@ -174,7 +174,8 @@ def generate_ROC_curves(automated_df, manual_df, local_scoress, chunk_length = 3
     plt.ylable("True Postives")
     plt.xlable("False Positives ")
     #display.plot()
-    plt.show
+    plt.show    
+
 
 
 
