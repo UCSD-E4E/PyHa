@@ -780,6 +780,8 @@ def generate_automated_labels_microfaune(
 
     # init labels dataframe
     annotations = pd.DataFrame()
+    local_score_dir = {}
+
     # generate local scores for every bird file in chosen directory
     for audio_file in os.listdir(audio_dir):
         # skip directories
@@ -828,6 +830,7 @@ def generate_automated_labels_microfaune(
         # get duration of clip
         duration = len(SIGNAL) / SAMPLE_RATE
 
+        local_score_dir[audio_file] = local_scores[0]
         try:
             # Running moment to moment algorithm and appending to a master
             # dataframe.
@@ -851,7 +854,9 @@ def generate_automated_labels_microfaune(
             continue
     # Quick fix to indexing
     annotations.reset_index(inplace=True, drop=True)
-    return annotations
+    print("HELLO")
+    print(local_score_dir)
+    return annotations, local_score_dir
 
 def generate_automated_labels_tweetynet(
         audio_dir,
