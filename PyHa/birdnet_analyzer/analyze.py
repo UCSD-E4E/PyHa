@@ -253,7 +253,7 @@ def analyzeFile(item, folder="", filename=""):
         msg = 'Error: Cannot open audio file {}'.format(fpath)
         print(msg, flush=True)
         writeErrorLog(msg)
-        return False
+        return return_df
 
     # Process each chunk
     try:
@@ -312,14 +312,11 @@ def analyzeFile(item, folder="", filename=""):
     #print(results)
     # Save as selection table
     try:
-        print("hello")
-
         # We have to check if output path is a file or directory
         if not cfg.OUTPUT_PATH.rsplit('.', 1)[-1].lower() in ['txt', 'csv']:
             cfg.RESULT_TYPE == "CSV"
             saveResultFile(results, 'PyHa/birdnet_analyzer/output/result.csv', '')        
             
-
             duration =  librosa.get_duration(sig)
             
             return_df = pd.read_csv('PyHa/birdnet_analyzer/output/result.csv', delimiter="\t")
@@ -364,9 +361,122 @@ def analyzeFile(item, folder="", filename=""):
     return return_df
 
 
+# for running analyze as a function
+def analyze(audio_path, isolation_parameters, lat=-1, lon=-1, week=-1, slist='',
+    sensitivity=1.0, min_conf=0.1, overlap=0.0, rtype='table', threads=4,
+    batchsize=1, locale='en', sf_thresh=0.03):
+
+    # print(isolation_parameters)
+    cfg.MODEL_PATH = 'PyHa/birdnet_analyzer/checkpoints/V2.1/BirdNET_GLOBAL_2K_V2.1_Model_FP32.tflite'
+    cfg.CODES_FILE = 'PyHa/birdnet_analyzer/eBird_taxonomy_codes_2021E.json'
+    cfg.LABELS_FILE = 'PyHa/birdnet_analyzer/checkpoints/V2.1/BirdNET_GLOBAL_2K_V2.1_Labels.txt'
+    print(cfg.CODES_FILE)
+
+    # Load eBird codes, labels
+    cfg.CODES = loadCodes()
+    cfg.LABELS = loadLabels(cfg.LABELS_FILE)
+
+    # Load translated labels
+    #lfile = os.path.join(cfg.TRANSLATED_LABELS_PATH, os.path.basename(cfg.LABELS_FILE).replace('.txt', '_{}.txt'.format(args.locale)))
+    #if not locale in ['en'] and os.path.isfile(lfile):
+    #    cfg.TRANSLATED_LABELS = loadLabels(lfile)
+    #else:
+    cfg.TRANSLATED_LABELS = cfg.LABELS   
+
+    ### Make sure to comment out appropriately if you are not using args. ###
+
+    # Load species list from location filter or provided list
+    cfg.LATITUDE, cfg.LONGITUDE, cfg.WEEK = lat, lon, week
+    cfg.LOCATION_FILTER_THRESHOLD = max(0.01, min(0.99, float(sf_thresh)))
+    if cfg.LATITUDE == -1 and cfg.LONGITUDE == -1:
+        if len(slist) == 0:
+            cfg.SPECIES_LIST_FILE = None
+        else:
+            cfg.SPECIES_LIST_FILE = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), slist)
+            if os.path.isdir(cfg.SPECIES_LIST_FILE):
+                cfg.SPECIES_LIST_FILE = os.path.join(cfg.SPECIES_LIST_FILE, 'species_list.txt')
+        cfg.SPECIES_LIST = loadSpeciesList(cfg.SPECIES_LIST_FILE)
+    else:
+        predictSpeciesList()
+    if len(cfg.SPECIES_LIST) == 0:
+        print('Species list contains {} species'.format(len(cfg.LABELS)))
+    else:        
+        print('Species list contains {} species'.format(len(cfg.SPECIES_LIST)))
+
+    # Set input and output path    
+    cfg.INPUT_PATH = audio_path
+    cfg.OUTPUT_PATH = "PyHa/birdnet_analyzer/output"
+
+    # Parse input files
+    if os.path.isdir(cfg.INPUT_PATH):
+        cfg.FILE_LIST = parseInputFiles(cfg.INPUT_PATH)  
+    else:
+        cfg.FILE_LIST = [cfg.INPUT_PATH]
+
+    # Set confidence threshold
+    cfg.MIN_CONFIDENCE = max(0.01, min(0.99, float(min_conf)))
+
+    # Set sensitivity
+    cfg.SIGMOID_SENSITIVITY = max(0.5, min(1.0 - (float(sensitivity) - 1.0), 1.5))
+
+    # Set overlap
+    cfg.SIG_OVERLAP = max(0.0, min(2.9, float(overlap)))
+
+    # Set result type
+    cfg.RESULT_TYPE = rtype.lower()    
+    if not cfg.RESULT_TYPE in ['table', 'audacity', 'r', 'csv']:
+        cfg.RESULT_TYPE = 'table'
+
+    # Set number of threads
+    if os.path.isdir(cfg.INPUT_PATH):
+        cfg.CPU_THREADS = max(1, int(threads))
+        cfg.TFLITE_THREADS = 1
+    else:
+        cfg.CPU_THREADS = 1
+        cfg.TFLITE_THREADS = max(1, int(threads))
+
+    # Set batch size
+    cfg.BATCH_SIZE = max(1, int(batchsize))
+
+    # Add config items to each file list entry.
+    # We have to do this for Windows which does not
+    # support fork() and thus each process has to
+    # have its own config. USE LINUX!
+    flist = []
+    filenames = []
+    for f in cfg.FILE_LIST:
+        flist.append((f, cfg.getConfig()))
+        filenames.append(f)
+    
+    automated_df = pd.DataFrame()
+    num_errors = 0
+    for entry in flist:
+        filename = entry[0].replace(audio_path, "").replace("\\", "")
+        print(filename)
+        entry_df = analyzeFile(entry, audio_path, filename)
+        if (automated_df.empty): automated_df = entry_df
+        elif (entry_df.empty): 
+            num_errors += 1
+            continue
+        else : automated_df = pd.concat([automated_df, entry_df])
+
+    if num_errors > 0:
+        print("Something went wrong with " + str(num_errors) + " clips out of " + str(len(filenames)) + " files")
+    return automated_df
+    # Analyze files  
+    # if cfg.CPU_THREADS < 2:
+    #    for entry in flist:
+    #        
+    #else:
+    #    with Pool(cfg.CPU_THREADS) as p:
+    #        p.map(analyzeFile, flist)
+    
+
+
+# for running analyze as an executable
 """ if __name__ == '__main__':
 
-    # Freeze support for excecutable
+    # Freeze support for executable
     freeze_support()
 
     # Clear error log
@@ -482,229 +592,7 @@ def analyzeFile(item, folder="", filename=""):
             p.map(analyzeFile, flist)
  """
 
-
-def analyze(audio_path, isolation_parameters, lat=-1, lon=-1, week=-1, slist='',
-    sensitivity=1.0, min_conf=0.1, overlap=0.0, rtype='table', threads=4,
-    batchsize=1, locale='en', sf_thresh=0.03):
-
-    print(isolation_parameters)
-    
-
-    # Set paths relative to script path (requested in #3)
-    #cfg.MODEL_PATH = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), cfg.MODEL_PATH)
-    #cfg.LABELS_FILE = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), cfg.LABELS_FILE)
-    #cfg.TRANSLATED_LABELS_PATH = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), cfg.TRANSLATED_LABELS_PATH)
-    #cfg.MDATA_MODEL_PATH = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), cfg.MDATA_MODEL_PATH)
-    #cfg.CODES_FILE = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), cfg.CODES_FILE)
-    #cfg.ERROR_LOG_FILE = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), cfg.ERROR_LOG_FILE)
-
-    cfg.MODEL_PATH = 'PyHa/birdnet_analyzer/checkpoints/V2.1/BirdNET_GLOBAL_2K_V2.1_Model_FP32.tflite'
-    cfg.CODES_FILE = 'PyHa/birdnet_analyzer/eBird_taxonomy_codes_2021E.json'
-    cfg.LABELS_FILE = 'PyHa/birdnet_analyzer/checkpoints/V2.1/BirdNET_GLOBAL_2K_V2.1_Labels.txt'
-    print(cfg.CODES_FILE)
-
-    # Load eBird codes, labels
-    cfg.CODES = loadCodes()
-    cfg.LABELS = loadLabels(cfg.LABELS_FILE)
-
-    # Load translated labels
-    #lfile = os.path.join(cfg.TRANSLATED_LABELS_PATH, os.path.basename(cfg.LABELS_FILE).replace('.txt', '_{}.txt'.format(args.locale)))
-    #if not locale in ['en'] and os.path.isfile(lfile):
-    #    cfg.TRANSLATED_LABELS = loadLabels(lfile)
-    #else:
-    cfg.TRANSLATED_LABELS = cfg.LABELS   
-
-    ### Make sure to comment out appropriately if you are not using args. ###
-
-    # Load species list from location filter or provided list
-    cfg.LATITUDE, cfg.LONGITUDE, cfg.WEEK = lat, lon, week
-    cfg.LOCATION_FILTER_THRESHOLD = max(0.01, min(0.99, float(sf_thresh)))
-    if cfg.LATITUDE == -1 and cfg.LONGITUDE == -1:
-        if len(slist) == 0:
-            cfg.SPECIES_LIST_FILE = None
-        else:
-            cfg.SPECIES_LIST_FILE = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), slist)
-            if os.path.isdir(cfg.SPECIES_LIST_FILE):
-                cfg.SPECIES_LIST_FILE = os.path.join(cfg.SPECIES_LIST_FILE, 'species_list.txt')
-        cfg.SPECIES_LIST = loadSpeciesList(cfg.SPECIES_LIST_FILE)
-    else:
-        predictSpeciesList()
-    if len(cfg.SPECIES_LIST) == 0:
-        print('Species list contains {} species'.format(len(cfg.LABELS)))
-    else:        
-        print('Species list contains {} species'.format(len(cfg.SPECIES_LIST)))
-
-    # Set input and output path    
-    cfg.INPUT_PATH = audio_path
-    cfg.OUTPUT_PATH = "PyHa/birdnet_analyzer/output"
-
-    # Parse input files
-    if os.path.isdir(cfg.INPUT_PATH):
-        cfg.FILE_LIST = parseInputFiles(cfg.INPUT_PATH)  
-    else:
-        cfg.FILE_LIST = [cfg.INPUT_PATH]
-
-    # Set confidence threshold
-    cfg.MIN_CONFIDENCE = max(0.01, min(0.99, float(min_conf)))
-
-    # Set sensitivity
-    cfg.SIGMOID_SENSITIVITY = max(0.5, min(1.0 - (float(sensitivity) - 1.0), 1.5))
-
-    # Set overlap
-    cfg.SIG_OVERLAP = max(0.0, min(2.9, float(overlap)))
-
-    # Set result type
-    cfg.RESULT_TYPE = rtype.lower()    
-    if not cfg.RESULT_TYPE in ['table', 'audacity', 'r', 'csv']:
-        cfg.RESULT_TYPE = 'table'
-
-    # Set number of threads
-    if os.path.isdir(cfg.INPUT_PATH):
-        cfg.CPU_THREADS = max(1, int(threads))
-        cfg.TFLITE_THREADS = 1
-    else:
-        cfg.CPU_THREADS = 1
-        cfg.TFLITE_THREADS = max(1, int(threads))
-
-    # Set batch size
-    cfg.BATCH_SIZE = max(1, int(batchsize))
-
-    # Add config items to each file list entry.
-    # We have to do this for Windows which does not
-    # support fork() and thus each process has to
-    # have its own config. USE LINUX!
-    flist = []
-    filenames = []
-    for f in cfg.FILE_LIST:
-        flist.append((f, cfg.getConfig()))
-        filenames.append(f)
-    
-    automated_df = pd.DataFrame()
-    for entry in flist:
-        filename = entry[0].replace(audio_path, "").replace("\\", "")
-        print(filename)
-        entry_df = analyzeFile(entry, audio_path, filename)
-        if (automated_df.empty): automated_df = entry_df
-        else : automated_df = pd.concat([automated_df, entry_df])
-
-    return automated_df
-    # Analyze files  
-    # if cfg.CPU_THREADS < 2:
-    #    for entry in flist:
-    #        
-    #else:
-    #    with Pool(cfg.CPU_THREADS) as p:
-    #        p.map(analyzeFile, flist)
-    # 
-    #  
-    
-
-
-
-
-
     # A few examples to test
     # python3 analyze.py --i example/ --o example/ --slist example/ --min_conf 0.5 --threads 4
     # python3 analyze.py --i example/soundscape.wav --o example/soundscape.BirdNET.selection.table.txt --slist example/species_list.txt --threads 8
     # python3 analyze.py --i example/ --o example/ --lat 42.5 --lon -76.45 --week 4 --sensitivity 1.0 --rtype table --locale de
-    
-""" def analyze(audio_path, output_path, lat=-1, lon=-1, week=-1, slist='',
-    sensitivity=1.0, min_conf=0.1, overlap=0.0, rtype='table', threads=4,
-    batchsize=1, locale='en', sf_thresh=0.03):
-
-    # Set paths relative to script path (requested in #3)
-    cfg.MODEL_PATH = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), cfg.MODEL_PATH)
-    cfg.LABELS_FILE = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), cfg.LABELS_FILE)
-    cfg.TRANSLATED_LABELS_PATH = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), cfg.TRANSLATED_LABELS_PATH)
-    cfg.MDATA_MODEL_PATH = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), cfg.MDATA_MODEL_PATH)
-    cfg.CODES_FILE = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), cfg.CODES_FILE)
-    cfg.ERROR_LOG_FILE = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), cfg.ERROR_LOG_FILE)
-
-    # Load eBird codes, labels
-    cfg.CODES = loadCodes()
-    cfg.LABELS = loadLabels(cfg.LABELS_FILE)
-
-    # Load translated labels
-    lfile = os.path.join(cfg.TRANSLATED_LABELS_PATH, os.path.basename(cfg.LABELS_FILE).replace('.txt', '_{}.txt'.format(args.locale)))
-    if not locale in ['en'] and os.path.isfile(lfile):
-        cfg.TRANSLATED_LABELS = loadLabels(lfile)
-    else:
-        cfg.TRANSLATED_LABELS = cfg.LABELS   
-
-    ### Make sure to comment out appropriately if you are not using args. ###
-
-    # Load species list from location filter or provided list
-    cfg.LATITUDE, cfg.LONGITUDE, cfg.WEEK = lat, lon, week
-    cfg.LOCATION_FILTER_THRESHOLD = max(0.01, min(0.99, float(sf_thresh)))
-    if cfg.LATITUDE == -1 and cfg.LONGITUDE == -1:
-        if len(slist) == 0:
-            cfg.SPECIES_LIST_FILE = None
-        else:
-            cfg.SPECIES_LIST_FILE = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), slist)
-            if os.path.isdir(cfg.SPECIES_LIST_FILE):
-                cfg.SPECIES_LIST_FILE = os.path.join(cfg.SPECIES_LIST_FILE, 'species_list.txt')
-        cfg.SPECIES_LIST = loadSpeciesList(cfg.SPECIES_LIST_FILE)
-    else:
-        predictSpeciesList()
-    if len(cfg.SPECIES_LIST) == 0:
-        print('Species list contains {} species'.format(len(cfg.LABELS)))
-    else:        
-        print('Species list contains {} species'.format(len(cfg.SPECIES_LIST)))
-
-    # Set input and output path    
-    cfg.INPUT_PATH = audio_path
-    cfg.OUTPUT_PATH = output_path
-
-    # Parse input files
-    if os.path.isdir(cfg.INPUT_PATH):
-        cfg.FILE_LIST = parseInputFiles(cfg.INPUT_PATH)  
-    else:
-        cfg.FILE_LIST = [cfg.INPUT_PATH]
-
-    # Set confidence threshold
-    cfg.MIN_CONFIDENCE = max(0.01, min(0.99, float(min_conf)))
-
-    # Set sensitivity
-    cfg.SIGMOID_SENSITIVITY = max(0.5, min(1.0 - (float(sensitivity) - 1.0), 1.5))
-
-    # Set overlap
-    cfg.SIG_OVERLAP = max(0.0, min(2.9, float(overlap)))
-
-    # Set result type
-    cfg.RESULT_TYPE = rtype.lower()    
-    if not cfg.RESULT_TYPE in ['table', 'audacity', 'r', 'csv']:
-        cfg.RESULT_TYPE = 'table'
-
-    # Set number of threads
-    if os.path.isdir(cfg.INPUT_PATH):
-        cfg.CPU_THREADS = max(1, int(threads))
-        cfg.TFLITE_THREADS = 1
-    else:
-        cfg.CPU_THREADS = 1
-        cfg.TFLITE_THREADS = max(1, int(threads))
-
-    # Set batch size
-    cfg.BATCH_SIZE = max(1, int(batchsize))
-
-    # Add config items to each file list entry.
-    # We have to do this for Windows which does not
-    # support fork() and thus each process has to
-    # have its own config. USE LINUX!
-    flist = []
-    for f in cfg.FILE_LIST:
-        flist.append((f, cfg.getConfig()))
-
-    # Analyze files   
-    if cfg.CPU_THREADS < 2:
-        for entry in flist:
-            analyzeFile(entry)
-    else:
-        with Pool(cfg.CPU_THREADS) as p:
-            p.map(analyzeFile, flist) """
-
-
-    # A few examples to test
-    # python3 analyze.py --i example/ --o example/ --slist example/ --min_conf 0.5 --threads 4
-    # python3 analyze.py --i example/soundscape.wav --o example/soundscape.BirdNET.selection.table.txt --slist example/species_list.txt --threads 8
-    # python3 analyze.py --i example/ --o example/ --lat 42.5 --lon -76.45 --week 4 --sensitivity 1.0 --rtype table --locale de
-    

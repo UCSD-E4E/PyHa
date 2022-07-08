@@ -31,14 +31,15 @@ PyHa = Python + Piha (referring to a bird species of our interest known as the s
 
 Many of the functions take in the `isolation_parameters` argument, and as such it will be defined globally here.
 
-The `isolation_parameters` dictionary definition depends on the model used. The currently supported models are BirdNET-Lite, Microfaune, and TweetyNET.
+The `isolation_parameters` dictionary definition depends on the model used. The currently supported models are BirdNET-Analyzer, BirdNET-Lite, Microfaune, and TweetyNET.
 
 
-The BirdNET-Lite `isolation_parameters` dictionary is as follows:
+The BirdNET `isolation_parameters` dictionary is as follows:
 
 ``` python
 isolation_parameters = {
     "model" : "birdnet",
+    "type" : "lite",
     "output_path" : "",
     "lat" : 0.0,
     "lon" : 0.0,
@@ -52,6 +53,8 @@ isolation_parameters = {
     "write_to_csv" : False
 }
 ```
+
+The `type` parameter can be: Analyzer or Lite. This input must be a string in all lowercase, and determines which BirdNET model to use.  
 
 <br>
 
@@ -250,7 +253,7 @@ Usage: `generate_automated_labels(audio_dir, isolation_parameters, manual_id, we
 ### [`generate_automated_labels_birdnet`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)
 *Found in [`IsoAutio.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)*
 
-This function is called by `generate_automated_labels` if `isolation_parameters["model"]` is set to `birdnet`. It generates bird labels across a folder of audio clips using BirdNET-Lite given the isolation parameters.
+This function is called by `generate_automated_labels` if `isolation_parameters["model"]` is set to `birdnet`. It generates bird labels across a folder of audio clips using BirdNET-Analyzer or BirdNET-Lite given the isolation parameters.
 
 | Parameter | Type |  Description |
 | --- | --- | --- |
@@ -587,11 +590,13 @@ This function returns a histogram with the length of the annotations.
 Usage: `binary_visualization(annotation_df, n_bins, min_length, max_length, save_fig, filename)`
 </details>
 
+All files in the `birdnet_analyzer` directory are from the [BirdNET-Analyzer repository](https://github.com/kahst/BirdNET-Analyzer), and their associated documentation can be found there.  
+
 All files in the `birdnet_lite` directory are from a [modified version](https://github.com/UCSD-E4E/BirdNET-Lite) of the [BirdNET Lite repository](https://github.com/kahst/BirdNET-Lite), and their associated documentation can be found there.  
 
 All files in the `microfaune_package` directory are from the [microfaune repository](https://github.com/microfaune/microfaune), and their associated documentation can be found there.    
 
-All files in the `tweetynet` directory are from the [tweetynet repository](https://github.com/yardencsGitHub/tweetynet), and their associated documentation can be found there.  
+All files in the `tweetynet` directory are from the [TweetyNet repository](https://github.com/yardencsGitHub/tweetynet), and their associated documentation can be found there.  
 
 ## Examples
 *These examples were created on an Ubuntu 16.04 machine. Results may vary between different Operating Systems and Tensorflow versions.*

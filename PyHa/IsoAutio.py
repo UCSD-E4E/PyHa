@@ -1,5 +1,5 @@
-#from PyHa.tweetynet_package.tweetynet.network import TweetyNet
-from .birdnet_analyzer import analyze
+from .birdnet_analyzer.analyze import analyze as analyzer_analyze
+from .birdnet_lite.analyze import analyze
 from .microfaune_package.microfaune.detection import RNNDetector
 from .microfaune_package.microfaune import audio
 from .tweetynet_package.tweetynet.TweetyNetModel import TweetyNetModel
@@ -10,8 +10,6 @@ import scipy.signal as scipy_signal
 import numpy as np
 import math
 import os
-#from .birdnet_lite.analyze import analyze
-#from .birdnet_analyzer.analyze import analyze
 from copy import deepcopy
 
 def build_isolation_parameters_microfaune(
@@ -679,7 +677,11 @@ def generate_automated_labels_birdnet(audio_dir, isolation_parameters):
 
         isolation_parameters (dict)
             - Python Dictionary that controls the various label creation
-              techniques. The keys it accepts are :
+              techniques. The keys it accepts are:
+              - type (string)
+                - Choose between using BirdNET-Lite or BirdNET-Analyzer.
+                - default: "lite"
+
               - output_path (string)
                 - Path to output folder. By default results are written into 
                   the input folder
@@ -733,15 +735,18 @@ def generate_automated_labels_birdnet(audio_dir, isolation_parameters):
         Dataframe of automated labels for the audio clip(s) in audio_dir.
     """
     #Get automated labels in birdnet format
-    annotations = analyze.analyze(audio_dir, isolation_parameters)
+    if isolation_parameters["type"] == "analyzer":
+        isolation_parameters.pop("type", None)
+        annotations = analyzer_analyze(audio_dir, isolation_parameters)
+        if (annotations.empty): return annotations
+        return annotations[["FOLDER", "IN FILE", "CLIP LENGTH", "CHANNEL","OFFSET", "DURATION", "SAMPLE RATE", "MANUAL ID"]]
+    else:
+        isolation_parameters.pop("type", None)
+        annotations = analyze(audio_path=audio_dir, **isolation_parameters)
+        return annotations
 
-    if (annotations.empty): return annotations
-
-    #Configure to kaledoscope format
-    #annotations = annotations.drop(["Selection", "View", "Channel", "Low Freq (Hz)", "High Freq (Hz)"])
-    annotations
-
-    return annotations[["FOLDER", "IN FILE", "CLIP LENGTH", "CHANNEL","OFFSET", "DURATION", "SAMPLE RATE", "MANUAL ID"]]
+    #Configure to kaleidoscope format
+    #annotations = annotations.drop(["Selection", "View", "Channel", "Low Freq (Hz)", "High Freq (Hz)"])    
 
 def generate_automated_labels_microfaune(
         audio_dir,

@@ -83,7 +83,7 @@ def splitSignal(sig, rate, overlap, seconds=3.0, minlen=1.5):
 
 def readAudioData(path, overlap, sample_rate=48000):
 
-    #print('READING AUDIO DATA...', end=' ', flush=True)
+    print('READING AUDIO DATA...', end=' ', flush=True)
 
     # Open file with librosa (uses ffmpeg or libav)
     try:
@@ -94,7 +94,7 @@ def readAudioData(path, overlap, sample_rate=48000):
     # Split audio into 3-second chunks
     chunks = splitSignal(sig, rate, overlap)
 
-    #print('DONE! READ', str(len(chunks)), 'CHUNKS.')
+    print('DONE! READ', str(len(chunks)), 'CHUNKS.')
 
     return chunks, clip_length
 
