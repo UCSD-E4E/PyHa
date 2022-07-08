@@ -102,30 +102,38 @@ def convert_label_to_local_score(manual_df, size_of_local_score):
 def get_target_annotations(chunked_manual_df, chunk_size):
     target_score_array = []
     manual_df = chunked_manual_df.set_index(["FOLDER","IN FILE"])
+    chunk_size_list = []
+    k = 0
     for item in np.unique(manual_df.index):
         clip_df = chunked_manual_df[(chunked_manual_df["FOLDER"] == item[0]) & (chunked_manual_df["IN FILE"] == item[1])]
-        print(item[1])
+        #print(item[1])
         clip_duration = clip_df.iloc[0]["CLIP LENGTH"]
         number_of_chunks = math.floor(clip_duration/chunk_size)
+        k += number_of_chunks
         target_score_clip = convert_label_to_local_score(clip_df, number_of_chunks)
+        chunk_size_list.append((number_of_chunks, clip_duration, item[1]))
         target_score_array.extend(target_score_clip)
         #print(len(target_score_array))
-    return np.array(target_score_array)
+    print(k)
+    return np.array(target_score_array), chunk_size_list
 
 # #Remember to chunk before passing it in
 # target_array = get_target_annotations(chunked_df_manual_clip, 3)
 # #Returns array -> 1 = bird, 0 = no bird
 
 #instead here get the local scores array from generated_automated_labels dictionary 
-def get_confidence_array(local_scores_array,chunked_df):
+def get_confidence_array(local_scores_array,chunked_df, chunk_size_list):
     array_of_max_scores = []
     manual_df = chunked_df.set_index(["FOLDER","IN FILE"])
+    k = 0
     for item in np.unique(manual_df.index):
-        print(item[1])
+        #print(item[1])
         clip_df = chunked_df[(chunked_df["FOLDER"] == item[0]) & (chunked_df["IN FILE"] == item[1])]
         local_score_clip = local_scores_array[item[1]]
         duration_of_clip = clip_df.iloc[0]["CLIP LENGTH"] 
         num_chunks = math.floor(duration_of_clip/3) 
+        k += num_chunks
+
         chunk_length = int(clip_df.iloc[0]["DURATION"]) #3 sec
 
         #chunk_count = math.floor(duration_of_clip / (clip_df["DURATION"][0]))
@@ -145,7 +153,7 @@ def get_confidence_array(local_scores_array,chunked_df):
             current_score = 0.0
             chunk_length = int(clip_df.iloc[0]["DURATION"])
 
-            print(start_index, end_index, len(local_score_clip),end_index - start_index )
+            #print(start_index, end_index, len(local_score_clip),end_index - start_index )
             for j in range(start_index, end_index):
                     
                     #current_seconds = math.floor(j * seconds_per_index)
@@ -156,6 +164,7 @@ def get_confidence_array(local_scores_array,chunked_df):
                         
             array_of_max_scores.append(max_score)
         #print(len(max_score))
+    print(k)
     return array_of_max_scores
 
 #wrapper function for get_confidence_array()
@@ -167,20 +176,26 @@ def generate_ROC_curves_chunked(automated_df, manual_df, local_scoress, chunk_le
     2. get the target array and new local score array 
     3. call the the ski-learn ROC function 
     """
+
+    #MAKE SURE WE INCLUDE FILES SHARED IN BOTH
+    #DO WE WANT TO IGNORE THIS???? BECUASE WE ARE MISSING FALSE NEGATIVES THIS WAY
+    manual_df = manual_df[manual_df['IN FILE'].isin(automated_df["IN FILE"].to_list())]
+    automated_df = automated_df[automated_df['IN FILE'].isin(manual_df["IN FILE"].to_list())]
+
+    print(len(np.unique(manual_df['IN FILE'])))
+    print(len(np.unique(automated_df['IN FILE'])))
+
     #CHUNK THE DATA
     auto_chunked_df = annotation_chunker(automated_df, chunk_length)
     manual_chunked_df = annotation_chunker(manual_df, chunk_length)
 
-    #MAKE SURE WE INCLUDE FILES SHARED IN BOTH
-    #DO WE WANT TO IGNORE THIS???? BECUASE WE ARE MISSING FALSE NEGATIVES THIS WAY
-    auto_chunked_df = auto_chunked_df[auto_chunked_df['IN FILE'].isin(manual_chunked_df["IN FILE"].to_list())]
-    manual_chunked_df = manual_chunked_df[manual_chunked_df['IN FILE'].isin(auto_chunked_df["IN FILE"].to_list())]
-
+    auto_chunked_df = auto_chunked_df.sort_values(by="IN FILE")
+    manual_chunked_df = manual_chunked_df.sort_values(by="IN FILE")
     #GENERATE TARGET AND CONFIDENCE ARRAYS FOR ROC CURVE GENERATION
-    target_array = get_target_annotations(manual_chunked_df, chunk_length)
-    confidence_scores_array = get_confidence_array(local_scoress,auto_chunked_df)
-    print("target", target_array)
-    print("confidence", confidence_scores_array)
+    target_array, chunk_size_list = get_target_annotations(manual_chunked_df, chunk_length)
+    confidence_scores_array = get_confidence_array(local_scoress,manual_chunked_df, chunk_size_list) #auto_chunked_df
+    print("target", len(target_array))
+    print("confidence", len(confidence_scores_array))
 
     #GENERATE AND PLOT ROC CURVES
     fpr, tpr, thresholds = metrics.roc_curve(target_array, confidence_scores_array) 
@@ -205,8 +220,8 @@ def generate_ROC_curves(automated_df, manual_df, local_scoress, chunk_length = 3
 
     #MAKE SURE WE INCLUDE FILES SHARED IN BOTH
     #DO WE WANT TO IGNORE THIS???? BECUASE WE ARE MISSING FALSE NEGATIVES THIS WAY
-    automated_df = automated_df[automated_df['IN FILE'].isin(manual_df["IN FILE"].to_list())]
     manual_df = manual_df[manual_df['IN FILE'].isin(automated_df["IN FILE"].to_list())]
+    
     target_array = np.array([])
     confidence_scores_array = np.array([])
    

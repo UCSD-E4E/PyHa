@@ -856,8 +856,6 @@ def generate_automated_labels_microfaune(
             continue
     # Quick fix to indexing
     annotations.reset_index(inplace=True, drop=True)
-    print("HELLO")
-    print(local_score_dir)
     return annotations, local_score_dir
 
 def generate_automated_labels_tweetynet(

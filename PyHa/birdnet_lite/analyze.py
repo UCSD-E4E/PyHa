@@ -177,12 +177,20 @@ def writeResultsToDf(df, detections, min_conf, output_metadata):
     
     for d in detections:
         for entry in detections[d]:
-            if (entry[0] in WHITE_LIST or len(WHITE_LIST) == 0): #entry[1] >= min_conf and 
+            if (entry[1] >= min_conf and  entry[0] in WHITE_LIST or len(WHITE_LIST) == 0): #
                 time_interval = d.split(';')
                 row['OFFSET'] = float(time_interval[0])
                 row['DURATION'] = float(time_interval[1])-float(time_interval[0])
                 row['MANUAL ID'] = entry[0].split('_')[0]
                 row['CONFIDENCE'] = entry[1]
+                df = pd.concat([df,row], ignore_index=True)
+                rcnt += 1
+            else:
+                time_interval = d.split(';')
+                row['OFFSET'] = float(time_interval[0])
+                row['DURATION'] = float(time_interval[1])-float(time_interval[0])
+                row['MANUAL ID'] = "NO CONFIDENCE"
+                row['CONFIDENCE'] = 0
                 df = pd.concat([df,row], ignore_index=True)
                 rcnt += 1
     print('DONE! WROTE', rcnt, 'RESULTS.')
