@@ -103,18 +103,15 @@ def get_target_annotations(chunked_manual_df, chunk_size):
     target_score_array = []
     manual_df = chunked_manual_df.set_index(["FOLDER","IN FILE"])
     chunk_size_list = []
-    k = 0
     for item in np.unique(manual_df.index):
         clip_df = chunked_manual_df[(chunked_manual_df["FOLDER"] == item[0]) & (chunked_manual_df["IN FILE"] == item[1])]
         #print(item[1])
         clip_duration = clip_df.iloc[0]["CLIP LENGTH"]
         number_of_chunks = math.floor(clip_duration/chunk_size)
-        k += number_of_chunks
         target_score_clip = convert_label_to_local_score(clip_df, number_of_chunks)
         chunk_size_list.append((number_of_chunks, clip_duration, item[1]))
         target_score_array.extend(target_score_clip)
         #print(len(target_score_array))
-    print(k)
     return np.array(target_score_array), chunk_size_list
 
 # #Remember to chunk before passing it in
@@ -132,7 +129,13 @@ def get_confidence_array(local_scores_array,chunked_df, chunk_size_list):
         local_score_clip = local_scores_array[item[1]]
         duration_of_clip = clip_df.iloc[0]["CLIP LENGTH"] 
         num_chunks = math.floor(duration_of_clip/3) 
-        k += num_chunks
+        if (num_chunks != chunk_size_list[k][0]):
+            print("BAD CHUNK SIZE, CONFIDENCE SIZE: ", num_chunks, " TARGET: ", chunk_size_list[k] )
+            print("duration_of_clip", duration_of_clip, chunk_size_list[i][1])
+            print(item[1], chunk_size_list[k][2])
+            break
+        k += 1
+
 
         chunk_length = int(clip_df.iloc[0]["DURATION"]) #3 sec
 
@@ -164,12 +167,11 @@ def get_confidence_array(local_scores_array,chunked_df, chunk_size_list):
                         
             array_of_max_scores.append(max_score)
         #print(len(max_score))
-    print(k)
     return array_of_max_scores
 
 #wrapper function for get_confidence_array()
 #i don't think this should be local_scores
-def generate_ROC_curves_chunked(automated_df, manual_df, local_scoress, chunk_length = 3):
+def generate_ROC_curves(automated_df, manual_df, local_scoress, chunk_length = 3):
     """
     psuedocode
     1. chunked the data frames
@@ -210,7 +212,7 @@ def generate_ROC_curves_chunked(automated_df, manual_df, local_scoress, chunk_le
 
 #wrapper function for get_confidence_array()
 #i don't think this should be local_scores
-def generate_ROC_curves(automated_df, manual_df, local_scoress, chunk_length = 3):
+def generate_ROC_curves_raw_local(automated_df, manual_df, local_scoress, chunk_length = 3):
     """
     psuedocode
     1. chunked the data frames
