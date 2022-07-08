@@ -306,7 +306,7 @@ def steinberg_isolate(
         
         entry['MANUAL ID'] = np.full(entry['OFFSET'].shape, manual_id)
     else:
-        entry['OFFSET'] = np.where(thresh_scores == 1)[0] * samples_per_score - int(isolation_parameters["window_size"] / 2 * SAMPLE_RATE)
+        entry['OFFSET'] = np.where(thresh_scores == 1)[0] * samples_per_score / SAMPLE_RATE - isolation_parameters["window_size"] / 2
         entry['DURATION'] = np.full(entry['OFFSET'].shape, isolation_parameters["window_size"] * 1.0)
         if (entry['OFFSET'] < 0):
             entry['OFFSET'][0] = 0
