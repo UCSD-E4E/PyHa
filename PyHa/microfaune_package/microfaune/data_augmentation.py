@@ -49,14 +49,14 @@ class DataAugmentation:
         """ data augmentation of one Spectrogram
         Parameters
         ----------
-        spec spectogram
+        spec spectrogram
         y_val classification value
 
         Returns
         -------
         list_s
-            list of Spectograms with Y list (duplicate from y input)
-            the first Spectograms is the given input S
+            list of Spectrograms with Y list (duplicate from y input)
+            the first Spectrograms is the given input S
         list_y
             All y have the value of the given y
         """
