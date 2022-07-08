@@ -104,6 +104,7 @@ def get_target_annotations(chunked_manual_df, chunk_size):
     manual_df = chunked_manual_df.set_index(["FOLDER","IN FILE"])
     for item in np.unique(manual_df.index):
         clip_df = chunked_manual_df[(chunked_manual_df["FOLDER"] == item[0]) & (chunked_manual_df["IN FILE"] == item[1])]
+        print(item[1])
         clip_duration = clip_df.iloc[0]["CLIP LENGTH"]
         number_of_chunks = math.floor(clip_duration/chunk_size)
         target_score_clip = convert_label_to_local_score(clip_df, number_of_chunks)
@@ -120,6 +121,7 @@ def get_confidence_array(local_scores_array,chunked_df):
     array_of_max_scores = []
     manual_df = chunked_df.set_index(["FOLDER","IN FILE"])
     for item in np.unique(manual_df.index):
+        print(item[1])
         clip_df = chunked_df[(chunked_df["FOLDER"] == item[0]) & (chunked_df["IN FILE"] == item[1])]
         local_score_clip = local_scores_array[item[1]]
         duration_of_clip = clip_df.iloc[0]["CLIP LENGTH"] 
@@ -142,12 +144,14 @@ def get_confidence_array(local_scores_array,chunked_df):
             max_score = 0.0
             current_score = 0.0
             chunk_length = int(clip_df.iloc[0]["DURATION"])
+
+            print(start_index, end_index, len(local_score_clip),end_index - start_index )
             for j in range(start_index, end_index):
                     
-                    current_seconds = math.floor(j * seconds_per_index)
-                    current_score = local_score_clip[current_seconds]
-                    
+                    #current_seconds = math.floor(j * seconds_per_index)
+                    current_score = local_score_clip[j]
                     if (current_score > max_score):
+                        
                         max_score = current_score
                         
             array_of_max_scores.append(max_score)
@@ -156,7 +160,7 @@ def get_confidence_array(local_scores_array,chunked_df):
 
 #wrapper function for get_confidence_array()
 #i don't think this should be local_scores
-def generate_ROC_curves(automated_df, manual_df, local_scoress, chunk_length = 3):
+def generate_ROC_curves_chunked(automated_df, manual_df, local_scoress, chunk_length = 3):
     """
     psuedocode
     1. chunked the data frames
@@ -169,14 +173,63 @@ def generate_ROC_curves(automated_df, manual_df, local_scoress, chunk_length = 3
 
     #MAKE SURE WE INCLUDE FILES SHARED IN BOTH
     #DO WE WANT TO IGNORE THIS???? BECUASE WE ARE MISSING FALSE NEGATIVES THIS WAY
-    #auto_chunked_df = auto_chunked_df[auto_chunked_df['IN FILE'].isin(manual_chunked_df["IN FILE"].to_list())]
-    #manual_chunked_df = manual_chunked_df[manual_chunked_df['IN FILE'].isin(auto_chunked_df["IN FILE"].to_list())]
+    auto_chunked_df = auto_chunked_df[auto_chunked_df['IN FILE'].isin(manual_chunked_df["IN FILE"].to_list())]
+    manual_chunked_df = manual_chunked_df[manual_chunked_df['IN FILE'].isin(auto_chunked_df["IN FILE"].to_list())]
 
     #GENERATE TARGET AND CONFIDENCE ARRAYS FOR ROC CURVE GENERATION
     target_array = get_target_annotations(manual_chunked_df, chunk_length)
     confidence_scores_array = get_confidence_array(local_scoress,auto_chunked_df)
-    print("target", len(target_array))
-    print("confidence", len(confidence_scores_array))
+    print("target", target_array)
+    print("confidence", confidence_scores_array)
+
+    #GENERATE AND PLOT ROC CURVES
+    fpr, tpr, thresholds = metrics.roc_curve(target_array, confidence_scores_array) 
+    roc_auc = metrics.auc(fpr, tpr)
+    display = metrics.RocCurveDisplay(fpr=fpr, tpr=tpr, roc_auc=roc_auc)
+    plt.plot(fpr, tpr)
+    plt.ylabel("True Postives")
+    plt.xlabel("False Positives ")
+    #display.plot()
+    plt.show
+
+
+#wrapper function for get_confidence_array()
+#i don't think this should be local_scores
+def generate_ROC_curves(automated_df, manual_df, local_scoress, chunk_length = 3):
+    """
+    psuedocode
+    1. chunked the data frames
+    2. get the target array and new local score array 
+    3. call the the ski-learn ROC function 
+    """
+
+    #MAKE SURE WE INCLUDE FILES SHARED IN BOTH
+    #DO WE WANT TO IGNORE THIS???? BECUASE WE ARE MISSING FALSE NEGATIVES THIS WAY
+    automated_df = automated_df[automated_df['IN FILE'].isin(manual_df["IN FILE"].to_list())]
+    manual_df = manual_df[manual_df['IN FILE'].isin(automated_df["IN FILE"].to_list())]
+    target_array = np.array([])
+    confidence_scores_array = np.array([])
+   
+    tmp_df = manual_df.set_index(["FOLDER","IN FILE"])
+    for item in np.unique(tmp_df.index):
+        clip_manual_df = manual_df[(manual_df["FOLDER"] == item[0]) & (manual_df["IN FILE"] == item[1])]
+        local_score_clip = local_scoress[item[1]]
+        duration_of_clip = clip_manual_df.iloc[0]["CLIP LENGTH"]
+        size_of_local_score = len(local_score_clip)
+        seconds_per_index = duration_of_clip/size_of_local_score
+
+
+        target_clip = np.zeros((size_of_local_score))
+        for i in range(size_of_local_score):
+            current_seconds = i * seconds_per_index
+            annotations_at_time = manual_df[(manual_df["OFFSET"] <= current_seconds) & (manual_df["OFFSET"] +manual_df["DURATION"] >=  current_seconds)]
+            if (not annotations_at_time.empty):
+                target_clip[i] = 1
+        target_array = np.append(target_array, target_clip)
+        confidence_scores_array = np.append(confidence_scores_array, local_score_clip)
+    
+    print("target", len(target_array.tolist()))
+    print("confidence", len(confidence_scores_array.tolist()))
 
     #GENERATE AND PLOT ROC CURVES
     fpr, tpr, thresholds = metrics.roc_curve(target_array, confidence_scores_array) 
@@ -187,6 +240,38 @@ def generate_ROC_curves(automated_df, manual_df, local_scoress, chunk_length = 3
     plt.xlabel("False Positives ")
     #display.plot()
     plt.show    
+
+#def generate_ROC_curves_IOU(automated_df, manual_df, stats_df, chunk_length = 3):
+#    """
+#    psuedocode
+#    1. chunked the data frames
+#    2. get the target array and new local score array 
+#    3. call the the ski-learn ROC function 
+#    """
+#    #CHUNK THE DATA
+#    auto_chunked_df = annotation_chunker(automated_df, chunk_length)
+#    manual_chunked_df = annotation_chunker(manual_df, chunk_length)#
+#
+#    #MAKE SURE WE INCLUDE FILES SHARED IN BOTH
+#    #DO WE WANT TO IGNORE THIS???? BECUASE WE ARE MISSING FALSE NEGATIVES THIS WAY
+#    auto_chunked_df = auto_chunked_df[auto_chunked_df['IN FILE'].isin(manual_chunked_df["IN FILE"].to_list())]
+#    manual_chunked_df = manual_chunked_df[manual_chunked_df['IN FILE'].isin(auto_chunked_df["IN FILE"].to_list())]#
+#
+#    #GENERATE TARGET AND CONFIDENCE ARRAYS FOR ROC CURVE GENERATION
+#    target_array = get_target_annotations(manual_chunked_df, chunk_length)
+#    confidence_scores_array = get_confidence_array(local_scoress,auto_chunked_df)
+#    print("target", target_array)
+#    print("confidence", confidence_scores_array)
+#
+#    #GENERATE AND PLOT ROC CURVES
+#    fpr, tpr, thresholds = metrics.roc_curve(target_array, confidence_scores_array) 
+#    roc_auc = metrics.auc(fpr, tpr)
+#    #display = metrics.RocCurveDisplay(fpr=fpr, tpr=tpr, roc_auc=roc_auc)
+#    plt.plot(fpr, tpr)
+#    plt.ylabel("True Postives")
+#    plt.xlabel("False Positives ")
+#    #display.plot()
+#    plt.show    
 
 
 

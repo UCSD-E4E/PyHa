@@ -163,6 +163,8 @@ def local_line_graph(
         local_scores_max = max(local_scores)
         for ndx in range(num_scores):
             local_scores[ndx] = local_scores[ndx] / local_scores_max
+
+    print(len(local_scores))
     # Making sure that the local score of the x-axis are the same across the
     # spectrogram and the local score plot
     step = duration / num_scores
@@ -285,10 +287,13 @@ def spectrogram_visualization(
     except BaseException:
         print("Failure in loading", clip_path)
         return
+
+    print(SAMPLE_RATE, len(SIGNAL))
     # Downsample the audio if the sample rate > 44.1 kHz
     # Force everything into the human hearing range.
     try:
-        if SAMPLE_RATE > 44100:
+        if SAMPLE_RATE != 44100:
+            print("here")
             rate_ratio = 44100 / SAMPLE_RATE
             SIGNAL = scipy_signal.resample(
                 SIGNAL, int(len(SIGNAL) * rate_ratio))
@@ -301,6 +306,8 @@ def spectrogram_visualization(
     if len(SIGNAL.shape) == 2:
         # averaging the two channels together
         SIGNAL = SIGNAL.sum(axis=1) / 2
+
+    print(len(SIGNAL))
 
     # Generate parameters for specific models
     local_scores = None
@@ -323,6 +330,7 @@ def spectrogram_visualization(
                 # Running the Mel Spectrogram through the RNN
                 global_score, local_score = detector.predict(microfaune_features)
                 local_scores = local_score[0].tolist()
+                print(len(local_scores))
             except BaseException:
                 print(
                     "Skipping " +
