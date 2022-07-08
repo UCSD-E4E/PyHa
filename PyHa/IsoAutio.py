@@ -735,7 +735,10 @@ def generate_automated_labels_birdnet(audio_dir, isolation_parameters):
         Dataframe of automated labels for the audio clip(s) in audio_dir.
     """
     #Get automated labels in birdnet format
-    if isolation_parameters["type"] == "analyzer":
+    if "type" not in isolation_parameters:
+        print("Warning: Model not specified. Defaulting to BirdNET-Lite.")
+        annotations = analyze(audio_path=audio_dir, **isolation_parameters)
+    elif isolation_parameters["type"] == "analyzer":
         isolation_parameters.pop("type", None)
         annotations = analyzer_analyze(audio_dir, isolation_parameters)
         if (annotations.empty): return annotations
@@ -743,8 +746,8 @@ def generate_automated_labels_birdnet(audio_dir, isolation_parameters):
     else:
         isolation_parameters.pop("type", None)
         annotations = analyze(audio_path=audio_dir, **isolation_parameters)
-        return annotations
-
+    
+    return annotations
     #Configure to kaleidoscope format
     #annotations = annotations.drop(["Selection", "View", "Channel", "Low Freq (Hz)", "High Freq (Hz)"])    
 
