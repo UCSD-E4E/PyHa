@@ -287,6 +287,15 @@ def steinberg_isolate(
         ends = np.where(diff_scores == -1)[0] - 1
         ends = ends * samples_per_score + int(isolation_parameters["window_size"] / 2 * SAMPLE_RATE)
         
+        if (len(starts) == 0):
+            return pd.DataFrame.from_dict({'FOLDER': [],       \
+                                           'IN FILE': [],      \
+                                           'CHANNEL': [],      \
+                                           'CLIP LENGTH': [],  \
+                                           'SAMPLE RATE': [],  \
+                                           'OFFSET': [],       \
+                                           'MANUAL ID': []})
+        
         i = 0
         while True:
             if (i == len(ends) - 1):
