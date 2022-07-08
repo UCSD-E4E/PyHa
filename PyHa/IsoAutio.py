@@ -276,76 +276,101 @@ def steinberg_isolate(
     samples_per_score = len(SIGNAL) // len(local_scores)
     
     thresh_scores = local_scores >= max(thresh, isolation_parameters["threshold_min"])
-    if (int(isolation_parameters["window_size"]) / 2 * SAMPLE_RATE >= samples_per_score / 2):
+    
+    if (int(isolation_parameters["window_size"] / 2 * SAMPLE_RATE) * 2 >= samples_per_score):
         thresh_scores = np.append(thresh_scores, [0])
         rolled_scores = np.roll(thresh_scores, 1)
         rolled_scores[0] = 0
 
         diff_scores = thresh_scores - rolled_scores
 
-        entry['OFFSET'] = np.where(diff_scores == 1)[0] * samples_per_score / SAMPLE_RATE * 1.0
-        entry['DURATION'] = np.where(diff_scores == -1)[0] * samples_per_score / SAMPLE_RATE * 1.0 - entry['OFFSET']
+        starts = np.where(diff_scores == 1)[0] * samples_per_score - int(isolation_parameters["window_size"] / 2 * SAMPLE_RATE)
+        ends = np.where(diff_scores == -1)[0] - 1
+        ends = ends * samples_per_score + int(isolation_parameters["window_size"] / 2 * SAMPLE_RATE)
+        
+        i = 0
+        while True:
+            if (i == len(ends) - 1):
+                break
+            if (starts[i + 1] < ends[i]):
+                ends = np.delete(ends, i)
+                starts = np.delete(starts, i + 1)
+            else:
+                i += 1
+        
+        starts[0] = max(0, starts[0])
+        ends[-1] = min(len(SIGNAL), ends[-1])
+        
+        entry['OFFSET'] = starts * 1.0 / SAMPLE_RATE
+        entry['DURATION'] = ends - starts
+        entry['DURATION'] = entry['DURATION'] * 1.0 / SAMPLE_RATE
+        
         entry['MANUAL ID'] = np.full(entry['OFFSET'].shape, manual_id)
     else:
-        entry['OFFSET'] = np.where(thresh_scores == 1)[0]  * 1.0 - int(isolation_parameters["window_size"]) / 2 * SAMPLE_RATE
+        entry['OFFSET'] = np.where(thresh_scores == 1)[0] * samples_per_score - int(isolation_parameters["window_size"] / 2 * SAMPLE_RATE)
+        entry['DURATION'] = np.full(entry['OFFSET'].shape, isolation_parameters["window_size"] * 1.0)
+        if (entry['OFFSET'] < 0):
+            entry['OFFSET'][0] = 0
+            entry['DURATION'][0] = isolation_parameters["window_size"] * 0.5
+        entry['MANUAL ID'] = np.full(entry['OFFSET'].shape, manual_id)
         
-    
     return pd.DataFrame.from_dict(entry)
-#     # isolate samples that produce a score above thresh
-# #     isolated_samples = np.empty(0, dtype=np.int16)
-#     prev_cap = 0        # sample idx of previously captured
-#     for i in range(len(local_scores)):
-#         # if a score hits or surpasses thresh, capture 1s on both sides of it
-#         if (local_scores[i] >= thresh and
-#                 local_scores[i] >= isolation_parameters["threshold_min"]):
-#             # score_pos is the sample index that the score corresponds to
-#             score_pos = i * samples_per_score
 
-#             # upper and lower bound of captured call
-#             # sample rate is # of samples in 1 second: +-1 second
-#             lo_idx = max(
-#                 0,
-#                 score_pos - int(isolation_parameters["window_size"]
-#                                 / 2 * SAMPLE_RATE))
-#             hi_idx = min(
-#                 len(SIGNAL),
-#                 score_pos + int(isolation_parameters["window_size"]
-#                                 / 2 * SAMPLE_RATE))
-#             lo_time = lo_idx / SAMPLE_RATE
-#             hi_time = hi_idx / SAMPLE_RATE
+    # # isolate samples that produce a score above thresh
+    # isolated_samples = np.empty(0, dtype=np.int16)
+    # prev_cap = 0        # sample idx of previously captured
+    # for i in range(len(local_scores)):
+    #     # if a score hits or surpasses thresh, capture 1s on both sides of it
+    #     if (local_scores[i] >= thresh and
+    #             local_scores[i] >= isolation_parameters["threshold_min"]):
+    #         # score_pos is the sample index that the score corresponds to
+    #         score_pos = i * samples_per_score
 
-#             # calculate start and end stamps
-#             # create new sample if not overlapping or if first stamp
-#             if prev_cap < lo_idx or prev_cap == 0:
-#                 # New label
-#                 new_stamp = [lo_time, hi_time]
-#                 # TODO make it so that here we get the duration
-#                 entry['OFFSET'].append(new_stamp)
-#                 entry['MANUAL ID'].append(manual_id)
-#             # extend same stamp if still overlapping
-#             else:
-#                 entry['OFFSET'][-1][1] = hi_time
+    #         # upper and lower bound of captured call
+    #         # sample rate is # of samples in 1 second: +-1 second
+    #         lo_idx = max(
+    #             0,
+    #             score_pos - int(isolation_parameters["window_size"]
+    #                             / 2 * SAMPLE_RATE))
+    #         hi_idx = min(
+    #             len(SIGNAL),
+    #             score_pos + int(isolation_parameters["window_size"]
+    #                             / 2 * SAMPLE_RATE))
+    #         lo_time = lo_idx / SAMPLE_RATE
+    #         hi_time = hi_idx / SAMPLE_RATE
 
-#             # mark previously captured to prevent overlap collection
-#             lo_idx = max(prev_cap, lo_idx)
-#             prev_cap = hi_idx
+    #         # calculate start and end stamps
+    #         # create new sample if not overlapping or if first stamp
+    #         if prev_cap < lo_idx or prev_cap == 0:
+    #             # New label
+    #             new_stamp = [lo_time, hi_time]
+    #             # TODO make it so that here we get the duration
+    #             entry['OFFSET'].append(new_stamp)
+    #             entry['MANUAL ID'].append(manual_id)
+    #         # extend same stamp if still overlapping
+    #         else:
+    #             entry['OFFSET'][-1][1] = hi_time
 
-#             # add to isolated samples
-#             # sub-clip numpy array
-# #             isolated_samples = np.append(
-# #                 isolated_samples, SIGNAL[lo_idx:hi_idx])
-#     entry = pd.DataFrame.from_dict(entry)
-#     # TODO, when you go through the process of rebuilding this isolate function
-#     # as a potential optimization problem
-#     # rework the algorithm so that it builds the dataframe correctly to save
-#     # time.
+    #         # mark previously captured to prevent overlap collection
+    #         lo_idx = max(prev_cap, lo_idx)
+    #         prev_cap = hi_idx
 
-#     #Spilt offset array so entry is in kaledoscope format
-#     entry = entry.assign(
-#         OFFSET=entry['OFFSET'].apply(lambda arr: arr[0]),
-#         DURATION=entry['OFFSET'].apply(lambda arr: arr[1]-arr[0])
-#     )
-#     return entry
+    #         # add to isolated samples
+    #         # sub-clip numpy array
+    #         isolated_samples = np.append(
+    #             isolated_samples, SIGNAL[lo_idx:hi_idx])
+    # entry = pd.DataFrame.from_dict(entry)
+    # # TODO, when you go through the process of rebuilding this isolate function
+    # # as a potential optimization problem
+    # # rework the algorithm so that it builds the dataframe correctly to save
+    # # time.
+
+    # #Spilt offset array so entry is in kaledoscope format
+    # entry = entry.assign(
+    #     OFFSET=entry['OFFSET'].apply(lambda arr: arr[0]),
+    #     DURATION=entry['OFFSET'].apply(lambda arr: arr[1]-arr[0])
+    # )
+    # return entry
 
 
 def simple_isolate(
