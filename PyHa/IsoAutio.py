@@ -731,8 +731,10 @@ def generate_automated_labels_birdnet(audio_dir, isolation_parameters):
         Dataframe of automated labels for the audio clip(s) in audio_dir.
     """
     annotations = analyze(audio_path=audio_dir, **isolation_parameters)
-    return annotations
-
+    local_scores_dir  = {}
+    for file in np.unique(annotations["IN FILE"]):
+        local_scores_dir[file] = annotations["CONFIDENCE"].to_list()
+    return annotations, local_scores_dir
 def generate_automated_labels_microfaune(
         audio_dir,
         isolation_parameters,
