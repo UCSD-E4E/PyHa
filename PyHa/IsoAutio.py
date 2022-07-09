@@ -572,57 +572,90 @@ def stack_isolate(
     # annotation start/stop values.
     time_per_score = samples_per_score / SAMPLE_RATE
 
-    # initializing variables used in master loop
+    thresh_scores = local_scores >= max(thresh, isolation_parameters["threshold_min"])
+    thresh_scores = np.append(thresh_scores, [0])
+    rolled_scores = np.roll(thresh_scores, 1)
+    rolled_scores[0] = 0
+
+    diff_scores = thresh_scores - rolled_scores
+
+    starts = np.where(diff_scores == 1)[0]
+    ends = np.where(diff_scores == -1)[0]
+    
     stack_counter = 0
-    annotation_start = 0
-    call_start = 0
-    call_stop = 0
-    # looping through every local score array value
-    for ndx in range(len(local_scores)):
-        # the case for the end of the local score array and the stack isn't
-        # empty.
-        if ndx == (len(local_scores) - 1) and stack_counter > 0:
-            call_end = float(ndx * time_per_score)
-            entry['OFFSET'].append(call_start)
-            entry['DURATION'].append(call_end - call_start)
-            entry['MANUAL ID'].append(manual_id)
-        # pushing onto the stack whenever a sample is above the threshold
-        if (local_scores[ndx] >= thresh and
-                local_scores[ndx] >= isolation_parameters["threshold_min"]):
-            # in case this is the start of a new annotation
-            if stack_counter == 0:
-                call_start = float(ndx * time_per_score)
-                annotation_start = 1
-            # increasing this stack counter will be referred to as "pushing"
-            stack_counter = stack_counter + 1
+    i = 0
+    while i < len(ends):
+        stack_counter += ends[i] - starts[i]
+        new_end = ends[i] + stack_counter - 1
+        while (i < len(ends) - 1 and starts[i + 1] <= new_end):
+            stack_counter -= starts[i + 1] - ends[i]
+            stack_counter += ends[i + 1] - starts[i + 1]
+            ends = np.delete(ends, i)
+            starts = np.delete(starts, i + 1)
+            new_end = ends[i] + stack_counter - 1
+        ends[i] = new_end
+        stack_counter = 0
+        i += 1
+    
+    ends[-1] = min(len(local_scores), ends[-1])
+    
+    entry['OFFSET'] = starts * time_per_score
+    entry['DURATION'] = ends - starts
+    entry['DURATION'] = entry['DURATION'] * time_per_score
+    
+    entry['MANUAL ID'] = np.full(entry['OFFSET'].shape, manual_id)
+    
+    # # initializing variables used in master loop
+    # stack_counter = 0
+    # annotation_start = 0
+    # call_start = 0
+    # call_stop = 0
+    # # looping through every local score array value
+    # for ndx in range(len(local_scores)):
+    #     # the case for the end of the local score array and the stack isn't
+    #     # empty.
+    #     if ndx == (len(local_scores) - 1) and stack_counter > 0:
+    #         call_end = float(ndx * time_per_score)
+    #         entry['OFFSET'].append(call_start)
+    #         entry['DURATION'].append(call_end - call_start)
+    #         entry['MANUAL ID'].append(manual_id)
+    #     # pushing onto the stack whenever a sample is above the threshold
+    #     if (local_scores[ndx] >= thresh and
+    #             local_scores[ndx] >= isolation_parameters["threshold_min"]):
+    #         # in case this is the start of a new annotation
+    #         if stack_counter == 0:
+    #             call_start = float(ndx * time_per_score)
+    #             annotation_start = 1
+    #         # increasing this stack counter will be referred to as "pushing"
+    #         stack_counter = stack_counter + 1
 
-        # when a score is below the threshold
-        else:
-            # the case where it is the end of an annotation
-            if stack_counter == 0 and annotation_start == 1:
-                # marking the end of a clip
-                call_end = float(ndx * time_per_score)
+    #     # when a score is below the threshold
+    #     else:
+    #         # the case where it is the end of an annotation
+    #         if stack_counter == 0 and annotation_start == 1:
+    #             # marking the end of a clip
+    #             call_end = float(ndx * time_per_score)
 
-                # adding annotation to dictionary containing all annotations
-                entry['OFFSET'].append(call_start)
-                entry['DURATION'].append(call_end - call_start)
-                entry['MANUAL ID'].append(manual_id)
+    #             # adding annotation to dictionary containing all annotations
+    #             entry['OFFSET'].append(call_start)
+    #             entry['DURATION'].append(call_end - call_start)
+    #             entry['MANUAL ID'].append(manual_id)
 
-                # resetting for the next annotation
-                call_start = 0
-                call_end = 0
-                annotation_start = 0
-            # the case where the stack is empty and a new annotation hasn't
-            # started, you just want to increment the index
-            elif stack_counter == 0 and annotation_start == 0:
-                continue
-            # the case where we are below the threshold and the stack isn't
-            # empty. Pop from the stack, which in this case means just
-            # subtracting from the counter.
-            else:
-                stack_counter = stack_counter - 1
-    # returning pandas dataframe from dictionary constructed with all of the
-    # annotations
+    #             # resetting for the next annotation
+    #             call_start = 0
+    #             call_end = 0
+    #             annotation_start = 0
+    #         # the case where the stack is empty and a new annotation hasn't
+    #         # started, you just want to increment the index
+    #         elif stack_counter == 0 and annotation_start == 0:
+    #             continue
+    #         # the case where we are below the threshold and the stack isn't
+    #         # empty. Pop from the stack, which in this case means just
+    #         # subtracting from the counter.
+    #         else:
+    #             stack_counter = stack_counter - 1
+    # # returning pandas dataframe from dictionary constructed with all of the
+    # # annotations
     return pd.DataFrame.from_dict(entry)
 
 # TODO
