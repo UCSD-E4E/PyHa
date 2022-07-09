@@ -781,8 +781,9 @@ def generate_automated_labels_microfaune(
         detector = RNNDetector()
     # Use Custom weights for Microfaune Detector
     else:
-        print("model \"{}\" does not exist".format(ml_model))
-        return None
+        detector = RNNDetector(weight_path)
+        # print("model \"{}\" does not exist".format(ml_model))
+        # return None
 
     # init labels dataframe
     annotations = pd.DataFrame()
