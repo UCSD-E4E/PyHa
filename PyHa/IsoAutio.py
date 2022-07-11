@@ -989,7 +989,8 @@ def generate_automated_labels(
         manual_id="bird",
         weight_path=None,
         normalized_sample_rate=44100,
-        normalize_local_scores=False):
+        normalize_local_scores=False,
+        include_local_scores=False):
     """
     Function that generates the bird labels across a folder of audio clips
     given the isolation_parameters
@@ -1016,13 +1017,18 @@ def generate_automated_labels(
         normalize_local_scores (bool)
             - Set whether or not to normalize the local scores.
 
+        include_local_scores (bool)
+            - Set whether or not to also output local_scores for ROC curve generation
+
     Returns:
         Dataframe of automated labels for the audio clips in audio_dir.
+        If include_local_scores = True, it outputs a tuple containing the dataframe of automated labels
+        and a directory containing the local scores of each file as used by the generate ROC curve functions
     """
 
     #try:
     if(isolation_parameters["model"] == 'microfaune'):
-        annotations = generate_automated_labels_microfaune(
+        annotations, local_scores = generate_automated_labels_microfaune(
                         audio_dir=audio_dir,
                         isolation_parameters=isolation_parameters,
                         manual_id=manual_id,
@@ -1037,10 +1043,10 @@ def generate_automated_labels(
             'threshold_const', 'chunk_size']
         for key in keys_to_delete:
             birdnet_parameters.pop(key, None)
-        annotations = generate_automated_labels_birdnet(
+        annotations, local_scores = generate_automated_labels_birdnet(
                         audio_dir, birdnet_parameters)
     elif(isolation_parameters['model'] == 'tweetynet'):
-        annotations = generate_automated_labels_tweetynet(
+        annotations, local_scores = generate_automated_labels_tweetynet(
                         audio_dir=audio_dir,
                         isolation_parameters=isolation_parameters,
                         manual_id=manual_id,
@@ -1053,7 +1059,10 @@ def generate_automated_labels(
     # except:
     #     print("Error. Check your isolation_parameters")
     #     return None
-    return annotations
+    if (include_local_scores) : 
+        return annotations, local_scores
+    else: 
+        return annotations
 
 def kaleidoscope_conversion(df):
     """

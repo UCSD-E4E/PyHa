@@ -165,7 +165,6 @@ def local_line_graph(
         for ndx in range(num_scores):
             local_scores[ndx] = local_scores[ndx] / local_scores_max
 
-    print(len(local_scores))
     # Making sure that the local score of the x-axis are the same across the
     # spectrogram and the local score plot
     step = duration / num_scores
@@ -289,12 +288,10 @@ def spectrogram_visualization(
         print("Failure in loading", clip_path)
         return
 
-    print(SAMPLE_RATE, len(SIGNAL))
     # Downsample the audio if the sample rate > 44.1 kHz
     # Force everything into the human hearing range.
     try:
         if SAMPLE_RATE != 44100:
-            print("here")
             rate_ratio = 44100 / SAMPLE_RATE
             SIGNAL = scipy_signal.resample(
                 SIGNAL, int(len(SIGNAL) * rate_ratio))
@@ -307,8 +304,6 @@ def spectrogram_visualization(
     if len(SIGNAL.shape) == 2:
         # averaging the two channels together
         SIGNAL = SIGNAL.sum(axis=1) / 2
-
-    print(len(SIGNAL))
 
     # Generate parameters for specific models
     local_scores = None
@@ -331,7 +326,6 @@ def spectrogram_visualization(
                 # Running the Mel Spectrogram through the RNN
                 global_score, local_score = detector.predict(microfaune_features)
                 local_scores = local_score[0].tolist()
-                print(len(local_scores))
             except BaseException:
                 print(
                     "Skipping " +
@@ -649,7 +643,6 @@ def get_target_annotations(chunked_manual_df, chunk_size):
     for item in np.unique(manual_df.index):
         #Get all annotations for a given clip
         clip_df = chunked_manual_df[(chunked_manual_df["FOLDER"] == item[0]) & (chunked_manual_df["IN FILE"] == item[1])]
-        print(item[1])
         clip_duration = clip_df.iloc[0]["CLIP LENGTH"]
 
         #get the target array for that clip
