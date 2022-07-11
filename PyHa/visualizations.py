@@ -731,10 +731,13 @@ def get_confidence_array(local_scores_array,chunked_df, chunk_size_list):
 
 
 
-def generate_ROC_curves(automated_df, manual_df, local_scoress, chunk_length = 3, label=""):
+def generate_ROC_curves_chunked_local(automated_df, manual_df, local_scoress, chunk_length = 3, label=""):
     """
     Function For ROC Curve generation. Displays the given roc curve for some automated labels
-    Note: this chunks both automated and manual labels piror to ROC curve generation
+    NOTE: this chunks both automated and manual labels piror to ROC curve generation
+    NOTE: This requires the local_score array. If your automated_df has confidence values, please use
+    generate_ROC_curves
+
         Args:
             automated_df (Dataframe)
                 - Autoamted Dataframe of dataset in question
@@ -796,7 +799,7 @@ def generate_ROC_curves_raw_local(automated_df, manual_df, local_scoress, label=
     models who have long periods of high local score array values, less good for models like 
     mircofaune with spikes in data
 
-    IT IS RECOMMENDED TO USE generate_ROC_curves()
+    NOTE: It is recommend to use generate_ROC_curves() if automated_df has confidence column
 
         Args:
             automated_df (Dataframe)
@@ -863,11 +866,10 @@ def generate_ROC_curves_raw_local(automated_df, manual_df, local_scoress, label=
     plt.show
     return roc_auc
 
-#wrapper function for get_confidence_array()
-#i don't think this should be local_scores
-def generate_ROC_curves_simple(automated_df, manual_df, label="", chunk_length=3):
+def generate_ROC_curves(automated_df, manual_df, label="", chunk_length=3):
     """
     Function For ROC Curve generation. Displays the given roc curve for some automated labels
+    Primary generate ROC curve function
 
         Args:
             automated_df (Dataframe)
@@ -891,7 +893,8 @@ def generate_ROC_curves_simple(automated_df, manual_df, label="", chunk_length=3
     automated_df = annotation_chunker(automated_df, chunk_length, include_no_bird=True)
     manual_df = annotation_chunker(manual_df, chunk_length, include_no_bird=False)
 
-    #Since we don't need chunking we can be a bit more stright forward
+    #get the true labels and confidence of each chunk, save as 2 arrays
+    #each index in both arrays are the confidence and true value for one chunk
     target_array = np.array(get_target_annotations(manual_df, chunk_length)[0])
     confidence_scores_array = np.array(automated_df["CONFIDENCE"])
 
