@@ -9,6 +9,7 @@ import scipy.signal as scipy_signal
 import numpy as np
 import seaborn as sns
 from .IsoAutio import *
+from .annotation_post_processing import *
 
 def spectrogram_graph(
         clip_name,
@@ -585,3 +586,288 @@ def annotation_duration_histogram(
     # Save the histogram if specified
     if save_fig:
         sns_hist.get_figure().savefig(filename)
+
+
+## ROC CURVE CODE BELOW
+def convert_label_to_local_score(manual_df, size_of_local_score):
+    """
+    Helper Function For ROC Curve generation. Given a manual dataframe and a spefifed array size,
+    coverts the dataframe's anntotions to a array representation with each index corresponding to
+    a spefific time in the audio data with values of 1 (annotation present) or 0 (annotation absent)
+
+        Args:
+            manual_df (Dataframe)
+                - Dataframe of human labels of ONLY A SINGLE CLIP
+
+            size_of_local_score
+                - size of array to create
+
+        Returns:
+            array representation of annotation locations of a given clip
+    """
+    #Determine how many seconds each index corresponds to
+    duration_of_clip = manual_df.iloc[0]["CLIP LENGTH"]
+    seconds_per_index = duration_of_clip/size_of_local_score
+
+    #Init array
+    local_score = np.zeros(size_of_local_score)
+
+    #For each index
+    for i in range(size_of_local_score):
+        #Determine the time that corresponds to this index
+        current_seconds = i * seconds_per_index
+
+        #If the manual dataframe has an annotation at that time, set the index value to 1
+        annotations_at_time = manual_df[(manual_df["OFFSET"] <= current_seconds) & (manual_df["OFFSET"] +manual_df["DURATION"] >=  current_seconds)]
+        if (not annotations_at_time.empty):
+            local_score[i] = 1
+    
+    return local_score
+
+
+    
+def get_target_annotations(chunked_manual_df, chunk_size):
+    """
+    Helper Function For ROC Curve generation. Converts a manual_df into a array representation of target ground truth values
+    for an entire dataset in order of the clips appearing in a dataset
+
+        Args:
+            manual_df (Dataframe)
+                - Dataframe of human labels
+
+            size_of_local_score
+                - size of array to create
+
+        Returns:
+            array representation of annotation locations of a given clip
+            some debugging array to make sure everything is correctly lining up
+    """
+    target_score_array = []
+    #Iterate through all files in the dataframe
+    manual_df = chunked_manual_df.set_index(["FOLDER","IN FILE"])
+    chunk_size_list = []
+    for item in np.unique(manual_df.index):
+        #Get all annotations for a given clip
+        clip_df = chunked_manual_df[(chunked_manual_df["FOLDER"] == item[0]) & (chunked_manual_df["IN FILE"] == item[1])]
+        print(item[1])
+        clip_duration = clip_df.iloc[0]["CLIP LENGTH"]
+
+        #get the target array for that clip
+        number_of_chunks = math.floor(clip_duration/chunk_size)
+        target_score_clip = convert_label_to_local_score(clip_df, number_of_chunks)
+
+        #Append that data to the return array
+        chunk_size_list.append((number_of_chunks, clip_duration, item[1]))
+        target_score_array.extend(target_score_clip)
+
+    return np.array(target_score_array), chunk_size_list
+
+
+# #Remember to chunk before passing it in
+# target_array = get_target_annotations(chunked_df_manual_clip, 3)
+# #Returns array -> 1 = bird, 0 = no bird
+
+#instead here get the local scores array from generated_automated_labels dictionary 
+def get_confidence_array(local_scores_array,chunked_df, chunk_size_list):
+    """
+    Helper Function For ROC Curve generation. Converts a directory of local scores into
+    a array containing the local score maximums of each chunk in each clip in a dataset
+
+        Args:
+            chunked_df (Dataframe)
+                - Dataframe of dataset in question
+
+            local_scores_array
+                - Directory of local scores with keys being the file name of each local score (values)
+
+            chunk_size_list
+                - Debugging directory to ensure everything is lining up correctly  
+
+        Returns:
+            array representation of local maximum confidences for an entire dataset
+    """
+    array_of_max_scores = []
+    manual_df = chunked_df.set_index(["FOLDER","IN FILE"])
+    k = 0
+
+    for item in np.unique(manual_df.index):
+        #For each file in the dataset, obtain the annotation data of that file
+        clip_df = chunked_df[(chunked_df["FOLDER"] == item[0]) & (chunked_df["IN FILE"] == item[1])]
+        local_score_clip = local_scores_array[item[1]]
+        
+        #calculate the number of local maximums we need
+        duration_of_clip = clip_df.iloc[0]["CLIP LENGTH"] 
+        num_chunks = math.floor(duration_of_clip/3)
+
+        #At this point the files should line up with the files appended in order for the target array
+        #If no, return an error 
+        if (num_chunks != chunk_size_list[k][0]):
+            print("BAD CHUNK SIZE, CONFIDENCE SIZE: ", num_chunks, " TARGET: ", chunk_size_list[k] )
+            print("duration_of_clip", duration_of_clip, chunk_size_list[i][1])
+            print(item[1], chunk_size_list[k][2])
+            break
+        k += 1
+
+
+        chunk_length = int(clip_df.iloc[0]["DURATION"]) #3 sec
+        #For each chunk in seconds
+        for i in range(0, num_chunks * chunk_length,chunk_length):
+            # now iterate through the local_score array for each chunk
+            clip_length = clip_df.iloc[0]["CLIP LENGTH"]
+            #seconds_per_index = clip_length/len(local_score_clip)
+            index_per_seconds = len(local_score_clip)/clip_length
+            
+            #Get the starting and ending index of that chunk as respective to
+            #the local score array
+            start_index = math.floor(index_per_seconds * i)
+            end_index = math.floor(index_per_seconds *(i + chunk_length))
+           
+            #Compute the local maximum in this chunk in the local scores
+            max_score = 0.0
+            current_score = 0.0
+            chunk_length = int(clip_df.iloc[0]["DURATION"])
+            for j in range(start_index, end_index):
+                    #TODO use max() here instead?
+                    current_score = local_score_clip[j]
+                    if (current_score > max_score):
+                        max_score = current_score
+
+            #Append local maximum to list of all local maximum local scores            
+            array_of_max_scores.append(max_score)
+    return array_of_max_scores
+
+
+
+def generate_ROC_curves(automated_df, manual_df, local_scoress, chunk_length = 3, label=""):
+    """
+    Function For ROC Curve generation. Displays the given roc curve for some automated labels
+    Note: this chunks both automated and manual labels piror to ROC curve generation
+        Args:
+            automated_df (Dataframe)
+                - Autoamted Dataframe of dataset in question
+
+            manual_df (Dataframe)
+                - Manual Dataframe of dataset in question
+
+            local_scores_array
+                - Directory of local scores with keys being the file name of each local score (values)
+
+            chunk_length
+                - size in seconds of each chunk  
+
+            label (String)
+                - name to display in legend. Doesn't display legend if left blank
+
+        Returns:
+            Area Under the ROC Curve
+    """
+
+    #Only include files shared by both
+    manual_df = manual_df[manual_df['IN FILE'].isin(automated_df["IN FILE"].to_list())]
+    automated_df = automated_df[automated_df['IN FILE'].isin(manual_df["IN FILE"].to_list())]
+
+    #chunk the data
+    auto_chunked_df = annotation_chunker(automated_df, chunk_length)
+    manual_chunked_df = annotation_chunker(manual_df, chunk_length)
+
+    #sort the data to ensure all append operations are in order
+    auto_chunked_df = auto_chunked_df.sort_values(by="IN FILE")
+    manual_chunked_df = manual_chunked_df.sort_values(by="IN FILE")
+    
+    #GENERATE TARGET AND CONFIDENCE ARRAYS FOR ROC CURVE GENERATION
+    target_array, chunk_size_list = get_target_annotations(manual_chunked_df, chunk_length)
+    confidence_scores_array = get_confidence_array(local_scoress,manual_chunked_df, chunk_size_list) #auto_chunked_df
+    
+    #Sanity check code
+    print("target", len(target_array))
+    print("confidence", len(confidence_scores_array))
+
+    #GENERATE AND PLOT ROC CURVES
+    fpr, tpr, thresholds = metrics.roc_curve(target_array, confidence_scores_array) 
+    roc_auc = metrics.auc(fpr, tpr)
+    plt.plot(fpr, tpr, label=label)
+    plt.ylabel("True Postives")
+    plt.xlabel("False Positives ")
+    if (label != ""):
+        plt.legend(loc="lower right")
+    plt.show
+    return roc_auc
+
+
+#wrapper function for get_confidence_array()
+#i don't think this should be local_scores
+def generate_ROC_curves_raw_local(automated_df, manual_df, local_scoress, label=""):
+    """
+    Function For ROC Curve generation. Displays the given roc curve for some automated labels
+    Note: this does not chunk data and relies of local score itself for annotations. Great for comparing
+    models who have long periods of high local score array values, less good for models like 
+    mircofaune with spikes in data
+
+    IT IS RECOMMENDED TO USE generate_ROC_curves()
+
+        Args:
+            automated_df (Dataframe)
+                - Autoamted Dataframe of dataset in question
+
+            manual_df (Dataframe)
+                - Manual Dataframe of dataset in question
+
+            local_scores_array
+                - Directory of local scores with keys being the file name of each local score (values)
+
+            label (String)
+                - name to display in legend. Doesn't display legend if left blank
+
+        Returns:
+            Area Under the ROC Curve
+    """
+
+    #Only include files shared by both
+    manual_df = manual_df[manual_df['IN FILE'].isin(automated_df["IN FILE"].to_list())]
+    automated_df = automated_df[automated_df['IN FILE'].isin(manual_df["IN FILE"].to_list())]
+    
+    #Since we don't need chunking we can be a bit more stright forward
+    target_array = np.array([])
+    confidence_scores_array = np.array([])
+    tmp_df = manual_df.set_index(["FOLDER","IN FILE"])
+    for item in np.unique(tmp_df.index):
+        #Get the data for each indivual clip
+        clip_manual_df = manual_df[(manual_df["FOLDER"] == item[0]) & (manual_df["IN FILE"] == item[1])]
+        local_score_clip = local_scoress[item[1]]
+        
+        #Determine how many seconds corresponds to each index of the
+        #local score array
+        duration_of_clip = clip_manual_df.iloc[0]["CLIP LENGTH"]
+        size_of_local_score = len(local_score_clip)
+        seconds_per_index = duration_of_clip/size_of_local_score
+        
+        #Get the target array represetnation of the manual dataframe that is
+        #the same size as our local_score array
+        target_clip = np.zeros((size_of_local_score))
+        for i in range(size_of_local_score):
+            current_seconds = i * seconds_per_index
+            annotations_at_time = manual_df[(manual_df["OFFSET"] <= current_seconds) & (manual_df["OFFSET"] +manual_df["DURATION"] >=  current_seconds)]
+            if (not annotations_at_time.empty):
+                target_clip[i] = 1
+        
+        #Append the target array and the corresponding local score array
+        target_array = np.append(target_array, target_clip)
+        confidence_scores_array = np.append(confidence_scores_array, local_score_clip)
+    
+    
+    #sanity check code
+    print("target", len(target_array.tolist()))
+    print("confidence", len(confidence_scores_array.tolist()))
+
+    #GENERATE AND PLOT ROC CURVES
+    fpr, tpr, thresholds = metrics.roc_curve(target_array, confidence_scores_array) 
+    roc_auc = metrics.auc(fpr, tpr)
+    plt.plot(fpr, tpr, label=label)
+    plt.ylabel("True Postives")
+    plt.xlabel("False Positives ")
+    if (label != ""):
+        plt.legend(loc="lower right")
+    plt.show
+    return roc_auc
+
+
