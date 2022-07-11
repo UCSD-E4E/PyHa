@@ -243,7 +243,7 @@ def analyzeFile(item, folder="", filename=""):
     start_time = datetime.datetime.now()
 
     # Status
-    print('Analyzing {}'.format(fpath), flush=True)
+    #print('Analyzing {}'.format(fpath), flush=True)
 
     # Open audio file and split into 3-second chunks
     chunks, sig, rate = getRawAudioFromFile(fpath)
@@ -356,7 +356,7 @@ def analyzeFile(item, folder="", filename=""):
         return return_df
 
     delta_time = (datetime.datetime.now() - start_time).total_seconds()
-    print('Finished {} in {:.2f} seconds'.format(fpath, delta_time), flush=True)
+    #print('Finished {} in {:.2f} seconds'.format(fpath, delta_time), flush=True)
     #print(return_df)
     return return_df
 
@@ -449,19 +449,24 @@ def analyze(audio_path, isolation_parameters, lat=-1, lon=-1, week=-1, slist='',
         filenames.append(f)
     
     automated_df = pd.DataFrame()
+    count = 1
     num_errors = 0
+    num_files = len(filenames)
+    
     for entry in flist:
         filename = entry[0].replace(audio_path, "").replace("\\", "")
-        print(filename)
+        print(count, "/", num_files, "processed:", filename)
+        count += 1
         entry_df = analyzeFile(entry, audio_path, filename)
         if (automated_df.empty): automated_df = entry_df
         elif (entry_df.empty): 
             num_errors += 1
             continue
         else : automated_df = pd.concat([automated_df, entry_df])
+        
 
     if num_errors > 0:
-        print("Something went wrong with " + str(num_errors) + " clips out of " + str(len(filenames)) + " files")
+        print("Something went wrong with", num_errors, "clips out of", num_files, "files")
     return automated_df
     # Analyze files  
     # if cfg.CPU_THREADS < 2:
