@@ -105,7 +105,7 @@ def get_target_annotations(chunked_manual_df, chunk_size):
     chunk_size_list = []
     for item in np.unique(manual_df.index):
         clip_df = chunked_manual_df[(chunked_manual_df["FOLDER"] == item[0]) & (chunked_manual_df["IN FILE"] == item[1])]
-        #print(item[1])
+        print(item[1])
         clip_duration = clip_df.iloc[0]["CLIP LENGTH"]
         number_of_chunks = math.floor(clip_duration/chunk_size)
         target_score_clip = convert_label_to_local_score(clip_df, number_of_chunks)
@@ -171,7 +171,7 @@ def get_confidence_array(local_scores_array,chunked_df, chunk_size_list):
 
 #wrapper function for get_confidence_array()
 #i don't think this should be local_scores
-def generate_ROC_curves(automated_df, manual_df, local_scoress, chunk_length = 3):
+def generate_ROC_curves(automated_df, manual_df, local_scoress, chunk_length = 3, label=""):
     """
     psuedocode
     1. chunked the data frames
@@ -203,10 +203,10 @@ def generate_ROC_curves(automated_df, manual_df, local_scoress, chunk_length = 3
     fpr, tpr, thresholds = metrics.roc_curve(target_array, confidence_scores_array) 
     roc_auc = metrics.auc(fpr, tpr)
     display = metrics.RocCurveDisplay(fpr=fpr, tpr=tpr, roc_auc=roc_auc)
-    plt.plot(fpr, tpr)
+    plt.plot(fpr, tpr, label=label)
     plt.ylabel("True Postives")
     plt.xlabel("False Positives ")
-    #display.plot()
+    plt.legend(loc="lower right")
     plt.show
 
 
