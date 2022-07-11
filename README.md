@@ -585,6 +585,25 @@ This function builds a histogram to visualize the length of annotations.
 This function returns a histogram with the length of the annotations.
 
 Usage: `binary_visualization(annotation_df, n_bins, min_length, max_length, save_fig, filename)`
+
+
+### [`generate_ROC_curves`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/visualizations.py)
+*Found in [`visualizations.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/visualizations.py)*
+
+ Function For ROC Curve generation. Displays the given roc curve for some automated labels Primary generate ROC curve function
+
+ automated_df, manual_df, label="", chunk_length=3
+
+| Parameter | Type |  Description |
+| --- | --- | --- |
+| `annotation_df` | Dataframe | Dataframe of automated labels. |
+| `manual_df` | Dataframe | Dataframe of human labels. |
+| `label` | str | Label for roc curve in line (recomended for comparisions) |
+| `chunk_length` | int | Size of chunks to use to generate ROC Curves |
+
+This function returns the Area Under the Curve and plots ROC curve graph.
+
+Usage: `generate_ROC_curves(automated_df, manual_df, label="", chunk_length=3)`
 </details>
 
 All files in the `birdnet_lite` directory are from a [modified version](https://github.com/UCSD-E4E/BirdNET-Lite) of the [BirdNET Lite repository](https://github.com/kahst/BirdNET-Lite), and their associated documentation can be found there.  
