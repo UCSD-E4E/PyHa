@@ -763,8 +763,8 @@ def generate_ROC_curves_chunked_local(automated_df, manual_df, local_scoress, ch
     automated_df = automated_df[automated_df['IN FILE'].isin(manual_df["IN FILE"].to_list())]
 
     #chunk the data
-    auto_chunked_df = annotation_chunker(automated_df, chunk_length)
-    manual_chunked_df = annotation_chunker(manual_df, chunk_length)
+    auto_chunked_df = annotation_chunker_no_duplicates(automated_df, chunk_length)
+    manual_chunked_df = annotation_chunker_no_duplicates(manual_df, chunk_length)
 
     #sort the data to ensure all append operations are in order
     auto_chunked_df = auto_chunked_df.sort_values(by="IN FILE")
@@ -890,8 +890,8 @@ def generate_ROC_curves(automated_df, manual_df, label="", chunk_length=3):
     automated_df = automated_df[automated_df['IN FILE'].isin(manual_df["IN FILE"].to_list())]
     
     #chunk the data
-    automated_df = annotation_chunker(automated_df, chunk_length, include_no_bird=True)
-    manual_df = annotation_chunker(manual_df, chunk_length, include_no_bird=False)
+    automated_df = annotation_chunker_no_duplicates(automated_df, chunk_length, include_no_bird=True)
+    manual_df = annotation_chunker_no_duplicates(manual_df, chunk_length, include_no_bird=False)
 
     #get the true labels and confidence of each chunk, save as 2 arrays
     #each index in both arrays are the confidence and true value for one chunk
@@ -901,6 +901,9 @@ def generate_ROC_curves(automated_df, manual_df, label="", chunk_length=3):
     #sanity check code
     print("target", len(target_array.tolist()))
     print("confidence", len(confidence_scores_array.tolist()))
+    print("automated df", automated_df.shape[0])
+
+    print(automated_df)
 
     #GENERATE AND PLOT ROC CURVES
     fpr, tpr, thresholds = metrics.roc_curve(target_array, confidence_scores_array) 
