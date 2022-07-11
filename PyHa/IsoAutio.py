@@ -846,6 +846,11 @@ def generate_automated_labels_microfaune(
                 manual_id=manual_id,
                 normalize_local_scores=normalize_local_scores)
             # print(new_entry)
+
+            #determine confidence of annotations
+            new_entry = add_confidence_to_annotations(new_entry, local_scores[0])
+
+
             if annotations.empty:
                 annotations = new_entry
             else:
@@ -969,6 +974,10 @@ def generate_automated_labels_tweetynet(
                     manual_id=manual_id,
                     normalize_local_scores=normalize_local_scores)
             # print(new_entry)
+
+            new_entry = add_confidence_to_annotations(new_entry, local_scores[0])
+
+
             if annotations.empty:
                 annotations = new_entry
             else:
@@ -1017,7 +1026,7 @@ def generate_automated_labels(
         normalize_local_scores (bool)
             - Set whether or not to normalize the local scores.
 
-        include_local_scores (bool)
+    include_local_scores (bool)
             - Set whether or not to also output local_scores for ROC curve generation
 
     Returns:
@@ -1084,6 +1093,76 @@ def kaleidoscope_conversion(df):
 
     kaleidoscope_df = pd.concat(kaleidoscope_df, axis=1, keys=headers)
     return kaleidoscope_df
+
+
+def add_confidence_to_annotations(clip_df, local_score_array):
+    """
+        Adds confidence of each annotation from a local_score array.
+        Takes the maximum normalized local score value within each
+        annotation as the confidence
+
+        Args:
+            clip_df: (Dataframe)
+                - Dataframe containing the automated annotations of a single
+                clip 
+
+            local_score_array: (Numpy Array)
+                - array of local_scores from predict functions
+
+        Returns:
+            clip_df with an extra column containing the confidence of each annotation
+    """
+    #data prep for processing
+    local_score_array = normalize(local_score_array, 0, 1)
+    clip_df["CONFIDENCE"] = 0
+    confidence_array = []
+
+    for i in range(clip_df.shape[0]):
+        annotation_data = clip_df.iloc[i]
+        # now iterate through the local_score array for each chunk
+        clip_length = annotation_data["CLIP LENGTH"]
+        #seconds_per_index = clip_length/len(local_score_clip)
+        index_per_seconds = len(local_score_array)/clip_length
+        
+        #Get the starting and ending index of that chunk as respective to
+        #the local score array
+        start_time =  annotation_data["OFFSET"]
+        end_time = annotation_data["OFFSET"] + annotation_data["DURATION"]
+        start_index = math.floor(start_time * index_per_seconds)
+        end_index = math.floor((end_time * index_per_seconds))
+        max_index = math.floor((clip_length * index_per_seconds))
+        
+        #Compute the local maximum in this chunk in the local scores
+        max_score = max(local_score_array[start_index: min(end_index, max_index)])
+        confidence_array.append(max_score)
+    clip_df["CONFIDENCE"] = confidence_array
+    return clip_df
+
+def normalize(arr, t_min, t_max):
+    """
+        normalize local_score for better confidence value
+
+        Args:
+            arr: (Numpy Array)
+                - Local Score array.
+
+            t_min: (int)
+                - minimum value to set.
+
+            t_max: (int)
+                - maximum value to set.
+
+        Returns:
+            Numpy array of the normalized local score array.
+        """
+    norm_arr = []
+    diff = t_max - t_min
+    arr_min = min(arr)
+    diff_arr = max(arr) - arr_min
+    for i in arr:
+        temp = (((i - arr_min)*diff)/diff_arr) + t_min
+        norm_arr.append(temp)
+    return norm_arr
 
 # def annotation_combiner(df):
 #    # Initializing the output Pandas dataframe

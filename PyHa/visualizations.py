@@ -863,4 +863,51 @@ def generate_ROC_curves_raw_local(automated_df, manual_df, local_scoress, label=
     plt.show
     return roc_auc
 
+#wrapper function for get_confidence_array()
+#i don't think this should be local_scores
+def generate_ROC_curves_simple(automated_df, manual_df, label="", chunk_length=3):
+    """
+    Function For ROC Curve generation. Displays the given roc curve for some automated labels
+
+        Args:
+            automated_df (Dataframe)
+                - Autoamted Dataframe of dataset in question
+
+            manual_df (Dataframe)
+                - Manual Dataframe of dataset in question
+
+            label (String)
+                - name to display in legend. Doesn't display legend if left blank
+
+        Returns:
+            Area Under the ROC Curve
+    """
+
+    #Only include files shared by both
+    manual_df = manual_df[manual_df['IN FILE'].isin(automated_df["IN FILE"].to_list())]
+    automated_df = automated_df[automated_df['IN FILE'].isin(manual_df["IN FILE"].to_list())]
+    
+    #chunk the data
+    automated_df = annotation_chunker(automated_df, chunk_length, include_no_bird=True)
+    manual_df = annotation_chunker(manual_df, chunk_length, include_no_bird=False)
+
+    #Since we don't need chunking we can be a bit more stright forward
+    target_array = np.array(get_target_annotations(manual_df, chunk_length)[0])
+    confidence_scores_array = np.array(automated_df["CONFIDENCE"])
+
+    #sanity check code
+    print("target", len(target_array.tolist()))
+    print("confidence", len(confidence_scores_array.tolist()))
+
+    #GENERATE AND PLOT ROC CURVES
+    fpr, tpr, thresholds = metrics.roc_curve(target_array, confidence_scores_array) 
+    roc_auc = metrics.auc(fpr, tpr)
+    plt.plot(fpr, tpr, label=label)
+    plt.ylabel("True Postives")
+    plt.xlabel("False Positives ")
+    if (label != ""):
+        plt.legend(loc="lower right")
+    plt.show
+    return roc_auc
+
 

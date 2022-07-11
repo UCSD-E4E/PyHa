@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from sklearn import metrics
 
 
-def annotation_chunker(kaleidoscope_df, chunk_length):
+def annotation_chunker(kaleidoscope_df, chunk_length, include_no_bird=False):
     """
     Function that converts a Kaleidoscope-formatted Dataframe containing 
     annotations to uniform chunks of chunk_length.
@@ -72,9 +72,18 @@ def annotation_chunker(kaleidoscope_df, chunk_length):
                 chunk_end = min((index+1)*chunk_length*1000,arr_len)
                 chunk = human_arr[int(chunk_start):int(chunk_end)]
                 if max(chunk) >= 0.5:
+                    #Get row data
                     row = pd.DataFrame(index = [0])
                     annotation_start = chunk_start / 1000
+
+                    overlap = is_overlap(clip_df["OFFSET"], clip_df["OFFSET"] + clip_df["DURATION"], annotation_start, annotation_start + chunk_length)
+                    annotation_df = clip_df[overlap]
+
                     #updating the dictionary
+                    if ('CONFIDENCE' in annotation_df.columns):
+                        row["CONFIDENCE"] = max(annotation_df["CONFIDENCE"])
+                    else:
+                        row["CONFIDENCE"] = 0
                     row["FOLDER"] = path
                     row["IN FILE"] = file
                     row["CLIP LENGTH"] = clip_len
@@ -84,5 +93,29 @@ def annotation_chunker(kaleidoscope_df, chunk_length):
                     row["MANUAL ID"] = bird
                     row["CHANNEL"] = 0
                     output_df = pd.concat([output_df,row], ignore_index=True)
+                elif (include_no_bird):
+                    #Get row data
+                    row = pd.DataFrame(index = [0])
+                    annotation_start = chunk_start / 1000
+
+                    #updating the dictionary
+                    row["CONFIDENCE"] = 0
+                    row["FOLDER"] = path
+                    row["IN FILE"] = file
+                    row["CLIP LENGTH"] = clip_len
+                    row["OFFSET"] = annotation_start
+                    row["DURATION"] = chunk_length
+                    row["SAMPLE RATE"] = sr
+                    row["MANUAL ID"] = "no bird"
+                    row["CHANNEL"] = 0
+                    output_df = pd.concat([output_df,row], ignore_index=True)
     return output_df
 
+def is_overlap(offset_df, end_df, chunk_start, chunk_end):
+    is_both_before = (chunk_end < offset_df) & (chunk_start < offset_df)
+    is_both_after = (end_df < chunk_end) & (end_df < chunk_start)
+    return (~is_both_before) & (~is_both_after)
+    
+    
+    interval = pd.Interval(left=offset_df, right=end_df)
+    print(interval)
