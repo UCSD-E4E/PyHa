@@ -903,8 +903,6 @@ def generate_ROC_curves(automated_df, manual_df, label="", chunk_length=3):
     print("confidence", len(confidence_scores_array.tolist()))
     print("automated df", automated_df.shape[0])
 
-    print(automated_df)
-
     #GENERATE AND PLOT ROC CURVES
     fpr, tpr, thresholds = metrics.roc_curve(target_array, confidence_scores_array) 
     roc_auc = metrics.auc(fpr, tpr)

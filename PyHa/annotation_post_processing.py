@@ -186,7 +186,7 @@ def annotation_chunker(kaleidoscope_df, chunk_length):
     return output_df
 
 
-#TODO Add mutliple species support for ROC curves
+#TODO Add mutliple species support for ROC curves 
 def annotation_chunker_no_duplicates(kaleidoscope_df, chunk_length, include_no_bird=False, bird=None):
     """
     Function that converts a Kaleidoscope-formatted Dataframe containing 
@@ -233,11 +233,12 @@ def annotation_chunker_no_duplicates(kaleidoscope_df, chunk_length, include_no_b
 
         # going through each species that was ID'ed in the clip
         arr_len = int(clip_len*1000)
-        species_df = clip_df[clip_df["MANUAL ID"] == bird]
+        species_df = clip_df#[clip_df["MANUAL ID"] == bird]
         human_arr = np.zeros((arr_len))
         # looping through each annotation
+        #print("========================================")
         for annotation in species_df.index:
-            print(species_df["OFFSET"][annotation])
+            #print(species_df["OFFSET"][annotation])
             minval = int(round(species_df["OFFSET"][annotation] * 1000, 0))
             # Determining the end of a human label
             maxval = int(
@@ -250,7 +251,10 @@ def annotation_chunker_no_duplicates(kaleidoscope_df, chunk_length, include_no_b
             human_arr[minval:maxval] = 1
         # performing the chunk isolation technique on the human array
 
+       
         for index in range(potential_annotation_count):
+            #print("-----------------------------------------")
+            #print(index)
             chunk_start = index * (chunk_length*1000)
             chunk_end = min((index+1)*chunk_length*1000,arr_len)
             chunk = human_arr[int(chunk_start):int(chunk_end)]
@@ -259,14 +263,22 @@ def annotation_chunker_no_duplicates(kaleidoscope_df, chunk_length, include_no_b
                 row = pd.DataFrame(index = [0])
                 annotation_start = chunk_start / 1000
 
-                overlap = is_overlap(clip_df["OFFSET"], clip_df["OFFSET"] + clip_df["DURATION"], annotation_start, annotation_start + chunk_length)
-                #print(overlap)
-                annotation_df = clip_df[overlap]
-                annotation_df = annotation_df.sort_values(by="CONFIDENCE", ascending=False)
-
+                #Handle birdnet output edge case
+                #print(clip_df)
+                if(clip_df.iloc[0]["DURATION"] == 3):
+                    overlap = (clip_df["OFFSET"]+0.5 >= (annotation_start)) & (clip_df["OFFSET"]-0.5 <= (annotation_start))
+                    annotation_df = clip_df[overlap]
+                    #print(annotation_start, np.array(clip_df["OFFSET"]), overlap)
+                    #print(annotation_df)
+                else:
+                    overlap = is_overlap(clip_df["OFFSET"], clip_df["OFFSET"] + clip_df["DURATION"], annotation_start, annotation_start + chunk_length)
+                    #print(overlap)
+                    annotation_df = clip_df[overlap]
+                
                 #updating the dictionary
-                if ('CONFIDENCE' in annotation_df.columns):
-                    row["CONFIDENCE"] = annotation_df.iloc[0]["MANUAL CONFIDENCE"]
+                if ('CONFIDENCE' in clip_df.columns):
+                    annotation_df = annotation_df.sort_values(by="CONFIDENCE", ascending=False)
+                    row["CONFIDENCE"] = annotation_df.iloc[0]["CONFIDENCE"]
                 else:
                     row["CONFIDENCE"] = 0
                 row["FOLDER"] = path
@@ -278,7 +290,7 @@ def annotation_chunker_no_duplicates(kaleidoscope_df, chunk_length, include_no_b
                 row["MANUAL ID"] = annotation_df.iloc[0]["MANUAL ID"] 
                 row["CHANNEL"] = 0
                 output_df = pd.concat([output_df,row], ignore_index=True)
-            else:
+            elif(include_no_bird):
                 #print(max(chunk))
                 #Get row data
                 row = pd.DataFrame(index = [0])

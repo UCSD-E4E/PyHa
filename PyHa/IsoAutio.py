@@ -833,6 +833,7 @@ def generate_automated_labels_microfaune(
         duration = len(SIGNAL) / SAMPLE_RATE
 
         local_score_dir[audio_file] = local_scores[0]
+        #print(local_scores[0])
         try:
             # Running moment to moment algorithm and appending to a master
             # dataframe.
@@ -845,11 +846,12 @@ def generate_automated_labels_microfaune(
                 isolation_parameters,
                 manual_id=manual_id,
                 normalize_local_scores=normalize_local_scores)
-            # print(new_entry)
+            #print(new_entry)
 
             #determine confidence of annotations
             new_entry = add_confidence_to_annotations(new_entry, local_scores[0])
 
+            #print(new_entry)
 
             if annotations.empty:
                 annotations = new_entry
