@@ -582,22 +582,24 @@ def stack_isolate(
     starts = np.where(diff_scores == 1)[0]
     ends = np.where(diff_scores == -1)[0]
     
-    stack_counter = 0
     i = 0
     while i < len(ends):
-        stack_counter += ends[i] - starts[i]
-        new_end = ends[i] + stack_counter - 1
+        stack_counter = ends[i] - starts[i]
+        new_end = ends[i] + stack_counter
         while (i < len(ends) - 1 and starts[i + 1] <= new_end):
             stack_counter -= starts[i + 1] - ends[i]
             stack_counter += ends[i + 1] - starts[i + 1]
             ends = np.delete(ends, i)
             starts = np.delete(starts, i + 1)
-            new_end = ends[i] + stack_counter - 1
+            new_end = ends[i] + stack_counter
         ends[i] = new_end
-        stack_counter = 0
         i += 1
     
-    ends[-1] = min(len(local_scores), ends[-1])
+    ends[-1] = min(len(local_scores) - 1, ends[-1])
+
+    if (starts[-1] == len(local_scores) - 1):
+        starts = np.delete(starts, len(starts) - 1)
+        ends = np.delete(ends, len(ends) - 1)
     
     entry['OFFSET'] = starts * time_per_score
     entry['DURATION'] = ends - starts
@@ -654,8 +656,9 @@ def stack_isolate(
     #         # subtracting from the counter.
     #         else:
     #             stack_counter = stack_counter - 1
-    # # returning pandas dataframe from dictionary constructed with all of the
-    # # annotations
+    
+    # returning pandas dataframe from dictionary constructed with all of the
+    # annotations
     return pd.DataFrame.from_dict(entry)
 
 # TODO
