@@ -251,8 +251,8 @@ def annotation_chunker_no_duplicates(kaleidoscope_df, chunk_length, include_no_b
             human_arr[minval:maxval] = 1
         # performing the chunk isolation technique on the human array
 
-       
         for index in range(potential_annotation_count):
+            #print("=======================")
             #print("-----------------------------------------")
             #print(index)
             chunk_start = index * (chunk_length*1000)
@@ -264,23 +264,30 @@ def annotation_chunker_no_duplicates(kaleidoscope_df, chunk_length, include_no_b
                 annotation_start = chunk_start / 1000
 
                 #Handle birdnet output edge case
-                #print(clip_df)
-                if(clip_df.iloc[0]["DURATION"] == 3):
+                #print("-------------------------------------------")
+                #print(sum(clip_df["DURATION"] == 3))
+                #print(sum(clip_df["DURATION"] == 3)/clip_df.shape[0])
+                #print("-------------------------------------------")
+                if(sum(clip_df["DURATION"] == 3)/clip_df.shape[0] == 1):
+                    #print("Processing here duration")
                     overlap = (clip_df["OFFSET"]+0.5 >= (annotation_start)) & (clip_df["OFFSET"]-0.5 <= (annotation_start))
                     annotation_df = clip_df[overlap]
                     #print(annotation_start, np.array(clip_df["OFFSET"]), overlap)
                     #print(annotation_df)
                 else:
+                    #print("Processing here")
                     overlap = is_overlap(clip_df["OFFSET"], clip_df["OFFSET"] + clip_df["DURATION"], annotation_start, annotation_start + chunk_length)
                     #print(overlap)
                     annotation_df = clip_df[overlap]
+                    #print(annotation_df)
                 
                 #updating the dictionary
                 if ('CONFIDENCE' in clip_df.columns):
                     annotation_df = annotation_df.sort_values(by="CONFIDENCE", ascending=False)
                     row["CONFIDENCE"] = annotation_df.iloc[0]["CONFIDENCE"]
                 else:
-                    row["CONFIDENCE"] = 0
+                    #The case of manual id, or there is an annotation with no known confidence
+                    row["CONFIDENCE"] = 1
                 row["FOLDER"] = path
                 row["IN FILE"] = file
                 row["CLIP LENGTH"] = clip_len

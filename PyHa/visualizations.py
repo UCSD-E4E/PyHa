@@ -891,11 +891,19 @@ def generate_ROC_curves(automated_df, manual_df, label="", chunk_length=3):
     
     #chunk the data
     automated_df = annotation_chunker_no_duplicates(automated_df, chunk_length, include_no_bird=True)
-    manual_df = annotation_chunker_no_duplicates(manual_df, chunk_length, include_no_bird=False)
+    manual_df = annotation_chunker_no_duplicates(manual_df, chunk_length, include_no_bird=True)
+
+    #sort the data to ensure all append operations are in order
+    automated_df = automated_df.sort_values(by=["IN FILE", "OFFSET"])
+    manual_df = manual_df.sort_values(by=["IN FILE", "OFFSET"])
+
+    print(automated_df)
+    print(manual_df)
+    #input()
 
     #get the true labels and confidence of each chunk, save as 2 arrays
     #each index in both arrays are the confidence and true value for one chunk
-    target_array = np.array(get_target_annotations(manual_df, chunk_length)[0])
+    target_array = np.array(manual_df["CONFIDENCE"])#get_target_annotations(manual_df, chunk_length)[0])
     confidence_scores_array = np.array(automated_df["CONFIDENCE"])
 
     #sanity check code
