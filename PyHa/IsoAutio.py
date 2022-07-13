@@ -274,112 +274,62 @@ def steinberg_isolate(
     thresh = threshold(local_scores, isolation_parameters)
     # how many samples one local score represents
     samples_per_score = len(SIGNAL) // len(local_scores)
-    
-    thresh_scores = local_scores >= max(thresh, isolation_parameters["threshold_min"])
-    
-    if (int(isolation_parameters["window_size"] / 2 * SAMPLE_RATE) * 2 >= samples_per_score):
-        thresh_scores = np.append(thresh_scores, [0])
-        rolled_scores = np.roll(thresh_scores, 1)
-        rolled_scores[0] = 0
 
-        diff_scores = thresh_scores - rolled_scores
+    # isolate samples that produce a score above thresh
+    isolated_samples = np.empty(0, dtype=np.int16)
+    prev_cap = 0        # sample idx of previously captured
+    for i in range(len(local_scores)):
+        # if a score hits or surpasses thresh, capture 1s on both sides of it
+        if (local_scores[i] >= thresh and
+                local_scores[i] >= isolation_parameters["threshold_min"]):
+            # score_pos is the sample index that the score corresponds to
+            score_pos = i * samples_per_score
 
-        starts = np.where(diff_scores == 1)[0] * samples_per_score - int(isolation_parameters["window_size"] / 2 * SAMPLE_RATE)
-        ends = np.where(diff_scores == -1)[0] - 1
-        ends = ends * samples_per_score + int(isolation_parameters["window_size"] / 2 * SAMPLE_RATE)
-        
-        if (len(starts) == 0):
-            return pd.DataFrame.from_dict({'FOLDER': [],       \
-                                           'IN FILE': [],      \
-                                           'CHANNEL': [],      \
-                                           'CLIP LENGTH': [],  \
-                                           'SAMPLE RATE': [],  \
-                                           'OFFSET': [],       \
-                                           'MANUAL ID': []})
-        
-        i = 0
-        while True:
-            if (i == len(ends) - 1):
-                break
-            if (starts[i + 1] < ends[i]):
-                ends = np.delete(ends, i)
-                starts = np.delete(starts, i + 1)
+            # upper and lower bound of captured call
+            # sample rate is # of samples in 1 second: +-1 second
+            lo_idx = max(
+                0,
+                score_pos - int(isolation_parameters["window_size"]
+                                / 2 * SAMPLE_RATE))
+            hi_idx = min(
+                len(SIGNAL),
+                score_pos + int(isolation_parameters["window_size"]
+                                / 2 * SAMPLE_RATE))
+            lo_time = lo_idx / SAMPLE_RATE
+            hi_time = hi_idx / SAMPLE_RATE
+
+            # calculate start and end stamps
+            # create new sample if not overlapping or if first stamp
+            if prev_cap < lo_idx or prev_cap == 0:
+                # New label
+                new_stamp = [lo_time, hi_time]
+                # TODO make it so that here we get the duration
+                entry['OFFSET'].append(new_stamp)
+                entry['MANUAL ID'].append(manual_id)
+            # extend same stamp if still overlapping
             else:
-                i += 1
-        
-        starts[0] = max(0, starts[0])
-        ends[-1] = min(len(SIGNAL), ends[-1])
-        
-        entry['OFFSET'] = starts * 1.0 / SAMPLE_RATE
-        entry['DURATION'] = ends - starts
-        entry['DURATION'] = entry['DURATION'] * 1.0 / SAMPLE_RATE
-        
-        entry['MANUAL ID'] = np.full(entry['OFFSET'].shape, manual_id)
-    else:
-        entry['OFFSET'] = np.where(thresh_scores == 1)[0] * samples_per_score / SAMPLE_RATE - isolation_parameters["window_size"] / 2
-        entry['DURATION'] = np.full(entry['OFFSET'].shape, isolation_parameters["window_size"] * 1.0)
-        if (entry['OFFSET'] < 0):
-            entry['OFFSET'][0] = 0
-            entry['DURATION'][0] = isolation_parameters["window_size"] * 0.5
-        entry['MANUAL ID'] = np.full(entry['OFFSET'].shape, manual_id)
-        
-    return pd.DataFrame.from_dict(entry)
+                entry['OFFSET'][-1][1] = hi_time
 
-    # # isolate samples that produce a score above thresh
-    # isolated_samples = np.empty(0, dtype=np.int16)
-    # prev_cap = 0        # sample idx of previously captured
-    # for i in range(len(local_scores)):
-    #     # if a score hits or surpasses thresh, capture 1s on both sides of it
-    #     if (local_scores[i] >= thresh and
-    #             local_scores[i] >= isolation_parameters["threshold_min"]):
-    #         # score_pos is the sample index that the score corresponds to
-    #         score_pos = i * samples_per_score
+            # mark previously captured to prevent overlap collection
+            lo_idx = max(prev_cap, lo_idx)
+            prev_cap = hi_idx
 
-    #         # upper and lower bound of captured call
-    #         # sample rate is # of samples in 1 second: +-1 second
-    #         lo_idx = max(
-    #             0,
-    #             score_pos - int(isolation_parameters["window_size"]
-    #                             / 2 * SAMPLE_RATE))
-    #         hi_idx = min(
-    #             len(SIGNAL),
-    #             score_pos + int(isolation_parameters["window_size"]
-    #                             / 2 * SAMPLE_RATE))
-    #         lo_time = lo_idx / SAMPLE_RATE
-    #         hi_time = hi_idx / SAMPLE_RATE
+            # add to isolated samples
+            # sub-clip numpy array
+            isolated_samples = np.append(
+                isolated_samples, SIGNAL[lo_idx:hi_idx])
+    entry = pd.DataFrame.from_dict(entry)
+    # TODO, when you go through the process of rebuilding this isolate function
+    # as a potential optimization problem
+    # rework the algorithm so that it builds the dataframe correctly to save
+    # time.
 
-    #         # calculate start and end stamps
-    #         # create new sample if not overlapping or if first stamp
-    #         if prev_cap < lo_idx or prev_cap == 0:
-    #             # New label
-    #             new_stamp = [lo_time, hi_time]
-    #             # TODO make it so that here we get the duration
-    #             entry['OFFSET'].append(new_stamp)
-    #             entry['MANUAL ID'].append(manual_id)
-    #         # extend same stamp if still overlapping
-    #         else:
-    #             entry['OFFSET'][-1][1] = hi_time
-
-    #         # mark previously captured to prevent overlap collection
-    #         lo_idx = max(prev_cap, lo_idx)
-    #         prev_cap = hi_idx
-
-    #         # add to isolated samples
-    #         # sub-clip numpy array
-    #         isolated_samples = np.append(
-    #             isolated_samples, SIGNAL[lo_idx:hi_idx])
-    # entry = pd.DataFrame.from_dict(entry)
-    # # TODO, when you go through the process of rebuilding this isolate function
-    # # as a potential optimization problem
-    # # rework the algorithm so that it builds the dataframe correctly to save
-    # # time.
-
-    # #Spilt offset array so entry is in kaledoscope format
-    # entry = entry.assign(
-    #     OFFSET=entry['OFFSET'].apply(lambda arr: arr[0]),
-    #     DURATION=entry['OFFSET'].apply(lambda arr: arr[1]-arr[0])
-    # )
-    # return entry
+    #Spilt offset array so entry is in kaledoscope format
+    entry = entry.assign(
+        OFFSET=entry['OFFSET'].apply(lambda arr: arr[0]),
+        DURATION=entry['OFFSET'].apply(lambda arr: arr[1]-arr[0])
+    )
+    return entry
 
 
 def simple_isolate(
@@ -454,45 +404,34 @@ def simple_isolate(
     # local_score * samples_per_score / sample_rate
     time_per_score = samples_per_score / SAMPLE_RATE
 
-    thresh_scores = local_scores >= max(thresh, isolation_parameters["threshold_min"])
-    thresh_scores = np.append(thresh_scores, [0])
-    rolled_scores = np.roll(thresh_scores, 1)
-    rolled_scores[0] = 0
-    
-    diff_scores = thresh_scores - rolled_scores
-    
-    entry['OFFSET'] = np.where(diff_scores == 1)[0] * time_per_score * 1.0
-    entry['DURATION'] = np.where(diff_scores == -1)[0] * time_per_score - entry['OFFSET']
-    entry['MANUAL ID'] = np.full(entry['OFFSET'].shape, manual_id)
-    
-    # annotation_start = 0
-    # call_start = 0
-    # call_stop = 0
-    # # looping through all of the local scores
-    # for ndx in range(len(local_scores)):
-    #     current_score = local_scores[ndx]
-    #     # Start of a new sequence.
-    #     if (current_score >= thresh and
-    #             annotation_start == 0 and
-    #             current_score >= isolation_parameters["threshold_min"]):
-    #         # signal a start of a new sequence.
-    #         annotation_start = 1
-    #         call_start = float(ndx * time_per_score)
-    #         # print("Call Start",call_start)
-    #     # End of a sequence
-    #     elif current_score < thresh and annotation_start == 1:
-    #         # signal the end of a sequence
-    #         annotation_start = 0
-    #         #
-    #         call_end = float(ndx * time_per_score)
-    #         # print("Call End",call_end)
-    #         entry['OFFSET'].append(call_start)
-    #         entry['DURATION'].append(call_end - call_start)
-    #         entry['MANUAL ID'].append(manual_id)
-    #         call_start = 0
-    #         call_end = 0
-    #     else:
-    #         continue
+    annotation_start = 0
+    call_start = 0
+    call_stop = 0
+    # looping through all of the local scores
+    for ndx in range(len(local_scores)):
+        current_score = local_scores[ndx]
+        # Start of a new sequence.
+        if (current_score >= thresh and
+                annotation_start == 0 and
+                current_score >= isolation_parameters["threshold_min"]):
+            # signal a start of a new sequence.
+            annotation_start = 1
+            call_start = float(ndx * time_per_score)
+            # print("Call Start",call_start)
+        # End of a sequence
+        elif current_score < thresh and annotation_start == 1:
+            # signal the end of a sequence
+            annotation_start = 0
+            #
+            call_end = float(ndx * time_per_score)
+            # print("Call End",call_end)
+            entry['OFFSET'].append(call_start)
+            entry['DURATION'].append(call_end - call_start)
+            entry['MANUAL ID'].append(manual_id)
+            call_start = 0
+            call_end = 0
+        else:
+            continue
     return pd.DataFrame.from_dict(entry)
 
 
@@ -573,90 +512,57 @@ def stack_isolate(
     # annotation start/stop values.
     time_per_score = samples_per_score / SAMPLE_RATE
 
-    thresh_scores = local_scores >= max(thresh, isolation_parameters["threshold_min"])
-    thresh_scores = np.append(thresh_scores, [0])
-    rolled_scores = np.roll(thresh_scores, 1)
-    rolled_scores[0] = 0
-
-    diff_scores = thresh_scores - rolled_scores
-
-    starts = np.where(diff_scores == 1)[0]
-    ends = np.where(diff_scores == -1)[0]
-    
+    # initializing variables used in master loop
     stack_counter = 0
-    i = 0
-    while i < len(ends):
-        stack_counter += ends[i] - starts[i]
-        new_end = ends[i] + stack_counter - 1
-        while (i < len(ends) - 1 and starts[i + 1] <= new_end):
-            stack_counter -= starts[i + 1] - ends[i]
-            stack_counter += ends[i + 1] - starts[i + 1]
-            ends = np.delete(ends, i)
-            starts = np.delete(starts, i + 1)
-            new_end = ends[i] + stack_counter - 1
-        ends[i] = new_end
-        stack_counter = 0
-        i += 1
-    
-    ends[-1] = min(len(local_scores), ends[-1])
-    
-    entry['OFFSET'] = starts * time_per_score
-    entry['DURATION'] = ends - starts
-    entry['DURATION'] = entry['DURATION'] * time_per_score
-    
-    entry['MANUAL ID'] = np.full(entry['OFFSET'].shape, manual_id)
-    
-    # # initializing variables used in master loop
-    # stack_counter = 0
-    # annotation_start = 0
-    # call_start = 0
-    # call_stop = 0
-    # # looping through every local score array value
-    # for ndx in range(len(local_scores)):
-    #     # the case for the end of the local score array and the stack isn't
-    #     # empty.
-    #     if ndx == (len(local_scores) - 1) and stack_counter > 0:
-    #         call_end = float(ndx * time_per_score)
-    #         entry['OFFSET'].append(call_start)
-    #         entry['DURATION'].append(call_end - call_start)
-    #         entry['MANUAL ID'].append(manual_id)
-    #     # pushing onto the stack whenever a sample is above the threshold
-    #     if (local_scores[ndx] >= thresh and
-    #             local_scores[ndx] >= isolation_parameters["threshold_min"]):
-    #         # in case this is the start of a new annotation
-    #         if stack_counter == 0:
-    #             call_start = float(ndx * time_per_score)
-    #             annotation_start = 1
-    #         # increasing this stack counter will be referred to as "pushing"
-    #         stack_counter = stack_counter + 1
+    annotation_start = 0
+    call_start = 0
+    call_stop = 0
+    # looping through every local score array value
+    for ndx in range(len(local_scores)):
+        # the case for the end of the local score array and the stack isn't
+        # empty.
+        if ndx == (len(local_scores) - 1) and stack_counter > 0:
+            call_end = float(ndx * time_per_score)
+            entry['OFFSET'].append(call_start)
+            entry['DURATION'].append(call_end - call_start)
+            entry['MANUAL ID'].append(manual_id)
+        # pushing onto the stack whenever a sample is above the threshold
+        if (local_scores[ndx] >= thresh and
+                local_scores[ndx] >= isolation_parameters["threshold_min"]):
+            # in case this is the start of a new annotation
+            if stack_counter == 0:
+                call_start = float(ndx * time_per_score)
+                annotation_start = 1
+            # increasing this stack counter will be referred to as "pushing"
+            stack_counter = stack_counter + 1
 
-    #     # when a score is below the threshold
-    #     else:
-    #         # the case where it is the end of an annotation
-    #         if stack_counter == 0 and annotation_start == 1:
-    #             # marking the end of a clip
-    #             call_end = float(ndx * time_per_score)
+        # when a score is below the threshold
+        else:
+            # the case where it is the end of an annotation
+            if stack_counter == 0 and annotation_start == 1:
+                # marking the end of a clip
+                call_end = float(ndx * time_per_score)
 
-    #             # adding annotation to dictionary containing all annotations
-    #             entry['OFFSET'].append(call_start)
-    #             entry['DURATION'].append(call_end - call_start)
-    #             entry['MANUAL ID'].append(manual_id)
+                # adding annotation to dictionary containing all annotations
+                entry['OFFSET'].append(call_start)
+                entry['DURATION'].append(call_end - call_start)
+                entry['MANUAL ID'].append(manual_id)
 
-    #             # resetting for the next annotation
-    #             call_start = 0
-    #             call_end = 0
-    #             annotation_start = 0
-    #         # the case where the stack is empty and a new annotation hasn't
-    #         # started, you just want to increment the index
-    #         elif stack_counter == 0 and annotation_start == 0:
-    #             continue
-    #         # the case where we are below the threshold and the stack isn't
-    #         # empty. Pop from the stack, which in this case means just
-    #         # subtracting from the counter.
-    #         else:
-    #             stack_counter = stack_counter - 1
-    # # returning pandas dataframe from dictionary constructed with all of the
-    # # annotations
+                # resetting for the next annotation
+                call_start = 0
+                call_end = 0
+                annotation_start = 0
+            # the case where the stack is empty and a new annotation hasn't
+            # started, you just want to increment the index
+            elif stack_counter == 0 and annotation_start == 0:
+                continue
+            # the case where we are below the threshold and the stack isn't
+            # empty. Pop from the stack, which in this case means just
+            # subtracting from the counter.
+            else:
+                stack_counter = stack_counter - 1
+    # returning pandas dataframe from dictionary constructed with all of the
+    # annotations
     return pd.DataFrame.from_dict(entry)
 
 # TODO
