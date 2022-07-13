@@ -328,6 +328,7 @@ def analyzeFile(item, folder="", filename=""):
             return_df["OFFSET"] = return_df["Begin Time (s)"]
             return_df["DURATION"] = return_df["End Time (s)"] - return_df["Begin Time (s)"]
             return_df["CHANNEL"] = return_df["Channel"]
+            return_df["CONFIDENCE"] = return_df["Confidence"]
         else:
             saveResultFile(results, 'PyHa/birdnet_analyzer/output/result.csv', '')        
 
@@ -342,6 +343,7 @@ def analyzeFile(item, folder="", filename=""):
             return_df["OFFSET"] = return_df["Begin Time (s)"]
             return_df["DURATION"] = return_df["End Time (s)"] - return_df["Begin Time (s)"]
             return_df["CHANNEL"] = return_df["Channel"]
+            return_df["CONFIDENCE"] = return_df["Confidence"]
 
             return_df = pd.read_csv('PyHa/birdnet_analyzer/output/result.csv', delimiter="\t")
     except:

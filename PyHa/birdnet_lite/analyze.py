@@ -146,7 +146,7 @@ def analyzeAudioData(chunks, lat, lon, week, sensitivity, overlap, interpreter, 
 
     detections = {}
     start = time.time()
-    # print('ANALYZING AUDIO...', end=' ', flush=True)
+    print('ANALYZING AUDIO...', end=' ', flush=True)
 
     # Convert and prepare metadata
     mdata = convertMetadata(np.array([lat, lon, week]))
@@ -155,36 +155,44 @@ def analyzeAudioData(chunks, lat, lon, week, sensitivity, overlap, interpreter, 
     # Parse every chunk
     pred_start = 0.0
     for c in chunks:
-
+        
         # Prepare as input signal
         sig = np.expand_dims(c, 0)
 
         # Make prediction
         p = predict([sig, mdata], interpreter, sensitivity, num_predictions)
-
         # Save result and timestamp
         pred_end = pred_start + 3.0
         detections[str(pred_start) + ';' + str(pred_end)] = p
         pred_start = pred_end - overlap
 
-    # print('DONE! Time', int((time.time() - start) * 10) / 10.0, 'SECONDS')
+    print('DONE! Time', int((time.time() - start) * 10) / 10.0, 'SECONDS')
 
     return detections
 
 def writeResultsToDf(df, detections, min_conf, output_metadata):
-
+    #print(df)
     rcnt = 0
     row = pd.DataFrame(output_metadata, index = [0])
     
     for d in detections:
         for entry in detections[d]:
-            if entry[1] >= min_conf and (entry[0] in WHITE_LIST or len(WHITE_LIST) == 0):
+            if (entry[1] >= min_conf and  entry[0] in WHITE_LIST or len(WHITE_LIST) == 0): #
                 time_interval = d.split(';')
                 row['OFFSET'] = float(time_interval[0])
                 row['DURATION'] = float(time_interval[1])-float(time_interval[0])
                 row['MANUAL ID'] = entry[0].split('_')[0]
+                row['CONFIDENCE'] = entry[1]
                 df = pd.concat([df,row], ignore_index=True)
                 rcnt += 1
+            #else:
+            #    time_interval = d.split(';')
+            #    row['OFFSET'] = float(time_interval[0])
+            #    row['DURATION'] = float(time_interval[1])-float(time_interval[0])
+            #    row['MANUAL ID'] = "NO CONFIDENCE"
+            #    row['CONFIDENCE'] = 0
+            #    df = pd.concat([df,row], ignore_index=True)
+            #    rcnt += 1
     print('DONE! WROTE', rcnt, 'RESULTS.')
     return df
 
@@ -225,7 +233,7 @@ def analyze(audio_path, output_path = None, lat=-1, lon=-1, week=-1, overlap=0.0
     sensitivity = max(0.5, min(1.0 - (sensitivity - 1.0), 1.5))
     sample_rate = 48000
     df_columns = {'FOLDER' : 'str', 'IN FILE' :'str', 'CLIP LENGTH' : 'float64', 'CHANNEL' : 'int64', 'OFFSET' : 'float64',
-                'DURATION' : 'float64', 'SAMPLE RATE' : 'int64','MANUAL ID' : 'str'}
+                'DURATION' : 'float64', 'SAMPLE RATE' : 'int64','MANUAL ID' : 'str', 'CONFIDENCE': 'float64',}
     df = pd.DataFrame({c: pd.Series(dtype=t) for c, t in df_columns.items()})
     output_metadata = {}
     output_metadata['CHANNEL'] = 0 # Setting channel to 0 by default
@@ -259,6 +267,7 @@ def analyze(audio_path, output_path = None, lat=-1, lon=-1, week=-1, overlap=0.0
                 if audioData == 0:
                     continue
                 detections = analyzeAudioData(audioData, lat, lon, week, sensitivity, overlap, interpreter,  num_predictions)
+                #output_metadata['FOLDER']  = os.path.join(os.path.split(datafile)[0] + os.path.sep)
                 output_metadata['FOLDER']  = os.path.join('.', os.path.relpath(os.path.split(datafile)[0], os.getcwd())) + os.path.sep
                 output_metadata['IN FILE'] = os.path.split(datafile)[1]
                 output_metadata['CLIP LENGTH'] = clip_length
