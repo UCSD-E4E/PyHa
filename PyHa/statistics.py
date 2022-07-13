@@ -1,7 +1,7 @@
 import pandas as pd
 from scipy import stats
 import numpy as np
-
+import time
 
 # Function that takes in a pandas dataframe of annotations and outputs a
 # dataframe of the mean, median, mode, quartiles, and standard deviation of
@@ -202,6 +202,7 @@ def automated_labeling_statistics(
     num_errors = 0
     num_processed = 0
 
+    start_time = time.time()
     # Looping through each audio clip
     for clip in clips:
         num_processed += 1
@@ -215,15 +216,23 @@ def automated_labeling_statistics(
                     statistics_df = clip_stats_df
                 else:
                     statistics_df = statistics_df.append(clip_stats_df)
-            elif stats_type == "IoU":
-                IoU_Matrix = clip_IoU_orig(clip_automated_df, clip_manual_df)
+            elif stats_type == "IoU-lin":
+                IoU_Matrix = clip_IoU_lin(clip_automated_df, clip_manual_df)
                 clip_stats_df = matrix_IoU_Scores(
                     IoU_Matrix, clip_manual_df, threshold)
                 if statistics_df.empty:
                     statistics_df = clip_stats_df
                 else:
                     statistics_df = statistics_df.append(clip_stats_df)
-            elif stats_type == "IoU-opt":
+            elif stats_type == "IoU-skip":
+                IoU_Matrix = clip_IoU_skip(clip_automated_df, clip_manual_df)
+                clip_stats_df = matrix_IoU_Scores(
+                    IoU_Matrix, clip_manual_df, threshold)
+                if statistics_df.empty:
+                    statistics_df = clip_stats_df
+                else:
+                    statistics_df = statistics_df.append(clip_stats_df)
+            elif stats_type == "IoU-lin-skip":
                 IoU_Matrix = clip_IoU(clip_automated_df, clip_manual_df)
                 clip_stats_df = matrix_IoU_Scores(
                     IoU_Matrix, clip_manual_df, threshold)
@@ -236,6 +245,9 @@ def automated_labeling_statistics(
             #print("Something went wrong with: " + clip)
             #print(e)
             continue
+        if num_processed % 50 == 0:
+            print("Processed", num_processed, "clips in", int((time.time() - start_time) * 10) / 10.0, 'seconds')
+            start_time = time.time()
     if num_errors > 0:
         print("Something went wrong with", num_errors, "clips out of", len(clips), "clips")
     statistics_df.reset_index(inplace=True, drop=True)
@@ -277,7 +289,7 @@ def global_dataset_statistics(statistics_df, manual_id = "bird"):
 
 # TODO rework this function to implement some linear algebra, right now the
 # nested for loop won't handle larger loads well To make a global matrix, find
-# the clip with the most amount of automated labels and set that to the number
+# the clip with the most amount of automated labelsf and set that to the number
 # of columns I believe this is currently the largest bottleneck in terms of
 # temporal performance.
 
@@ -346,6 +358,8 @@ def clip_IoU(automated_df, manual_df):
     for i in range(manual_row_count):
         for j in range(automated_row_count):
             # sum the time bins shared by the human and bot annotations
+            if IoU_Matrix[i][j] == 0:
+                continue
             IoU_Matrix[i][j] /= np.sum(np.logical_or(human_arr[i], bot_arr[j]))
             IoU_Matrix[i][j] = round(IoU_Matrix[i][j], 4)
     return np.nan_to_num(IoU_Matrix)
@@ -455,7 +469,7 @@ def clip_IoU_skip(automated_df, manual_df):
 
     return IoU_Matrix
 
-def clip_IoU_orig(automated_df, manual_df):
+def clip_IoU_lin(automated_df, manual_df):
     """
     Function that takes in the manual and automated labels for a clip and
     outputs IoU metrics of each human label with respect to each
@@ -494,66 +508,35 @@ def clip_IoU_orig(automated_df, manual_df):
 
     # Initializing arrays that will represent each of the human and automated
     # labels
-    bot_arr = np.zeros((int(duration * SAMPLE_RATE)))
-    human_arr = np.zeros((int(duration * SAMPLE_RATE)))
+    bot_arr = np.zeros((automated_row_count, int(duration * SAMPLE_RATE)))
+    human_arr = np.zeros((manual_row_count, int(duration * SAMPLE_RATE)))
+    
+    for row in automated_df.index:
+        minval = int(round(automated_df["OFFSET"][row] * SAMPLE_RATE, 0))
+        # Determining the ending of an automated label
+        maxval = int(round((automated_df["OFFSET"][row] + automated_df["DURATION"][row]) * 
+                SAMPLE_RATE,0))
+        # Placing the label relative to the clip
+        bot_arr[row][minval:maxval] = 1
 
-    # Looping through each human label
     for row in manual_df.index:
-        # print(row)
         # Determining the beginning of a human label
         minval = int(round(manual_df["OFFSET"][row] * SAMPLE_RATE, 0))
         # Determining the end of a human label
-        maxval = int(
-            round(
-                (manual_df["OFFSET"][row] +
-                 manual_df["DURATION"][row]) *
-                SAMPLE_RATE,
-                0))
+        maxval = int(round((manual_df["OFFSET"][row] + manual_df["DURATION"][row]) *
+                SAMPLE_RATE,0))
         # Placing the label relative to the clip
-        human_arr[minval:maxval] = 1
-        # Looping through each automated label
-        for column in automated_df.index:
-            # Determining the beginning of an automated label
-            min_val = int(
-                round(
-                    automated_df["OFFSET"][column] *
-                    SAMPLE_RATE,
-                    0))
-            # Determining the ending of an automated label
-            max_val = int(
-                round(
-                    (automated_df["OFFSET"][column] +
-                     automated_df["DURATION"][column]) *
-                    SAMPLE_RATE,
-                    0))
-            # Placing the label relative to the clip
-            bot_arr[min_val:max_val] = 1
-            # Determining the overlap between the human label and the automated
-            # label
-            intersection = human_arr * bot_arr
-            # Determining the union between the human label and the automated
-            # label
-            union = human_arr + bot_arr
-            union[union == 2] = 1
-            # Determining how much of the human label and the automated label
-            # overlap with respect to time
-            intersection_count = np.count_nonzero(
-                intersection == 1) / SAMPLE_RATE
-            # Determining the span of the human label and the automated label
-            # with respect to time.
-            union_count = np.count_nonzero(union == 1) / SAMPLE_RATE
-            # Placing the Intersection over Union Percentage into it's
-            # respective position in the array.
-            if union_count == 0:
-                continue
-            IoU_Matrix[row, column] = round(
-                intersection_count / union_count, 4)
-            # Resetting the automated label to zero
-            bot_arr[bot_arr == 1] = 0
-        # Resetting the human label to zero
-        human_arr[human_arr == 1] = 0
+        human_arr[row][minval:maxval] = 1
 
-    return IoU_Matrix
+    # multiply every row in human by every row in bot
+    IoU_Matrix = np.matmul(human_arr, bot_arr.transpose())
+    
+    for i in range(manual_row_count):
+        for j in range(automated_row_count):
+            # sum the time bins shared by the human and bot annotations
+            IoU_Matrix[i][j] /= np.sum(np.logical_or(human_arr[i], bot_arr[j]))
+            IoU_Matrix[i][j] = round(IoU_Matrix[i][j], 4)
+    return np.nan_to_num(IoU_Matrix)
 
 
 def matrix_IoU_Scores(IoU_Matrix, manual_df, threshold):
@@ -608,9 +591,7 @@ def matrix_IoU_Scores(IoU_Matrix, manual_df, threshold):
         precision = round(tp_count / (tp_count + fp_count), 4)
         f1 = round(2 * (recall * precision) / (recall + precision), 4)
     except ZeroDivisionError:
-        print(
-            "Division by zero setting precision, recall, and f1 to zero on " +
-            filename)
+#        print("Division by zero setting precision, recall, and f1 to zero on", filename)
         recall = 0
         precision = 0
         f1 = 0
