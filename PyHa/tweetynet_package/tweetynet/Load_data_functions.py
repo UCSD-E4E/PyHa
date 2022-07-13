@@ -14,7 +14,7 @@ from .CustomAudioDataset import CustomAudioDataset
 def get_frames(x, hop_length): # Calculates the frame number given the start point and hop length of a spectrogram.
     return ((x) / hop_length) + 1 
 
-def frames2seconds(x, sr): #Calculates the fime in seconds from the frame number of a spectrogram.
+def frames2seconds(x, sr): #Calculates the time in seconds from the frame number of a spectrogram.
     return x/sr
 
 def window_spectrograms(spc, Y, uid, time_bin, windowsize):
@@ -40,7 +40,7 @@ def window_spectrograms(spc, Y, uid, time_bin, windowsize):
     Returns: (Tuple)
         Contains the uids, spectrograms, labels, and time bins of the windowed spectrogram.
     """
-    computed = windowsize//time_bin #verify, big assumption. are time bins consistant?
+    computed = windowsize//time_bin #verify, big assumption. are time bins consistent?
     time_axis = int(computed*(spc.shape[1]//computed))
     freq_axis = int(spc.shape[1]//computed) # 31, 2, 19
     spc_split = np.split(spc[:,:time_axis],freq_axis,axis = 1)
@@ -68,7 +68,7 @@ def window_data(spcs, ys, uids, time_bins, windowsize):
         windowsize: (int)
             - Number of seconds in a window of the clip.
 
-    Returns: (Dictionray)
+    Returns: (Dictionary)
         Contains the uids, spectrograms, labels, and time bins of the windowed spectrograms.
     """
     windowed_dataset = {"uids": [], "X": [], "Y": []}
@@ -103,7 +103,7 @@ def create_signal2spec(signal, SR, n_mels, frame_size, hop_length):
         windowsize: (int)
             - Number of seconds in a window of the clip.
 
-    Returns: (Dictionray)
+    Returns: (Dictionary)
         Contains the uids, spectrograms, labels, and time bins.
     """
     features = {"uids": [], "X": [], "Y": [], "time_bins": []}
@@ -140,7 +140,7 @@ def load_signal2spec(signal, SR, n_mels, frame_size, hop_length):
             - Number of seconds in a window of the clip.
 
     Returns: (Tuples)
-        Containing the spectrorgam(X), labels(Y), unique file identifier(uids), Number of time bins(time_bins).
+        Containing the spectrogram(X), labels(Y), unique file identifier(uids), Number of time bins(time_bins).
     """
     dataset = create_signal2spec(signal, SR, n_mels, frame_size, hop_length)
     X = dataset['X']
@@ -203,30 +203,30 @@ def predictions_to_kaleidoscope(predictions, SIGNAL, audio_dir, audio_file, manu
             - Sampling rate of the audio clip, usually 44100.
 
     Returns:
-        Pandas Dataframe of automated labels for the audio clipmin Kaliedoscope format.
+        Pandas Dataframe of automated labels for the audio clipmin Kaleidoscope format.
     """
     time_bin_seconds = predictions.iloc[1]["time_bins"]
     zero_sorted_filtered_df = predictions[predictions["pred"] == 0]
     offset = zero_sorted_filtered_df["time_bins"]
     duration = zero_sorted_filtered_df["time_bins"].diff().shift(-1)    
     intermediary_df = pd.DataFrame({"OFFSET": offset, "DURATION": duration})
-    kaliedoscope_df = []
+    kaleidoscope_df = []
 
     if offset.iloc[0] != 0:
-        kaliedoscope_df.append(pd.DataFrame({"OFFSET": [0], "DURATION": [offset.iloc[0]]}))
-    kaliedoscope_df.append(intermediary_df[intermediary_df["DURATION"] >= 2*time_bin_seconds])
+        kaleidoscope_df.append(pd.DataFrame({"OFFSET": [0], "DURATION": [offset.iloc[0]]}))
+    kaleidoscope_df.append(intermediary_df[intermediary_df["DURATION"] >= 2*time_bin_seconds])
     if offset.iloc[-1] < predictions.iloc[-1]["time_bins"]:
-        kaliedoscope_df.append(pd.DataFrame({"OFFSET": [offset.iloc[-1]], "DURATION": [predictions.iloc[-1]["time_bins"] + 
+        kaleidoscope_df.append(pd.DataFrame({"OFFSET": [offset.iloc[-1]], "DURATION": [predictions.iloc[-1]["time_bins"] + 
                                 predictions.iloc[1]["time_bins"]]}))
 
-    kaliedoscope_df = pd.concat(kaliedoscope_df)
-    kaliedoscope_df = kaliedoscope_df.reset_index(drop=True)
-    kaliedoscope_df["FOLDER"] = audio_dir
-    kaliedoscope_df["IN FILE"] = audio_file
-    kaliedoscope_df["CHANNEL"] = 0
-    kaliedoscope_df["CLIP LENGTH"] = len(SIGNAL)/sample_rate
-    kaliedoscope_df["SAMPLE RATE"] = sample_rate
-    kaliedoscope_df["MANUAL ID"] = manual_id
+    kaleidoscope_df = pd.concat(kaleidoscope_df)
+    kaleidoscope_df = kaleidoscope_df.reset_index(drop=True)
+    kaleidoscope_df["FOLDER"] = audio_dir
+    kaleidoscope_df["IN FILE"] = audio_file
+    kaleidoscope_df["CHANNEL"] = 0
+    kaleidoscope_df["CLIP LENGTH"] = len(SIGNAL)/sample_rate
+    kaleidoscope_df["SAMPLE RATE"] = sample_rate
+    kaleidoscope_df["MANUAL ID"] = manual_id
 
-    return kaliedoscope_df
+    return kaleidoscope_df
     

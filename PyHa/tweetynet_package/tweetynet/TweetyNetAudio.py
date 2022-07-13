@@ -11,7 +11,7 @@ def downsampled_mono_audio(signal, sample_rate, normalized_sample_rate):
         Parameters
         ----------
         signal: array-like
-            1-Dimendional array of the audio.
+            1-Dimensional array of the audio.
         sample_rate: int
             Sampling frequency in Hz of the signal.
         normalized_sample_rate: int
@@ -22,7 +22,7 @@ def downsampled_mono_audio(signal, sample_rate, normalized_sample_rate):
         sample_rate: int
             Sampling frequency in Hz of the downsampled signal. 
         signal: array-like
-            1-Dimendional array of the downsampled audio.
+            1-Dimensional array of the downsampled audio.
         
     """
     if sample_rate > normalized_sample_rate:
