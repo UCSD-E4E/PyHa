@@ -739,24 +739,41 @@ def chunk_isolate(
     # calculating the chunk size with respect to the local score array
     local_scores_per_chunk = scores_per_second * \
         isolation_parameters["chunk_size"]
-    # looping through each chunk
-    for ndx in range(chunk_count):
-        # finding the start of a chunk
-        chunk_start = ndx * local_scores_per_chunk
-        # finding the end of a chunk
-        chunk_end = min((ndx + 1) * local_scores_per_chunk, len(local_scores))
-        # breaking up the local_score array into a chunk.
-        chunk = local_scores[int(chunk_start):int(chunk_end)]
-        # comparing the largest local score value to the threshold.
-        # the case for if we label the chunk as an annotation
-        if max(chunk) >= thresh and max(
-                chunk) >= isolation_parameters["threshold_min"]:
-            # Creating the time stamps for the annotation.
-            # Requires converting from local score index to time in seconds.
-            annotation_start = chunk_start / scores_per_second
-            annotation_end = chunk_end / scores_per_second
-            entry["OFFSET"].append(annotation_start)
-            entry["DURATION"].append(annotation_end - annotation_start)
+    
+    chunk_starts_float = np.linspace(start = 0, stop = chunk_count * local_scores_per_chunk, num = chunk_count, endpoint = False)
+    chunk_starts = chunk_starts_float.copy().astype(int)
+    chunk_starts = np.delete(chunk_starts, 0)
+    chunked_scores = np.array(list(map(np.amax, np.split(local_scores, chunk_starts))))
+    
+    thresh_scores = chunked_scores >= max(thresh, isolation_parameters["threshold_min"])
+    chunk_indices = np.where(thresh_scores == 1)[0]
+    
+    entry['OFFSET'] = chunk_starts_float[chunk_indices] / scores_per_second
+    
+    all_chunk_durs = np.roll(chunk_starts_float, -1) / scores_per_second - chunk_starts_float / scores_per_second
+    all_chunk_durs[-1] = len(local_scores) / scores_per_second - chunk_starts_float[-1] / scores_per_second
+    entry['DURATION'] = all_chunk_durs[chunk_indices]
+    
+    entry['MANUAL ID'] = np.full(entry['OFFSET'].shape, manual_id)
+    
+    # # looping through each chunk
+    # for ndx in range(chunk_count):
+    #     # finding the start of a chunk
+    #     chunk_start = ndx * local_scores_per_chunk
+    #     # finding the end of a chunk
+    #     chunk_end = min((ndx + 1) * local_scores_per_chunk, len(local_scores))
+    #     # breaking up the local_score array into a chunk.
+    #     chunk = local_scores[int(chunk_start):int(chunk_end)]
+    #     # comparing the largest local score value to the threshold.
+    #     # the case for if we label the chunk as an annotation
+    #     if max(chunk) >= thresh and max(
+    #             chunk) >= isolation_parameters["threshold_min"]:
+    #         # Creating the time stamps for the annotation.
+    #         # Requires converting from local score index to time in seconds.
+    #         annotation_start = chunk_start / scores_per_second
+    #         annotation_end = chunk_end / scores_per_second
+    #         entry["OFFSET"].append(annotation_start)
+    #         entry["DURATION"].append(annotation_end - annotation_start)
 
     return pd.DataFrame.from_dict(entry)
 
