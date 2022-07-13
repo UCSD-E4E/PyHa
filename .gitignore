@@ -12,4 +12,3 @@ outputs/result.csv
 outputs/*
 *.ipynb
 !PyHa_Tutorial.ipynb
-!IoU_Performance.ipynb
