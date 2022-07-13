@@ -31,7 +31,30 @@ PyHa = Python + Piha (referring to a bird species of our interest known as the s
 
 Many of the functions take in the `isolation_parameters` argument, and as such it will be defined globally here.
 
-The `isolation_parameters` dictionary definition depends on the model used. The currently supported models are Microfaune and BirdNET-Lite.  
+The `isolation_parameters` dictionary definition depends on the model used. The currently supported models are BirdNET-Lite, Microfaune, and TweetyNET.
+
+
+The BirdNET-Lite `isolation_parameters` dictionary is as follows:
+
+``` python
+isolation_parameters = {
+    "model" : "birdnet",
+    "output_path" : "",
+    "lat" : 0.0,
+    "lon" : 0.0,
+    "week" : 0,
+    "overlap" : 0.0,
+    "sensitivity" : 0.0,
+    "min_conf" : 0.0,
+    "custom_list" : "",
+    "filetype" : "",
+    "num_predictions" : 0,
+    "write_to_csv" : False
+}
+```
+
+<br>
+
 
 The Microfaune `isolation_parameters` dictionary is as follows:
 
@@ -54,34 +77,53 @@ The remaining parameters are floats representing their respective values.
 
 <br>
 
-The BirdNET-Lite `isolation_parameters` dictionary is as follows:
+The TweetyNET `isolation_parameters` dictionary is as follows:
 
-``` python
+```python
 isolation_parameters = {
-    "model" : "birdnet",
-    "output_path" : "",
-    "lat" : 0.0,
-    "lon" : 0.0,
-    "week" : 0,
-    "overlap" : 0.0,
-    "sensitivity" : 0.0,
-    "min_conf" : 0.0,
-    "custom_list" : "",
-    "filetype" : "",
-    "num_predictions" : 0,
-    "write_to_csv" : False
+    "model" : "tweetynet",
+    "tweety_output": False,
+    "technique" : "",
+    "threshold_type" : "",
+    "threshold_const" : 0.0,
+    "threshold_min" : 0.0,
+    "window_size" : 0.0,
+    "chunk_size" : 0.0,
 }
 ```
+
+The `tweety_output` parameter sets whether to use TweetyNET's original output or isolation techniques. If set to `False`, TweetyNET will use the specified `technique` parameter.
+
+<!-- annotation_post_processing.py file -->
+
+<details>
+ <summary>annotation_post_processing.py file</summary>
+
+### [`annotation_chunker`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/annotation_post_processing.py)
+*Found in [`annotation_post_processing.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/annotation_post_processing.py)*
+
+This function converts a Kaleidoscope-formatted Dataframe containing annotations to uniform chunks of `chunk_length`. Drops any annotation that less than chunk_length.
+
+| Parameter | Type |  Description |
+| --- | --- | --- |
+| `kaleidoscope_df` | Dataframe | Dataframe of automated or human labels in Kaleidoscope format |
+| `chunk_length` | int | Duration in seconds of each annotation chunk |
+
+This function returns a dataframe with annotations converted to uniform second chunks.
+
+Usage: `annotation_chunker(kaleidoscope_df, chunk_length)`
+</details>
+
 
 <!-- IsoAutio.py file -->
 
 <details>
- <summary>IsoAutio.py files</summary>
+ <summary>IsoAutio.py file</summary>
 
 ### [`isolate`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)
 *Found in [`IsoAutio.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)*
 
-This function is the wrapper function for all of Microfaune's audio isolation techniques, and will call the respective function based on `isolation_parameters` "technique" key.
+This function is the wrapper function for audio isolation techniques, and will call the respective function based on `isolation_parameters` "technique" key.
 
 | Parameter | Type |  Description |
 | --- | --- | --- |
@@ -205,6 +247,20 @@ This function returns a dataframe of automated labels for the audio clips in aud
 
 Usage: `generate_automated_labels(audio_dir, isolation_parameters, manual_id, weight_path, normalized_sample_rate, normalize_local_scores)`
 
+### [`generate_automated_labels_birdnet`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)
+*Found in [`IsoAutio.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)*
+
+This function is called by `generate_automated_labels` if `isolation_parameters["model"]` is set to `birdnet`. It generates bird labels across a folder of audio clips using BirdNET-Lite given the isolation parameters.
+
+| Parameter | Type |  Description |
+| --- | --- | --- |
+| `audio_dir` | string | Directory with wav audio files |
+| `isolation_parameters` | dict | Python Dictionary that controls the various label creation techniques. |
+
+This function returns a dataframe of automated labels for the audio clips in audio_dir.
+
+Usage: `generate_automated_labels_birdnet(audio_dir, isolation_parameters)`
+
 
 ### [`generate_automated_labels_microfaune`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)
 *Found in [`IsoAutio.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)*
@@ -225,19 +281,24 @@ This function returns a dataframe of automated labels for the audio clips in aud
 Usage: `generate_automated_labels_microfaune(audio_dir, isolation_parameters, manual_id, weight_path, normalized_sample_rate, normalize_local_scores)`
 
 
-### [`generate_automated_labels_birdnet`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)
+### [`generate_automated_labels_tweetynet`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)
 *Found in [`IsoAutio.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)*
 
-This function is called by `generate_automated_labels` if `isolation_parameters["model"]` is set to `birdnet`. It generates bird labels across a folder of audio clips using BirdNET-Lite given the isolation parameters.
+This function is called by `generate_automated_labels` if `isolation_parameters["model"]` is set to `tweetynet`. It applies the isolation technique determined by the `isolation_parameters` dictionary across a whole folder of audio clips.
 
 | Parameter | Type |  Description |
 | --- | --- | --- |
 | `audio_dir` | string | Directory with wav audio files |
 | `isolation_parameters` | dict | Python Dictionary that controls the various label creation techniques. |
+| `manual_id` | string | controls the name of the class written to the pandas dataframe |
+| `weight_path` | string | File path of weights to be used by the RNNDetector for determining presence of bird sounds.
+| `normalized_sample_rate` | int | Sampling rate that the audio files should all be normalized to.
+| `normalize_local_scores` | boolean | Set whether or not to normalize the local scores.
 
 This function returns a dataframe of automated labels for the audio clips in audio_dir.
 
-Usage: `generate_automated_labels_birdnet(audio_dir, isolation_parameters)`
+Usage: `generate_automated_labels_tweetynet(audio_dir, isolation_parameters, manual_id, weight_path, normalized_sample_rate, normalize_local_scores)`
+
 
 
 ### [`kaleidoscope_conversion`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)
@@ -437,6 +498,7 @@ Usage: `class_statistics(clip_statistics)`
 This function produces graphs with the spectrogram of an audio clip. It is now integrated with Pandas so you can visualize human and automated annotations.
 
 | Parameter | Type |  Description |
+| --- | --- | --- |
 | `clip_name`  | string | Directory of the clip. |
 | `sample_rate` | int | Sample rate of the audio clip, usually 44100. |
 | `samples` | list of ints | Each of the samples from the audio clip. |
@@ -525,15 +587,16 @@ This function returns a histogram with the length of the annotations.
 Usage: `binary_visualization(annotation_df, n_bins, min_length, max_length, save_fig, filename)`
 </details>
 
-
-All files in the `microfaune_package` directory are from the [microfaune repository](https://github.com/microfaune/microfaune), and their associated documentation can be found there.  
-
 All files in the `birdnet_lite` directory are from a [modified version](https://github.com/UCSD-E4E/BirdNET-Lite) of the [BirdNET Lite repository](https://github.com/kahst/BirdNET-Lite), and their associated documentation can be found there.  
+
+All files in the `microfaune_package` directory are from the [microfaune repository](https://github.com/microfaune/microfaune), and their associated documentation can be found there.    
+
+All files in the `tweetynet` directory are from the [tweetynet repository](https://github.com/yardencsGitHub/tweetynet), and their associated documentation can be found there.  
 
 ## Examples
 *These examples were created on an Ubuntu 16.04 machine. Results may vary between different Operating Systems and Tensorflow versions.*
 
-Examples using Microfaune were created using this dictionary for the `isolation_parameters`:
+Examples using Microfaune were created using the following dictionary for `isolation_parameters`:
 
 ```json
 isolation_parameters = {
@@ -564,6 +627,11 @@ annotation_duration_statistics(manual_df)
 ```
 ![image](https://user-images.githubusercontent.com/44332326/127575181-9ce49439-5396-425d-a1d5-148ef47db373.png)
 
+### Function that converts annotations into 3 second chunks
+```python
+annotation_chunker(automated_df, 3)
+```
+![annotation chunker](https://user-images.githubusercontent.com/33042752/176480538-671b731d-89ad-402c-a603-8a0ee35124f6.png)
 
 ### Helper function to convert to kaleidoscope-compatible format
 ```python
