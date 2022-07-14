@@ -735,6 +735,7 @@ def generate_automated_labels_birdnet(audio_dir, isolation_parameters, df=None):
     for file in np.unique(annotations["IN FILE"]):
         local_scores_dir[file] = annotations["CONFIDENCE"].to_list()
     return annotations, local_scores_dir
+    
 def generate_automated_labels_microfaune(
         audio_dir,
         isolation_parameters,
