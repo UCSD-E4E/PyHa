@@ -840,11 +840,13 @@ def generate_ROC_curves_raw_local(automated_df, manual_df, local_scoress, label=
         #Get the target array represetnation of the manual dataframe that is
         #the same size as our local_score array
         target_clip = np.zeros((size_of_local_score))
+        confidence_array =  np.zeros((size_of_local_score))
         for i in range(size_of_local_score):
             current_seconds = i * seconds_per_index
             annotations_at_time = manual_df[(manual_df["OFFSET"] <= current_seconds) & (manual_df["OFFSET"] +manual_df["DURATION"] >=  current_seconds)]
             if (not annotations_at_time.empty):
                 target_clip[i] = 1
+                confidence_array[i]
         
         #Append the target array and the corresponding local score array
         target_array = np.append(target_array, target_clip)
@@ -889,6 +891,9 @@ def generate_ROC_curves(automated_df, manual_df, label="", chunk_length=3):
     manual_df = manual_df[manual_df['IN FILE'].isin(automated_df["IN FILE"].to_list())]
     automated_df = automated_df[automated_df['IN FILE'].isin(manual_df["IN FILE"].to_list())]
     
+    print(len(automated_df["IN FILE"].to_list()))
+    print(len(manual_df["IN FILE"].to_list()))
+
     #chunk the data
     automated_df = annotation_chunker_no_duplicates(automated_df, chunk_length, include_no_bird=True)
     manual_df = annotation_chunker_no_duplicates(manual_df, chunk_length, include_no_bird=True)
@@ -896,10 +901,6 @@ def generate_ROC_curves(automated_df, manual_df, label="", chunk_length=3):
     #sort the data to ensure all append operations are in order
     automated_df = automated_df.sort_values(by=["IN FILE", "OFFSET"])
     manual_df = manual_df.sort_values(by=["IN FILE", "OFFSET"])
-
-    print(automated_df)
-    print(manual_df)
-    #input()
 
     #get the true labels and confidence of each chunk, save as 2 arrays
     #each index in both arrays are the confidence and true value for one chunk
@@ -918,8 +919,36 @@ def generate_ROC_curves(automated_df, manual_df, label="", chunk_length=3):
     plt.ylabel("True Postives")
     plt.xlabel("False Positives ")
     if (label != ""):
-        plt.legend(loc="lower right")
+        plt.legend(loc="center right", bbox_to_anchor=(2, 0))
     plt.show
     return roc_auc
 
 
+def generate_ROC_curves_mutliclass(automated_df, manual_df, label="", chunk_length=3):
+    """
+    Function For ROC Curve generation for mutliple classes. Displays the given roc curve for some automated labels
+    for each class in automated_df
+
+        Args:
+            automated_df (Dataframe)
+                - Autoamted Dataframe of dataset in question
+
+            manual_df (Dataframe)
+                - Manual Dataframe of dataset in question
+
+            label (String)
+                - name to display in legend. Doesn't display legend if left blank
+
+        Returns:
+            Nothing
+    """
+    species_pural  = np.unique(automated_df["MANUAL ID"])
+    for species in species_pural:
+        auto_species = automated_df[automated_df["MANUAL ID"] == species]
+        manual_species = manual_df[manual_df["MANUAL ID"] == species]
+        try:
+            if (label != ""):
+                label = (label + " - " + species)
+            generate_ROC_curves(auto_species, manual_species, label=label, chunk_length=chunk_length)
+        except:
+            pass

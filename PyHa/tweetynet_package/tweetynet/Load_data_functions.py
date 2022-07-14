@@ -40,9 +40,16 @@ def window_spectrograms(spc, Y, uid, time_bin, windowsize):
     Returns: (Tuple)
         Contains the uids, spectrograms, labels, and time bins of the windowed spectrogram.
     """
+    #print("window spectrogram")
     computed = windowsize//time_bin #verify, big assumption. are time bins consistant?
+    #print(computed, windowsize, time_bin, computed, spc, spc.shape[1])
+    #print("-------------------------")
+    #print(computed, spc.shape[1], (spc.shape[1]//computed))
+    #print(computed*(spc.shape[1]//computed))
+    #print(int(computed*(spc.shape[1]//computed)))
     time_axis = int(computed*(spc.shape[1]//computed))
     freq_axis = int(spc.shape[1]//computed) # 31, 2, 19
+    #print(time_axis, freq_axis)
     spc_split = np.split(spc[:,:time_axis],freq_axis,axis = 1)
     Y_split = np.split(Y[:time_axis],freq_axis)
     uid_split = [str(i) + "_" + uid for i in range(freq_axis)]
@@ -73,7 +80,9 @@ def window_data(spcs, ys, uids, time_bins, windowsize):
     """
     windowed_dataset = {"uids": [], "X": [], "Y": []}
     #print("Windowing Spectrogram")
+    
     for i in range(len(uids)):
+        #print("SPECTROGRAMS", spcs[i])
         spc_split, Y_split, uid_split = window_spectrograms(spcs[i],ys[i], uids[i], time_bins[i], windowsize)
         windowed_dataset["X"].extend(spc_split)
         windowed_dataset["Y"].extend(Y_split)
@@ -167,8 +176,11 @@ def compute_features(signal, SR=44100):
     frame_size=2048
     hop_length=1024
     windowsize=2
+    #print(signal[0])
     x, y, uids, time_bins = load_signal2spec(signal[0], SR, n_mels, frame_size, hop_length)
+    #print("CLEAR", x)
     dataset = window_data(x, y, uids, time_bins, windowsize)
+    #print("CLEAR")
     X = np.array(dataset['X']).astype(np.float32)/255
     X = X.reshape(X.shape[0], 1, X.shape[1], X.shape[2])
     Y = np.array(dataset["Y"]).astype(np.longlong)
@@ -205,6 +217,8 @@ def predictions_to_kaleidoscope(predictions, SIGNAL, audio_dir, audio_file, manu
     Returns:
         Pandas Dataframe of automated labels for the audio clipmin Kaliedoscope format.
     """
+    #print(predictions)
+
     time_bin_seconds = predictions.iloc[1]["time_bins"]
     zero_sorted_filtered_df = predictions[predictions["pred"] == 0]
     offset = zero_sorted_filtered_df["time_bins"]
@@ -212,12 +226,19 @@ def predictions_to_kaleidoscope(predictions, SIGNAL, audio_dir, audio_file, manu
     intermediary_df = pd.DataFrame({"OFFSET": offset, "DURATION": duration})
     kaliedoscope_df = []
 
+    #print(zero_sorted_filtered_df)
+
     if offset.iloc[0] != 0:
         kaliedoscope_df.append(pd.DataFrame({"OFFSET": [0], "DURATION": [offset.iloc[0]]}))
     kaliedoscope_df.append(intermediary_df[intermediary_df["DURATION"] >= 2*time_bin_seconds])
+
+    print(predictions)
+
     if offset.iloc[-1] < predictions.iloc[-1]["time_bins"]:
         kaliedoscope_df.append(pd.DataFrame({"OFFSET": [offset.iloc[-1]], "DURATION": [predictions.iloc[-1]["time_bins"] + 
                                 predictions.iloc[1]["time_bins"]]}))
+
+    print(predictions)
 
     kaliedoscope_df = pd.concat(kaliedoscope_df)
     kaliedoscope_df = kaliedoscope_df.reset_index(drop=True)

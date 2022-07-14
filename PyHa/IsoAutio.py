@@ -913,6 +913,8 @@ def generate_automated_labels_tweetynet(
     annotations = pd.DataFrame()
     local_score_dir = {}
     # generate local scores for every bird file in chosen directory
+    print(len(os.listdir(audio_dir)))
+    count = 0
     for audio_file in os.listdir(audio_dir):
         # skip directories
         if os.path.isdir(audio_dir + audio_file):
@@ -947,7 +949,10 @@ def generate_automated_labels_tweetynet(
             SIGNAL = SIGNAL.sum(axis=1) / 2
         # detection
         try:
+            #print("=========================================================")
+            #print(audio_file)
             tweetynet_features = compute_features([SIGNAL])
+            #print("ERROR NOT HERE", audio_file)
             predictions, local_scores = detector.predict(tweetynet_features, model_weights=weight_path, norm=normalize_local_scores)
         except BaseException as e:
             print("Error in detection, skipping", audio_file)
@@ -978,18 +983,21 @@ def generate_automated_labels_tweetynet(
             # print(new_entry)
 
             new_entry = add_confidence_to_annotations(new_entry, local_scores[0])
-
+            print(new_entry.empty)
 
             if annotations.empty:
                 annotations = new_entry
             else:
                 annotations = annotations.append(new_entry)
+
+            count += 1
         except BaseException as e:
             print("Error in isolating bird calls from", audio_file)
             print(e)
             continue
         local_score_dir[audio_file] = local_scores[0]
     # Quick fix to indexing
+    print(count)
     annotations.reset_index(inplace=True, drop=True)
     return annotations,local_score_dir
 
