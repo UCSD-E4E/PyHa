@@ -665,7 +665,7 @@ def chunk_isolate(
     return pd.DataFrame.from_dict(entry)
 
 
-def generate_automated_labels_birdnet(audio_dir, isolation_parameters):
+def generate_automated_labels_birdnet(audio_dir, isolation_parameters, df=None):
     """
     Function that generates the bird labels for an audio file or across a
     folder using the BirdNet-Lite model
@@ -730,7 +730,7 @@ def generate_automated_labels_birdnet(audio_dir, isolation_parameters):
     Returns:
         Dataframe of automated labels for the audio clip(s) in audio_dir.
     """
-    annotations = analyze(audio_path=audio_dir, **isolation_parameters)
+    annotations = analyze(audio_path=audio_dir, **isolation_parameters, pregenrated_df=df)
     local_scores_dir  = {}
     for file in np.unique(annotations["IN FILE"]):
         local_scores_dir[file] = annotations["CONFIDENCE"].to_list()
@@ -1001,7 +1001,8 @@ def generate_automated_labels(
         weight_path=None,
         normalized_sample_rate=44100,
         normalize_local_scores=False,
-        include_local_scores=False):
+        include_local_scores=False,
+        pregenerated_df=None):
     """
     Function that generates the bird labels across a folder of audio clips
     given the isolation_parameters
@@ -1055,7 +1056,7 @@ def generate_automated_labels(
         for key in keys_to_delete:
             birdnet_parameters.pop(key, None)
         annotations, local_scores = generate_automated_labels_birdnet(
-                        audio_dir, birdnet_parameters)
+                        audio_dir, birdnet_parameters, df=pregenerated_df)
     elif(isolation_parameters['model'] == 'tweetynet'):
         annotations, local_scores = generate_automated_labels_tweetynet(
                         audio_dir=audio_dir,
