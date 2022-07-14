@@ -7,6 +7,7 @@ try:
 except:
     from tensorflow import lite as tflite
 
+import csv
 import argparse
 import operator
 import librosa
@@ -79,23 +80,38 @@ def splitSignal(sig, rate, overlap, seconds=3.0, minlen=1.5):
         sig_splits.append(split)
 
     return sig_splits
-
-def readAudioData(path, overlap, sample_rate=48000):
+#this is the problem
+def readAudioData(path, overlap, sample_rate=48000, generated_tweetynet_df=None, list_of_offsets = []):
 
     print('READING AUDIO DATA...', end=' ', flush=True)
 
     # Open file with librosa (uses ffmpeg or libav)
     try:
-        sig, rate = librosa.load(path, sr=sample_rate, mono=True, res_type='kaiser_fast')
-        clip_length = librosa.get_duration(y=sig, sr=rate)
-    except:
-        return 0
+        
+        if generated_tweetynet_df is None:
+            
+            sig, rate = librosa.load(path, sr=sample_rate, mono=True, res_type='kaiser_fast')
+            clip_length = librosa.get_duration(y=sig, sr=rate)
+        else:
+
+            file_names = path.split("/")[-1]
+            
+            #see if file names in birdnet are in generated_tweetynet_df
+            clip_df = generated_tweetynet_df[generated_tweetynet_df["IN FILE"] == file_names]
+            if (not clip_df.empty):
+                list_of_offsets = clip_df["OFFSET"].tolist()
+
+                sig, rate = librosa.load(path, sr=sample_rate, mono=True, res_type='kaiser_fast')
+                clip_length = librosa.get_duration(y=sig, sr=rate) 
+    except Exception as e:
+        print(e)
+        return 0, 0, []
     # Split audio into 3-second chunks
     chunks = splitSignal(sig, rate, overlap)
 
     print('DONE! READ', str(len(chunks)), 'CHUNKS.')
 
-    return chunks, clip_length
+    return chunks, clip_length,list_of_offsets
 
 def convertMetadata(m):
 
@@ -130,7 +146,7 @@ def predict(sample, interpreter, sensitivity, num_predictions):
 
     # Get label and scores for pooled predictions
     p_labels = dict(zip(CLASSES, p_sigmoid))
-
+    
     # Sort by score
     p_sorted = sorted(p_labels.items(), key=operator.itemgetter(1), reverse=True)
 
@@ -142,7 +158,7 @@ def predict(sample, interpreter, sensitivity, num_predictions):
     # Only return first the top ten results
     return p_sorted[:num_predictions]
 
-def analyzeAudioData(chunks, lat, lon, week, sensitivity, overlap, interpreter, num_predictions):
+def analyzeAudioData(chunks, lat, lon, week, sensitivity, overlap, interpreter, num_predictions,list_of_offsets=[]):
 
     detections = {}
     start = time.time()
@@ -155,16 +171,22 @@ def analyzeAudioData(chunks, lat, lon, week, sensitivity, overlap, interpreter, 
     # Parse every chunk
     pred_start = 0.0
     for c in chunks:
-
-        # Prepare as input signal
-        sig = np.expand_dims(c, 0)
-
-        # Make prediction
-        p = predict([sig, mdata], interpreter, sensitivity, num_predictions)
-        # Save result and timestamp
-        pred_end = pred_start + 3.0
-        detections[str(pred_start) + ';' + str(pred_end)] = p
-        pred_start = pred_end - overlap
+        
+        if (pred_start in list_of_offsets or list_of_offsets == []):
+            
+            # Prepare as input signal
+            sig = np.expand_dims(c, 0)
+            
+            # Make prediction
+            p = predict([sig, mdata], interpreter, sensitivity, num_predictions)
+            
+            # Save result and timestamp
+            pred_end = pred_start + 3.0
+            detections[str(pred_start) + ';' + str(pred_end)] = p
+            pred_start = pred_end - overlap
+        else: 
+            pred_end = pred_start + 3.0
+            pred_start = pred_end - overlap
 
     print('DONE! Time', int((time.time() - start) * 10) / 10.0, 'SECONDS')
 
@@ -198,7 +220,7 @@ def writeResultsToDf(df, detections, min_conf, output_metadata):
 
 
 def parseTestSet(path, file_type='wav'):
-
+    
     # Find all soundscape files
     dataset = []
     if os.path.isfile(path):
@@ -208,11 +230,12 @@ def parseTestSet(path, file_type='wav'):
             for f in filenames:
                 if f.rsplit('.', 1)[-1].lower() == file_type:
                     dataset.append(os.path.abspath(os.path.join(dirpath, f)))
+
     return dataset
 
 def analyze(audio_path, output_path = None, lat=-1, lon=-1, week=-1, overlap=0.0,
     sensitivity=1.0, min_conf=0.1, custom_list='', filetype='wav', num_predictions=10,
-    write_to_csv=False):
+    write_to_csv=False, pregenrated_df=None, list_of_offsets = []):
     
     global WHITE_LIST
     
@@ -235,19 +258,23 @@ def analyze(audio_path, output_path = None, lat=-1, lon=-1, week=-1, overlap=0.0
     df_columns = {'FOLDER' : 'str', 'IN FILE' :'str', 'CLIP LENGTH' : 'float64', 'CHANNEL' : 'int64', 'OFFSET' : 'float64',
                 'DURATION' : 'float64', 'SAMPLE RATE' : 'int64','MANUAL ID' : 'str', 'CONFIDENCE': 'float64',}
     df = pd.DataFrame({c: pd.Series(dtype=t) for c, t in df_columns.items()})
+    
     output_metadata = {}
     output_metadata['CHANNEL'] = 0 # Setting channel to 0 by default
     output_metadata['SAMPLE RATE'] = sample_rate
     output_file = os.path.join(audio_path, 'result.csv')
 
+    
     if len(dataset) == 1:
         try:
             datafile = dataset[0]
+            
             output_metadata['FOLDER']  = os.path.join('.', os.path.relpath(os.path.split(datafile)[0], os.getcwd())) + os.path.sep
             output_metadata['IN FILE'] =  os.path.split(datafile)[1]
-            audioData, clip_length = readAudioData(datafile, overlap, sample_rate)
+            audioData, clip_length, lists_of_offsets = readAudioData(datafile, overlap, sample_rate, generated_tweetynet_df=pregenrated_df, list_of_offsets = [])
+            
             output_metadata['CLIP LENGTH'] = clip_length
-            detections = analyzeAudioData(audioData, lat, lon, week, sensitivity, overlap, interpreter, num_predictions)
+            detections = analyzeAudioData(audioData, lat, lon, week, sensitivity, overlap, interpreter, num_predictions, list_of_offsets= lists_of_offsets)
             if output_path is None:
                 output_file = os.path.join(output_metadata['FOLDER'], 'result.csv')
                 output_file = os.path.abspath(output_file)
@@ -260,19 +287,24 @@ def analyze(audio_path, output_path = None, lat=-1, lon=-1, week=-1, overlap=0.0
         except:
              print("Error processing file: {}".format(datafile))
     elif len(dataset) > 0:
-        for datafile in dataset:         
+        
+        for datafiles in dataset:  
+                   
             try:
                 # Read audio data
-                audioData, clip_length = readAudioData(datafile, overlap, sample_rate)
+                
+                audioData, clip_length, lists_of_offsets = readAudioData(datafiles, overlap, sample_rate, generated_tweetynet_df= pregenrated_df, list_of_offsets = [])
                 if audioData == 0:
                     continue
-                detections = analyzeAudioData(audioData, lat, lon, week, sensitivity, overlap, interpreter,  num_predictions)
-                output_metadata['FOLDER']  = os.path.join('.', os.path.relpath(os.path.split(datafile)[0], os.getcwd())) + os.path.sep
-                output_metadata['IN FILE'] = os.path.split(datafile)[1]
+                detections = analyzeAudioData(audioData, lat, lon, week, sensitivity, overlap, interpreter,  num_predictions, list_of_offsets=lists_of_offsets)
+                
+                output_metadata['FOLDER']  = os.path.join('.', os.path.relpath(os.path.split(datafiles)[0], os.getcwd())) + os.path.sep
+                output_metadata['IN FILE'] = os.path.split(datafiles)[1]
                 output_metadata['CLIP LENGTH'] = clip_length
                 df = writeResultsToDf(df, detections, min_conf, output_metadata)
-            except:
-                print("Error in processing file: {}".format(datafile)) 
+            except Exception as e:
+                print(e)
+                print("Error in processing file: {}".format(datafiles)) 
         if output_path is None:
             output_file = os.path.join(audio_path, 'result.csv')
             output_file = os.path.abspath(output_file)
