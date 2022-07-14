@@ -922,4 +922,34 @@ def generate_ROC_curves(automated_df, manual_df, label="", chunk_length=3):
     plt.show
     return roc_auc
 
+def generate_ROC_curves_mutliclass(automated_df, manual_df, label="", chunk_length=3):
+    '''
+    Function For ROC Curve generation for mutliple classes. Displays the given roc curve for some automated labels
+    for each class in automated_df
+
+        Args:
+            automated_df (Dataframe)
+                - Autoamted Dataframe of dataset in question
+
+            manual_df (Dataframe)
+                - Manual Dataframe of dataset in question
+
+            label (String)
+                - name to display in legend. Doesn't display legend if left blank
+
+        Returns:
+            Nothing
+    '''
+
+    species_pural  = np.unique(automated_df["MANUAL ID"])
+    for species in species_pural:
+        auto_species = automated_df[automated_df["MANUAL ID"] == species]
+        manual_species = manual_df[manual_df["MANUAL ID"] == species]
+        try:
+            if (label != ""):
+                label = (label + " - " + species)
+            generate_ROC_curves(auto_species, manual_species, label=label, chunk_length=chunk_length)
+        except:
+            pass
+
 
