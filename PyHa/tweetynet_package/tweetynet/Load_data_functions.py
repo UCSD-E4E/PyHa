@@ -232,13 +232,13 @@ def predictions_to_kaleidoscope(predictions, SIGNAL, audio_dir, audio_file, manu
         kaliedoscope_df.append(pd.DataFrame({"OFFSET": [0], "DURATION": [offset.iloc[0]]}))
     kaliedoscope_df.append(intermediary_df[intermediary_df["DURATION"] >= 2*time_bin_seconds])
 
-    print(predictions)
+    #print(predictions)
 
     if offset.iloc[-1] < predictions.iloc[-1]["time_bins"]:
         kaliedoscope_df.append(pd.DataFrame({"OFFSET": [offset.iloc[-1]], "DURATION": [predictions.iloc[-1]["time_bins"] + 
                                 predictions.iloc[1]["time_bins"]]}))
 
-    print(predictions)
+    #print(predictions)
 
     kaliedoscope_df = pd.concat(kaliedoscope_df)
     kaliedoscope_df = kaliedoscope_df.reset_index(drop=True)

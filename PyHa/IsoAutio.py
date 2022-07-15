@@ -983,7 +983,7 @@ def generate_automated_labels_tweetynet(
             # print(new_entry)
 
             new_entry = add_confidence_to_annotations(new_entry, local_scores[0])
-            print(new_entry.empty)
+            #print(new_entry.empty)
 
             if annotations.empty:
                 annotations = new_entry
@@ -997,7 +997,7 @@ def generate_automated_labels_tweetynet(
             continue
         local_score_dir[audio_file] = local_scores[0]
     # Quick fix to indexing
-    print(count)
+    #print(count)
     annotations.reset_index(inplace=True, drop=True)
     return annotations,local_score_dir
 

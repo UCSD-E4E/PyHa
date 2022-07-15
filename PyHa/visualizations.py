@@ -919,12 +919,12 @@ def generate_ROC_curves(automated_df, manual_df, label="", chunk_length=3):
     plt.ylabel("True Postives")
     plt.xlabel("False Positives ")
     if (label != ""):
-        plt.legend(loc="center right", bbox_to_anchor=(2, 0))
+        plt.legend(bbox_to_anchor=(1.04,0), loc="lower left", borderaxespad=0)
     plt.show
     return roc_auc
 
 
-def generate_ROC_curves_mutliclass(automated_df, manual_df, label="", chunk_length=3):
+def generate_ROC_curves_mutliclass(automated_df, manual_df, label="", chunk_length=3, species_pural = []):
     """
     Function For ROC Curve generation for mutliple classes. Displays the given roc curve for some automated labels
     for each class in automated_df
@@ -942,13 +942,20 @@ def generate_ROC_curves_mutliclass(automated_df, manual_df, label="", chunk_leng
         Returns:
             Nothing
     """
-    species_pural  = np.unique(automated_df["MANUAL ID"])
+    if (species_pural == []):
+        species_pural  = np.unique(automated_df["MANUAL ID"])
     for species in species_pural:
         auto_species = automated_df[automated_df["MANUAL ID"] == species]
         manual_species = manual_df[manual_df["MANUAL ID"] == species]
+
+        if (auto_species.empty | manual_species.empty):
+            continue
+
         try:
             if (label != ""):
-                label = (label + " - " + species)
-            generate_ROC_curves(auto_species, manual_species, label=label, chunk_length=chunk_length)
+                label_actual= (label + " - " + species)
+            else:
+                label_actual = label
+            generate_ROC_curves(auto_species, manual_species, label=label_actual, chunk_length=chunk_length)
         except:
             pass
