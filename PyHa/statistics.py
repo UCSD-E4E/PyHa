@@ -226,12 +226,12 @@ def automated_labeling_statistics(
                 else:
                     statistics_df = statistics_df.append(clip_stats_df)
         except BaseException as e:
-            num_errors += 1
-            print("Something went wrong with:", clip)
-            print(e)
+            #num_errors += 1
+            #print("Something went wrong with:", clip)
+            #print(e)
             continue
-        if num_processed % 100 == 0:
-            print("processed", num_processed, "clips")
+        #if num_processed % 100 == 0:
+        #    print("processed", num_processed, "clips")
     if num_errors > 0:
         print("Something went wrong with", num_errors, "clips out of", len(clips), "clips")
     statistics_df.reset_index(inplace=True, drop=True)
