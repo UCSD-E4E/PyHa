@@ -313,7 +313,9 @@ def clip_IoU(automated_df, manual_df):
     bot_arr = np.zeros((automated_row_count, int(duration * SAMPLE_RATE)))
     human_arr = np.zeros((manual_row_count, int(duration * SAMPLE_RATE)))
     
+    # Fill array with automated labels 
     for row in automated_df.index:
+        # Determine the beginning of an automated label
         minval = int(round(automated_df["OFFSET"][row] * SAMPLE_RATE, 0))
         # Determining the ending of an automated label
         maxval = int(round((automated_df["OFFSET"][row] + automated_df["DURATION"][row]) * 
@@ -321,6 +323,7 @@ def clip_IoU(automated_df, manual_df):
         # Placing the label relative to the clip
         bot_arr[row][minval:maxval] = 1
 
+    # Fill array with human labels
     for row in manual_df.index:
         # Determining the beginning of a human label
         minval = int(round(manual_df["OFFSET"][row] * SAMPLE_RATE, 0))
@@ -330,14 +333,16 @@ def clip_IoU(automated_df, manual_df):
         # Placing the label relative to the clip
         human_arr[row][minval:maxval] = 1
 
-    # multiply every row in human by every row in bot
+    # Multiply every row in human by every row in bot
     IoU_Matrix = np.matmul(human_arr, bot_arr.transpose())
     
+    # Compare each human annotation to every automated annotation
     for i in range(manual_row_count):
         for j in range(automated_row_count):
-            # sum the time bins shared by the human and bot annotations
+            # Skip comparision if there is no intersection, since IoU = 0 anyway 
             if IoU_Matrix[i][j] == 0:
                 continue
+            # Sum logicial ORR of time bins shared by the human and bot annotations
             IoU_Matrix[i][j] /= np.sum(np.logical_or(human_arr[i], bot_arr[j]))
             IoU_Matrix[i][j] = round(IoU_Matrix[i][j], 4)
     return np.nan_to_num(IoU_Matrix)
