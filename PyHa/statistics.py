@@ -271,12 +271,6 @@ def global_dataset_statistics(statistics_df, manual_id = "bird"):
              'Global IoU': round(IoU, 6)}
     return pd.DataFrame.from_dict([entry])
 
-# TODO rework this function to implement some linear algebra, right now the
-# nested for loop won't handle larger loads well To make a global matrix, find
-# the clip with the most amount of automated labelsf and set that to the number
-# of columns I believe this is currently the largest bottleneck in terms of
-# temporal performance.
-
 def clip_IoU(automated_df, manual_df):
     """
     Function that takes in the manual and automated labels for a clip and
