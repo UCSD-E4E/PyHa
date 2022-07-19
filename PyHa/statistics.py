@@ -68,7 +68,7 @@ def clip_general(automated_df, human_df):
     # print(SIGNAL.shape)
     human_arr = np.zeros((int(SAMPLE_RATE * duration),))
     bot_arr = np.zeros((int(SAMPLE_RATE * duration),))
-
+    
     folder_name = automated_df["FOLDER"].to_list()[0]
     clip_name = automated_df["IN FILE"].to_list()[0]
     # Placing 1s wherever the au
@@ -93,7 +93,7 @@ def clip_general(automated_df, human_df):
 
     human_arr_flipped = 1 - human_arr
     bot_arr_flipped = 1 - bot_arr
-
+    
     true_positive_arr = human_arr * bot_arr
     false_negative_arr = human_arr * bot_arr_flipped
     false_positive_arr = human_arr_flipped * bot_arr
@@ -207,7 +207,8 @@ def automated_labeling_statistics(
     for clip in clips:
         num_processed += 1
         clip_automated_df = automated_df[automated_df["IN FILE"] == clip]
-        clip_manual_df = manual_df[manual_df["IN FILE"] == clip]
+        # In case the extension for manual_df is different from the clip extension, just check the name before the extension
+        clip_manual_df = manual_df[manual_df["IN FILE"].str.startswith(".".join(clip.split(".")[:-1]))]
         try:
             if stats_type == "general":
                 clip_stats_df = clip_general(

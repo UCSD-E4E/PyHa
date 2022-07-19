@@ -8,7 +8,11 @@ TEST/*
 mixed_bird_manual.csv
 outputs/result.csv
 *.wav
+*.mp3
+*.flac
 *.pyc
 outputs/*
 *.ipynb
 !PyHa_Tutorial.ipynb
+*.csv
+!ScreamingPiha_Manual_Labels.csv

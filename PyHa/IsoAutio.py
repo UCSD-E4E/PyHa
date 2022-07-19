@@ -1,15 +1,15 @@
-#from PyHa.tweetynet_package.tweetynet.network import TweetyNet
+from .birdnet_lite.analyze import analyze
 from .microfaune_package.microfaune.detection import RNNDetector
 from .microfaune_package.microfaune import audio
 from .tweetynet_package.tweetynet.TweetyNetModel import TweetyNetModel
 from .tweetynet_package.tweetynet.Load_data_functions import compute_features, predictions_to_kaleidoscope
+import os
 import torch
+import librosa
 import pandas as pd
 import scipy.signal as scipy_signal
 import numpy as np
-import math
-import os
-from .birdnet_lite.analyze import analyze
+from math import ceil
 from copy import deepcopy
 
 def build_isolation_parameters_microfaune(
@@ -60,7 +60,6 @@ def build_isolation_parameters_microfaune(
         "threshold_type": threshold_type,
         "threshold_const": threshold_const,
         "threshold_min": threshold_min,
-        "window_size": window_size,
         "chunk_size": chunk_size
     }
 
@@ -636,7 +635,7 @@ def chunk_isolate(
              'MANUAL ID': manual_id}
 
     # calculating the number of chunks that define an audio clip
-    chunk_count = math.ceil(
+    chunk_count = ceil(
         len(SIGNAL) / (isolation_parameters["chunk_size"] * SAMPLE_RATE))
     # calculating the number of local scores per second
     scores_per_second = len(local_scores) / old_duration
@@ -736,6 +735,7 @@ def generate_automated_labels_birdnet(audio_dir, isolation_parameters):
 def generate_automated_labels_microfaune(
         audio_dir,
         isolation_parameters,
+        ml_model = "microfaune",
         manual_id="bird",
         weight_path=None,
         normalized_sample_rate=44100,
@@ -777,6 +777,8 @@ def generate_automated_labels_microfaune(
     # Use Custom weights for Microfaune Detector
     else:
         detector = RNNDetector(weight_path)
+        # print("model \"{}\" does not exist".format(ml_model))
+        # return None
 
     # init labels dataframe
     annotations = pd.DataFrame()
@@ -786,13 +788,12 @@ def generate_automated_labels_microfaune(
         if os.path.isdir(audio_dir + audio_file):
             continue
 
-        # It is a bit awkward here to be relying on Microfaune's wave file
-        # reading when we want to expand to other frameworks,
-        # Likely want to change that in the future. Librosa had some troubles.
-
-        # Reading in the wave audio files
+        # Reading in the audio files using librosa, converting to single channeled data with original sample rate
+        # Reason for the factor for the signal is explained here: https://stackoverflow.com/questions/53462062/pyaudio-bytes-data-to-librosa-floating-point-time-series
+        # Librosa scales down to [-1, 1], but the models require the range [-32768, 32767]
         try:
-            SAMPLE_RATE, SIGNAL = audio.load_wav(audio_dir + audio_file)
+            SIGNAL, SAMPLE_RATE = librosa.load(audio_dir + audio_file, sr=None, mono=True)
+            SIGNAL = SIGNAL * 32768
         except BaseException:
             print("Failed to load", audio_file)
             continue
@@ -905,13 +906,12 @@ def generate_automated_labels_tweetynet(
         if os.path.isdir(audio_dir + audio_file):
             continue
 
-        # It is a bit awkward here to be relying on Microfaune's wave file
-        # reading when we want to expand to other frameworks,
-        # Likely want to change that in the future. Librosa had some troubles.
-
-        # Reading in the wave audio files
+        # Reading in the audio files using librosa, converting to single channeled data with original sample rate
+        # Reason for the factor for the signal is explained here: https://stackoverflow.com/questions/53462062/pyaudio-bytes-data-to-librosa-floating-point-time-series
+        # Librosa scales down to [-1, 1], but the models require the range [-32768, 32767], so the multiplication is required
         try:
-            SAMPLE_RATE, SIGNAL = audio.load_wav(audio_dir + audio_file)
+            SIGNAL, SAMPLE_RATE = librosa.load(audio_dir + audio_file, sr=None, mono=True)
+            SIGNAL = SIGNAL * 32768
         except BaseException:
             print("Failed to load", audio_file)
             continue

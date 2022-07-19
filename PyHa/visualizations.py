@@ -3,6 +3,7 @@ from .microfaune_package.microfaune import audio
 from .tweetynet_package.tweetynet.TweetyNetModel import TweetyNetModel
 from .tweetynet_package.tweetynet.Load_data_functions import compute_features
 import torch
+import librosa
 import matplotlib.pyplot as plt
 import pandas as pd
 import scipy.signal as scipy_signal
@@ -279,9 +280,12 @@ def spectrogram_visualization(
         None
     """
 
-    # Loading in the clip with Microfaune's built-in loading function
+    # Reading in the audio file using librosa, converting to single channeled data with original sample rate
+    # Reason for the factor for the signal is explained here: https://stackoverflow.com/questions/53462062/pyaudio-bytes-data-to-librosa-floating-point-time-series
+    # Librosa scales down to [-1, 1], but the models require the range [-32768, 32767], so the multiplication is required
     try:
-        SAMPLE_RATE, SIGNAL = audio.load_wav(clip_path)
+        SIGNAL, SAMPLE_RATE = librosa.load(clip_path, sr=None, mono=True)
+        SIGNAL = SIGNAL * 32768
     except BaseException:
         print("Failure in loading", clip_path)
         return
