@@ -1,19 +1,15 @@
-#from PyHa.tweetynet_package.tweetynet.network import TweetyNet
+from .birdnet_lite.analyze import analyze
 from .microfaune_package.microfaune.detection import RNNDetector
 from .microfaune_package.microfaune import audio
 from .tweetynet_package.tweetynet.TweetyNetModel import TweetyNetModel
 from .tweetynet_package.tweetynet.Load_data_functions import compute_features, predictions_to_kaleidoscope
+import os
 import torch
-import torchaudio
 import librosa
 import pandas as pd
 import scipy.signal as scipy_signal
 import numpy as np
-import math
-import os
-from os import path
-from pydub import AudioSegment
-from .birdnet_lite.analyze import analyze
+from math import ceil
 from copy import deepcopy
 
 def build_isolation_parameters_microfaune(
@@ -64,7 +60,6 @@ def build_isolation_parameters_microfaune(
         "threshold_type": threshold_type,
         "threshold_const": threshold_const,
         "threshold_min": threshold_min,
-        "window_size": window_size,
         "chunk_size": chunk_size
     }
 
@@ -640,7 +635,7 @@ def chunk_isolate(
              'MANUAL ID': manual_id}
 
     # calculating the number of chunks that define an audio clip
-    chunk_count = math.ceil(
+    chunk_count = ceil(
         len(SIGNAL) / (isolation_parameters["chunk_size"] * SAMPLE_RATE))
     # calculating the number of local scores per second
     scores_per_second = len(local_scores) / old_duration
