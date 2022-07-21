@@ -216,10 +216,9 @@ def steinberg_isolate(
         isolation_parameters,
         manual_id="bird"):
     """
-    Technique developed by Gabriel Steinberg, optimized by Pranjal Chatterjee, 
-    that attempts to take the local score array output of a neural network and 
-    lump local scores together in a way to produce automated labels based on a 
-    class across an audio clip.
+    Technique developed by Gabriel Steinberg that attempts to take the local 
+    score array output of a neural network and lump local scores together in
+    a way to produce automated labels based on a class across an audio clip.
 
     Technique Pseudocode:
 
@@ -353,10 +352,9 @@ def simple_isolate(
         isolation_parameters,
         manual_id="bird"):
     """
-    Technique suggested by Irina Tolkova, implemented by Jacob Ayers, 
-    and optimized by Pranjal Chatterjee. Attempts to produce automated 
-    annotations of an audio clip based on local score array outputs 
-    from a neural network.
+    Technique suggested by Irina Tolkova, implemented by Jacob Ayers. 
+    Attempts to produce automated annotations of an audio clip based
+    on local score array outputs from a neural network.
 
     Technique Pseudocode:
 
@@ -448,9 +446,9 @@ def stack_isolate(
         isolation_parameters,
         manual_id="bird"):
     """
-    Technique created by Jacob Ayers, and optimized by Pranjal Chatterjee. 
-    Attempts to produce automated annotations of an audio clip base on local
-    score array outputs from a neural network.
+    Technique created by Jacob Ayers. Attempts to produce automated
+    annotations of an audio clip base on local score array outputs
+    from a neural network.
 
     Technique Pseudocode:
 
@@ -586,9 +584,9 @@ def chunk_isolate(
         isolation_parameters,
         manual_id="bird"):
     """
-    Technique created by Jacob Ayers, and optimized by Pranjal Chatterjee. 
-    Attempts to produce automated annotations of an audio clip based on local 
-    score array outputs from a neural network.
+    Technique created by Jacob Ayers. Attempts to produce automated 
+    annotations of an audio clip based on local score array outputs
+    from a neural network.
 
     Technique Pseudocode:
 
