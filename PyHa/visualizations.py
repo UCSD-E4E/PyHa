@@ -731,7 +731,7 @@ def get_confidence_array(local_scores_array,chunked_df, chunk_size_list):
 
 
 
-def generate_ROC_curves_chunked_local(automated_df, manual_df, local_scoress, chunk_length = 3, label=""):
+def generate_ROC_curves_chunked_local(automated_df, manual_df, local_scoress, chunk_length = 3, label="", plotting=True):
     """
     Function For ROC Curve generation. Displays the given roc curve for some automated labels
     NOTE: this chunks both automated and manual labels piror to ROC curve generation
@@ -762,6 +762,8 @@ def generate_ROC_curves_chunked_local(automated_df, manual_df, local_scoress, ch
     manual_df = manual_df[manual_df['IN FILE'].isin(automated_df["IN FILE"].to_list())]
     automated_df = automated_df[automated_df['IN FILE'].isin(manual_df["IN FILE"].to_list())]
 
+
+
     #chunk the data
     auto_chunked_df = annotation_chunker_no_duplicates(automated_df, chunk_length)
     manual_chunked_df = annotation_chunker_no_duplicates(manual_df, chunk_length)
@@ -781,18 +783,19 @@ def generate_ROC_curves_chunked_local(automated_df, manual_df, local_scoress, ch
     #GENERATE AND PLOT ROC CURVES
     fpr, tpr, thresholds = metrics.roc_curve(target_array, confidence_scores_array) 
     roc_auc = metrics.auc(fpr, tpr)
-    plt.plot(fpr, tpr, label=label)
-    plt.ylabel("True Postives")
-    plt.xlabel("False Positives ")
-    if (label != ""):
-        plt.legend(loc="lower right")
-    plt.show
+    if plotting: 
+        plt.plot(fpr, tpr, label=label)
+        plt.ylabel("True Postives")
+        plt.xlabel("False Positives ")
+        if (label != ""):
+            plt.legend(loc="lower right")
+        plt.show
     return roc_auc
 
 
 #wrapper function for get_confidence_array()
 #i don't think this should be local_scores
-def generate_ROC_curves_raw_local(automated_df, manual_df, local_scoress, label=""):
+def generate_ROC_curves_raw_local(automated_df, manual_df, local_scoress, label="", plotting=True):
     """
     Function For ROC Curve generation. Displays the given roc curve for some automated labels
     Note: this does not chunk data and relies of local score itself for annotations. Great for comparing
@@ -858,15 +861,16 @@ def generate_ROC_curves_raw_local(automated_df, manual_df, local_scoress, label=
     #GENERATE AND PLOT ROC CURVES
     fpr, tpr, thresholds = metrics.roc_curve(target_array, confidence_scores_array) 
     roc_auc = metrics.auc(fpr, tpr)
-    plt.plot(fpr, tpr, label=label)
-    plt.ylabel("True Postives")
-    plt.xlabel("False Positives ")
-    if (label != ""):
-        plt.legend(loc="lower right")
-    plt.show
+    if plotting: 
+        plt.plot(fpr, tpr, label=label)
+        plt.ylabel("True Postives")
+        plt.xlabel("False Positives ")
+        if (label != ""):
+            plt.legend(loc="lower right")
+        plt.show
     return roc_auc
 
-def generate_ROC_curves(automated_df, manual_df, label="", chunk_length=3):
+def generate_ROC_curves(automated_df, manual_df, label="", chunk_length=3, plotting=True):
     """
     Function For ROC Curve generation. Displays the given roc curve for some automated labels
     Primary generate ROC curve function
@@ -884,11 +888,17 @@ def generate_ROC_curves(automated_df, manual_df, label="", chunk_length=3):
         Returns:
             Area Under the ROC Curve
     """
+    # print(automated_df.shape[0])
+    # print(manual_df.shape[0])
 
     #Only include files shared by both
     manual_df = manual_df[manual_df['IN FILE'].isin(automated_df["IN FILE"].to_list())]
     automated_df = automated_df[automated_df['IN FILE'].isin(manual_df["IN FILE"].to_list())]
     
+    # print(automated_df.shape[0])
+    # print(manual_df.shape[0])
+    # print("==================================================")
+
     #chunk the data
     automated_df = annotation_chunker_no_duplicates(automated_df, chunk_length, include_no_bird=True)
     manual_df = annotation_chunker_no_duplicates(manual_df, chunk_length, include_no_bird=True)
@@ -897,8 +907,7 @@ def generate_ROC_curves(automated_df, manual_df, label="", chunk_length=3):
     automated_df = automated_df.sort_values(by=["IN FILE", "OFFSET"])
     manual_df = manual_df.sort_values(by=["IN FILE", "OFFSET"])
 
-    print(automated_df)
-    print(manual_df)
+   
     #input()
 
     #get the true labels and confidence of each chunk, save as 2 arrays
@@ -911,15 +920,19 @@ def generate_ROC_curves(automated_df, manual_df, label="", chunk_length=3):
     print("confidence", len(confidence_scores_array.tolist()))
     print("automated df", automated_df.shape[0])
 
+    print(target_array)
+    print(confidence_scores_array)
+
     #GENERATE AND PLOT ROC CURVES
     fpr, tpr, thresholds = metrics.roc_curve(target_array, confidence_scores_array) 
     roc_auc = metrics.auc(fpr, tpr)
-    plt.plot(fpr, tpr, label=label)
-    plt.ylabel("True Postives")
-    plt.xlabel("False Positives ")
-    if (label != ""):
-        plt.legend(loc="lower right")
-    plt.show
+    if plotting: 
+        plt.plot(fpr, tpr, label=label)
+        plt.ylabel("True Postives")
+        plt.xlabel("False Positives ")
+        if (label != ""):
+            plt.legend(loc="lower right")
+        plt.show
     return roc_auc
 
 def generate_ROC_curves_mutliclass(automated_df, manual_df, label="", chunk_length=3):
@@ -942,14 +955,22 @@ def generate_ROC_curves_mutliclass(automated_df, manual_df, label="", chunk_leng
     '''
 
     species_pural  = np.unique(automated_df["MANUAL ID"])
+    auc_score_per_curve = -100 
     for species in species_pural:
         auto_species = automated_df[automated_df["MANUAL ID"] == species]
         manual_species = manual_df[manual_df["MANUAL ID"] == species]
+        #print("manual size", manual_species.shape[0])
+
+        if (auto_species.shape[0] == 0 or manual_species.empty):
+            continue
+
         try:
             if (label != ""):
                 label = (label + " - " + species)
-            generate_ROC_curves(auto_species, manual_species, label=label, chunk_length=chunk_length)
+            auc_score_per_curve = generate_ROC_curves(auto_species, manual_species, label=label, chunk_length=chunk_length, plotting = True)
         except:
             pass
+
+    return auc_score_per_curve
 
 
