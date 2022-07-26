@@ -9,7 +9,8 @@ import scipy.signal as scipy_signal
 import numpy as np
 import seaborn as sns
 from .IsoAutio import *
-from .annotation_post_processing import *
+from .annotation_post_processing import annotation_chunker_no_duplicates, annotation_chunker
+from sklearn import metrics
 
 def spectrogram_graph(
         clip_name,
@@ -888,15 +889,58 @@ def generate_ROC_curves(automated_df, manual_df, label="", chunk_length=3):
     """
 
     #Only include files shared by both
-    manual_df = manual_df[manual_df['IN FILE'].isin(automated_df["IN FILE"].to_list())]
-    automated_df = automated_df[automated_df['IN FILE'].isin(manual_df["IN FILE"].to_list())]
-    
-    print(len(automated_df["IN FILE"].to_list()))
-    print(len(manual_df["IN FILE"].to_list()))
+    manual_df["path"] = manual_df['FOLDER'] + manual_df['IN FILE'] 
+    automated_df["path"] = automated_df['FOLDER'] + automated_df['IN FILE'] 
 
-    #chunk the data
+    print(manual_df["path"])
+    print(automated_df["path"])
+    #print(manual_df)
+
+    manual_df = manual_df[manual_df['path'].isin(automated_df["path"].to_list())]
+    automated_df = automated_df[automated_df['path'].isin(manual_df["path"].to_list())]
+
+
+    test1 = automated_df.groupby(by=["IN FILE", "FOLDER"]).mean()
+    test2 = manual_df.groupby(by=["IN FILE", "FOLDER"]).mean()
+    if (test1.shape[0] != test2.shape[0]):
+        print("make sure you are using the same folder and file names in both df")
+        return -1
+
+    #print(test1[test1["CLIP LENGTH"]== 60]["CLIP LENGTH"])
+    #print("test2")
+    #print(test1)
+    #print(test2)
+    #print(test1.shape[0], test1.shape[0])
+    #print(sum(test1["CLIP LENGTH"]), sum(test2["CLIP LENGTH"])
+    #print(sum(test1["CLIP LENGTH"])/3, sum(test2["CLIP LENGTH"])/3)
+    
+    print(len(np.unique(automated_df["IN FILE"].to_list())))
+    print(len(np.unique(manual_df["IN FILE"].to_list())))
+    #print(np.unique(manual_df["IN FILE"].to_list()) == np.unique(manual_df["IN FILE"].to_list()))
+    ##chunk the data
     automated_df = annotation_chunker_no_duplicates(automated_df, chunk_length, include_no_bird=True)
     manual_df = annotation_chunker_no_duplicates(manual_df, chunk_length, include_no_bird=True)
+
+    
+
+    test1 = automated_df.groupby(by=["IN FILE", "FOLDER", "OFFSET"]).mean()
+    #print(test1[test1["CLIP LENGTH"] != 1])
+    test2 = manual_df.groupby(by=["IN FILE", "FOLDER", "OFFSET"]).mean()
+
+    print(sum(test1["CLIP LENGTH"]), sum(test2["CLIP LENGTH"]))
+    #print(test1, test2)
+    #test3 = test1.merge(test2, right_index=True, left_index=True)
+    #print(test3)
+    #print(test3[test3["CLIP LENGTH_x"] != test3["CLIP LENGTH_y"]])
+    # print(automated_df.drop_duplicates().shape[0])
+    # print(automated_df.shape[0])
+    # test1b = automated_df.groupby(by=["IN FILE", "FOLDER"]).max()
+    # test2 = manual_df.groupby(by=["IN FILE", "FOLDER"]).count()
+    # test3 = test1.merge(test2, right_index=True, left_index=True)
+    # print("HELLO")
+    # print(test3[test3["CLIP LENGTH_x"] != test3["CLIP LENGTH_y"]])
+    # print("========================================")
+    #print(automated_df[automated_df["IN FILE"] == "20190622_144000.WAV"])
 
     #sort the data to ensure all append operations are in order
     automated_df = automated_df.sort_values(by=["IN FILE", "OFFSET"])
@@ -909,6 +953,7 @@ def generate_ROC_curves(automated_df, manual_df, label="", chunk_length=3):
 
     #sanity check code
     print("target", len(target_array.tolist()))
+    print("manual df", manual_df.shape[0])
     print("confidence", len(confidence_scores_array.tolist()))
     print("automated df", automated_df.shape[0])
 
