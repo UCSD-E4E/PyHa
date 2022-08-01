@@ -1,3 +1,4 @@
+from sre_parse import Verbose
 from .microfaune_package.microfaune.detection import RNNDetector
 from .microfaune_package.microfaune import audio
 from .tweetynet_package.tweetynet.TweetyNetModel import TweetyNetModel
@@ -874,7 +875,7 @@ def generate_ROC_curves_raw_local(automated_df, manual_df, local_scoress, label=
         plt.show
     return roc_auc
 
-def generate_ROC_curves(automated_df, manual_df, label="", chunk_length=3, plotting=True):
+def generate_ROC_curves(automated_df, manual_df, label="", chunk_length=3, plotting=True, verbose=False):
     """
     Function For ROC Curve generation. Displays the given roc curve for some automated labels
     Primary generate ROC curve function
@@ -920,12 +921,13 @@ def generate_ROC_curves(automated_df, manual_df, label="", chunk_length=3, plott
     confidence_scores_array = np.array(automated_df["CONFIDENCE"])
 
     #sanity check code
-    print("target", len(target_array.tolist()))
-    print("confidence", len(confidence_scores_array.tolist()))
-    print("automated df", automated_df.shape[0])
+    if(verbose):
+        print("target", len(target_array.tolist()))
+        print("confidence", len(confidence_scores_array.tolist()))
+        print("automated df", automated_df.shape[0])
 
-    print(target_array)
-    print(confidence_scores_array)
+        print(target_array)
+        print(confidence_scores_array)
 
     #GENERATE AND PLOT ROC CURVES
     fpr, tpr, thresholds = metrics.roc_curve(target_array, confidence_scores_array) 
@@ -939,7 +941,7 @@ def generate_ROC_curves(automated_df, manual_df, label="", chunk_length=3, plott
         plt.show
     return roc_auc
 
-def generate_ROC_curves_mutliclass(automated_df, manual_df, label="", chunk_length=3):
+def generate_ROC_curves_mutliclass(automated_df, manual_df, label="", chunk_length=3, verbose=False):
     '''
     Function For ROC Curve generation for mutliple classes. Displays the given roc curve for some automated labels
     for each class in automated_df
@@ -971,7 +973,7 @@ def generate_ROC_curves_mutliclass(automated_df, manual_df, label="", chunk_leng
         try:
             if (label != ""):
                 label = (label + " - " + species)
-            auc_score_per_curve = generate_ROC_curves(auto_species, manual_species, label=label, chunk_length=chunk_length, plotting = True)
+            auc_score_per_curve = generate_ROC_curves(auto_species, manual_species, label=label, chunk_length=chunk_length, plotting = True, verbose=False)
         except:
             pass
 

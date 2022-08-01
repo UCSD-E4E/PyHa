@@ -93,16 +93,22 @@ def readAudioData(path, overlap, sample_rate=48000, generated_tweetynet_df=None,
             sig, rate = librosa.load(path, sr=sample_rate, mono=True, res_type='kaiser_fast')
             clip_length = librosa.get_duration(y=sig, sr=rate)
         else:
+            #TODO MAKE THIS GENERTIC TO PC
 
-            file_names = path.split("/")[-1]
+            file_names = path.split("\\")[-1]
+            print(file_names)
             
             #see if file names in birdnet are in generated_tweetynet_df
+            
             clip_df = generated_tweetynet_df[generated_tweetynet_df["IN FILE"] == file_names]
             if (not clip_df.empty):
                 list_of_offsets = clip_df["OFFSET"].tolist()
 
                 sig, rate = librosa.load(path, sr=sample_rate, mono=True, res_type='kaiser_fast')
-                clip_length = librosa.get_duration(y=sig, sr=rate) 
+                clip_length = librosa.get_duration(y=sig, sr=rate)
+            else:
+                return 0, 0, []
+ 
     except Exception as e:
         print(e)
         return 0, 0, []

@@ -10,6 +10,7 @@ import pandas as pd
 import scipy.signal as scipy_signal
 import numpy as np
 from math import ceil
+import math
 from copy import deepcopy
 
 def build_isolation_parameters_microfaune(
