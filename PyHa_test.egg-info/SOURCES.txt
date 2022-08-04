@@ -9,4 +9,5 @@ PyHa_test/visualizations.py
 PyHa_test.egg-info/PKG-INFO
 PyHa_test.egg-info/SOURCES.txt
 PyHa_test.egg-info/dependency_links.txt
+PyHa_test.egg-info/requires.txt
 PyHa_test.egg-info/top_level.txt

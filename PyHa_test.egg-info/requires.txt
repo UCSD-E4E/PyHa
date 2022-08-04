@@ -1,0 +1,16 @@
+Keras
+librosa
+matplotlib
+microfaune-ai
+numpy
+opensoundscape
+pandas
+pydub
+scikit-image
+scikit-learn
+scipy
+seaborn
+SoundFile
+tensorflow
+torch
+freetype-py
