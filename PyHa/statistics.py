@@ -208,7 +208,8 @@ def automated_labeling_statistics(
         num_processed += 1
         clip_automated_df = automated_df[automated_df["IN FILE"] == clip]
         # In case the extension for manual_df is different from the clip extension, just check the name before the extension
-        clip_manual_df = manual_df[manual_df["IN FILE"].str.startswith(".".join(clip.split(".")[:-1]))]
+        clip_manual_df = manual_df[manual_df["IN FILE"] == clip]
+        #clip_manual_df = manual_df[manual_df["IN FILE"].str.startswith(".".join(clip.split(".")[:-1]))]
         try:
             if stats_type == "general":
                 clip_stats_df = clip_general(
@@ -228,7 +229,6 @@ def automated_labeling_statistics(
         except BaseException as e:
             num_errors += 1
             #print("Something went wrong with: " + clip)
-            #print(e)
             continue
         if num_processed % 50 == 0:
             print("Processed", num_processed, "clips in", int((time.time() - start_time) * 10) / 10.0, 'seconds')
@@ -713,7 +713,6 @@ def clip_statistics(
     manual_class_list = list(dict.fromkeys(manual_class_list))
     # Finding the intersection between the manual and automated classes
     class_list = np.intersect1d(automated_class_list,manual_class_list)
-    
     # Initializing the output dataframe
     clip_statistics = pd.DataFrame()
     # Looping through each class and comparing the automated labels to the manual labels

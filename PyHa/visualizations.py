@@ -893,9 +893,6 @@ def generate_ROC_curves(automated_df, manual_df, label="", chunk_length=3, plott
         Returns:
             Area Under the ROC Curve
     """
-    # print(automated_df.shape[0])
-    # print(manual_df.shape[0])
-
     #Only include files shared by both
     manual_df = manual_df[manual_df['IN FILE'].isin(automated_df["IN FILE"].to_list())]
     automated_df = automated_df[automated_df['IN FILE'].isin(manual_df["IN FILE"].to_list())]
@@ -911,8 +908,6 @@ def generate_ROC_curves(automated_df, manual_df, label="", chunk_length=3, plott
     #sort the data to ensure all append operations are in order
     automated_df = automated_df.sort_values(by=["IN FILE", "OFFSET"])
     manual_df = manual_df.sort_values(by=["IN FILE", "OFFSET"])
-
-   
     #input()
 
     #get the true labels and confidence of each chunk, save as 2 arrays
@@ -941,10 +936,10 @@ def generate_ROC_curves(automated_df, manual_df, label="", chunk_length=3, plott
         plt.show
     return roc_auc
 
-def generate_ROC_curves_mutliclass(automated_df, manual_df, label="", chunk_length=3, verbose=False):
+def generate_ROC_curves_multiclass(automated_df, manual_df, label="", chunk_length=3, plotting=True, verbose=False):
     '''
-    Function For ROC Curve generation for mutliple classes. Displays the given roc curve for some automated labels
-    for each class in automated_df
+    Function For ROC Curve generation for multiple classes. Displays the 
+    given ROC curve for each class in automated_df
 
         Args:
             automated_df (Dataframe)
@@ -960,12 +955,11 @@ def generate_ROC_curves_mutliclass(automated_df, manual_df, label="", chunk_leng
             Nothing
     '''
 
-    species_pural  = np.unique(automated_df["MANUAL ID"])
+    species_plural  = np.unique(automated_df["MANUAL ID"])
     auc_score_per_curve = -100 
-    for species in species_pural:
+    for species in species_plural:
         auto_species = automated_df[automated_df["MANUAL ID"] == species]
         manual_species = manual_df[manual_df["MANUAL ID"] == species]
-        #print("manual size", manual_species.shape[0])
 
         if (auto_species.shape[0] == 0 or manual_species.empty):
             continue
@@ -973,7 +967,7 @@ def generate_ROC_curves_mutliclass(automated_df, manual_df, label="", chunk_leng
         try:
             if (label != ""):
                 label = (label + " - " + species)
-            auc_score_per_curve = generate_ROC_curves(auto_species, manual_species, label=label, chunk_length=chunk_length, plotting = True, verbose=False)
+            auc_score_per_curve = generate_ROC_curves(auto_species, manual_species, label=label, chunk_length=chunk_length, plotting=plotting, verbose=verbose)
         except:
             pass
 
