@@ -6,6 +6,16 @@ import time
 # Function that takes in a pandas dataframe of annotations and outputs a
 # dataframe of the mean, median, mode, quartiles, and standard deviation of
 # the annotation durations.
+
+def checkVerbose(
+    errorMessage, 
+    verbose):
+    """
+    Adds the ability to toggle on/off all error messages and warnings.
+    """
+    if(verbose):
+        print(errorMessage)
+
 def annotation_duration_statistics(df):
     """
     Function that calculates basic statistics related to the duration of
@@ -39,7 +49,7 @@ def annotation_duration_statistics(df):
     return pd.DataFrame.from_dict([entry])
 
 
-def clip_general(automated_df, human_df):
+def clip_general(automated_df, human_df, verbose=True):
     """
     Function to generate a dataframe with statistics relating to the efficacy
     of the automated label compared to the human label.
@@ -127,8 +137,8 @@ def clip_general(automated_df, human_df):
         f1 = 2 * (recall * precision) / (recall + precision)
         IoU = true_positive_count / union_count
     except BaseException:
-        print('''Error calculating statistics, likely due
-        to zero division, setting values to zero''')
+        checkVerbose('''Error calculating statistics, likely due
+        to zero division, setting values to zero''', verbose)
         f1 = 0
         precision = 0
         recall = 0
@@ -234,7 +244,7 @@ def automated_labeling_statistics(
             print("Processed", num_processed, "clips in", int((time.time() - start_time) * 10) / 10.0, 'seconds')
             start_time = time.time()
     if num_errors > 0:
-        print("Something went wrong with", num_errors, "clips out of", len(clips), "clips")
+        checkVerbose("Something went wrong with" + num_errors + "clips out of" + str(len(clips)) + "clips", verbose)
     statistics_df.reset_index(inplace=True, drop=True)
     return statistics_df
 
@@ -607,8 +617,8 @@ def global_statistics(statistics_df, manual_id = 'N/A'):
         recall = tp_sum / (tp_sum + fn_sum)
         f1 = 2 * (precision * recall) / (precision + recall)
     except ZeroDivisionError:
-        print('''Error in calculating Precision, Recall, and F1. Likely due to
-        zero division, setting values to zero''')
+        checkVerbose('''Error in calculating Precision, Recall, and F1. Likely due to
+        zero division, setting values to zero''', verbose)
         precision = 0
         recall = 0
         f1 = 0

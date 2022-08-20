@@ -12,13 +12,26 @@ import numpy as np
 from math import ceil
 from copy import deepcopy
 
+
+def checkVerbose(
+    errorMessage, 
+    isolation_parameters):
+    """
+    Adds the ability to toggle on/off all error messages and warnings.
+    """
+    if(isolation_parameters['verbose']):
+        print(errorMessage)
+
+        
+
 def build_isolation_parameters_microfaune(
         technique,
         threshold_type,
         threshold_const,
         threshold_min=0,
         window_size=1.0,
-        chunk_size=2.0):
+        chunk_size=2.0,
+        verbose=True):
     """
     Wrapper function for all audio isolation techniques (Steinberg, Simple, 
     Stack, Chunk). Will call the respective function of each technique
@@ -60,17 +73,21 @@ def build_isolation_parameters_microfaune(
         "threshold_type": threshold_type,
         "threshold_const": threshold_const,
         "threshold_min": threshold_min,
-        "chunk_size": chunk_size
+        "chunk_size": chunk_size,
+        "verbose": verbose
     }
 
     if window_size != 1.0 and technique != "steinberg":
-        print('''Warning: window_size is dedicated to the steinberg isolation
-        technique. Won't affect current technique.''')
+        checkVerbose('''Warning: window_size is dedicated to the steinberg isolation
+        technique. Won't affect current technique.''', isolation_parameters)
     if chunk_size != 2.0 and technique != "chunk":
-        print('''Warning: chunk_size is dedicated to the chunk technique.
-        Won't affect current technique.''')
+        checkVerbose('''Warning: chunk_size is dedicated to the chunk technique.
+        Won't affect current technique.''', isolation_parameters)
 
     return isolation_parameters
+
+
+
 
 
 def isolate(
@@ -813,7 +830,7 @@ def generate_automated_labels_microfaune(
             SIGNAL, SAMPLE_RATE = librosa.load(audio_dir + audio_file, sr=None, mono=True)
             SIGNAL = SIGNAL * 32768
         except BaseException:
-            print("Failed to load", audio_file)
+            checkVerbose("Failed to load" + audio_file, isolation_parameters)
             continue
 
         # downsample the audio if the sample rate isn't 44.1 kHz
@@ -826,7 +843,7 @@ def generate_automated_labels_microfaune(
                     SIGNAL, int(len(SIGNAL) * rate_ratio))
                 SAMPLE_RATE = normalized_sample_rate
         except:
-            print("Failed to Downsample" + audio_file)
+            checkVerbose("Failed to Downsample" + audio_file, isolation_parameters)
             # resample produces unreadable float32 array so convert back
             # SIGNAL = np.asarray(SIGNAL, dtype=np.int16)
 
@@ -840,7 +857,7 @@ def generate_automated_labels_microfaune(
             microfaune_features = detector.compute_features([SIGNAL])
             global_score, local_scores = detector.predict(microfaune_features)
         except BaseException as e:
-            print("Error in detection, skipping", audio_file)
+            checkVerbose("Error in detection, skipping" + audio_file, isolation_parameters)
             print(e)
             continue
 
@@ -865,7 +882,7 @@ def generate_automated_labels_microfaune(
             else:
                 annotations = annotations.append(new_entry)
         except BaseException as e:
-            print("Error in isolating bird calls from", audio_file)
+            checkVerbose("Error in isolating bird calls from" + audio_file, isolation_parameters)
             print(e)
             continue
     # Quick fix to indexing
@@ -931,7 +948,7 @@ def generate_automated_labels_tweetynet(
             SIGNAL, SAMPLE_RATE = librosa.load(audio_dir + audio_file, sr=None, mono=True)
             SIGNAL = SIGNAL * 32768
         except BaseException:
-            print("Failed to load", audio_file)
+            checkVerbose("Failed to load" + audio_file, isolation_parameters)
             continue
 
         # downsample the audio if the sample rate isn't 44.1 kHz
@@ -944,7 +961,7 @@ def generate_automated_labels_tweetynet(
                     SIGNAL, int(len(SIGNAL) * rate_ratio))
                 SAMPLE_RATE = normalized_sample_rate
         except:
-            print("Failed to Downsample" + audio_file)
+            checkVerbose("Failed to Downsample" + audio_file, isolation_parameters)
 
         # convert stereo to mono if needed
         # Might want to compare to just taking the first set of data.
@@ -955,7 +972,7 @@ def generate_automated_labels_tweetynet(
             tweetynet_features = compute_features([SIGNAL])
             predictions, local_scores = detector.predict(tweetynet_features, model_weights=weight_path, norm=normalize_local_scores)
         except BaseException as e:
-            print("Error in detection, skipping", audio_file)
+            checkVerbose("Error in detection, skipping" + audio_file, isolation_parameters)
             print(e)
             continue
 
@@ -986,7 +1003,7 @@ def generate_automated_labels_tweetynet(
             else:
                 annotations = annotations.append(new_entry)
         except BaseException as e:
-            print("Error in isolating bird calls from", audio_file)
+            checkVerbose("Error in isolating bird calls from" + audio_file, isolation_parameters)
             print(e)
             continue
     # Quick fix to indexing
@@ -1059,8 +1076,11 @@ def generate_automated_labels(
                         normalized_sample_rate=normalized_sample_rate,
                         normalize_local_scores=normalize_local_scores)
     else:
-        print("{model_name} model does not exist"\
-            .format(model_name=isolation_parameters["model"]))
+        # print("{model_name} model does not exist"\
+        #     .format(model_name=isolation_parameters["model"]))
+        checkVerbose("{model_name} model does not exist"\
+        .format(model_name=isolation_parameters["model"]), isolation_parameters)
+        annotations = None
     # except:
     #     print("Error. Check your isolation_parameters")
     #     return None
