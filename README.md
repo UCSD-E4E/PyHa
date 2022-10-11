@@ -16,6 +16,7 @@ PyHa = Python + Piha (referring to a bird species of our interest known as the s
 
 ## Installation and Setup
 1. Navigate to a desired folder and clone the repository onto your local machine. `git clone https://github.com/UCSD-E4E/PyHa.git`
+- If you wish to reduce the size of the repository on your local machine you can alternatively use `git clone https://github.com/UCSD-E4E/PyHa.git --depth 1` which will only install the most up-to-date version of the repo without its history.
 2. Install [Miniconda](https://docs.conda.io/en/latest/miniconda.html) or [Miniforge](https://github.com/conda-forge/miniforge).
 3. Install the conda environment by running `conda env create --file conda_environments/{filename}`, where `filename` is the name of the yaml containing the environment for your OS.
 4. Run `conda activate species-id` to activate the conda environment used to develop the package.
