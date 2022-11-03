@@ -18,6 +18,14 @@ def checkVerbose(
     isolation_parameters):
     """
     Adds the ability to toggle on/off all error messages and warnings.
+
+    Args:
+        errorMessage (string)
+            - Error message to be displayed
+
+        isolation_parameters (dict)
+            - Python Dictionary that controls the various label creation
+              techniques.
     """
     if(isolation_parameters['verbose']):
         print(errorMessage)
@@ -63,6 +71,9 @@ def build_isolation_parameters_microfaune(
             - determines the length of annotation when using "chunk"
               isolation technique
 
+        verbose (boolean)
+            - Whether to display error messages
+
     Returns:
         isolation_parameters (dict)
             - Python dictionary that controls how to go about isolating
@@ -85,9 +96,6 @@ def build_isolation_parameters_microfaune(
         Won't affect current technique.''', isolation_parameters)
 
     return isolation_parameters
-
-
-
 
 
 def isolate(
@@ -858,7 +866,6 @@ def generate_automated_labels_microfaune(
             global_score, local_scores = detector.predict(microfaune_features)
         except BaseException as e:
             checkVerbose("Error in detection, skipping" + audio_file, isolation_parameters)
-            print(e)
             continue
 
         # get duration of clip
@@ -883,7 +890,6 @@ def generate_automated_labels_microfaune(
                 annotations = annotations.append(new_entry)
         except BaseException as e:
             checkVerbose("Error in isolating bird calls from" + audio_file, isolation_parameters)
-            print(e)
             continue
     # Quick fix to indexing
     annotations.reset_index(inplace=True, drop=True)
@@ -973,7 +979,6 @@ def generate_automated_labels_tweetynet(
             predictions, local_scores = detector.predict(tweetynet_features, model_weights=weight_path, norm=normalize_local_scores)
         except BaseException as e:
             checkVerbose("Error in detection, skipping" + audio_file, isolation_parameters)
-            print(e)
             continue
 
         try:
@@ -1004,7 +1009,6 @@ def generate_automated_labels_tweetynet(
                 annotations = annotations.append(new_entry)
         except BaseException as e:
             checkVerbose("Error in isolating bird calls from" + audio_file, isolation_parameters)
-            print(e)
             continue
     # Quick fix to indexing
     annotations.reset_index(inplace=True, drop=True)

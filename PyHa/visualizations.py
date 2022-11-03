@@ -16,6 +16,13 @@ def checkVerbose(
     verbose):
     """
     Adds the ability to toggle on/off all error messages and warnings.
+    
+    Args:
+        errorMessage (string)
+            - Error message to be displayed
+
+        verbose (boolean)
+            - Whether to display error messages
     """
     if(verbose):
         print(errorMessage)
@@ -285,6 +292,9 @@ def spectrogram_visualization(
 
         save_fig (boolean)
             - Whether the plots should be saved in a directory as a png file.
+
+        verbose (boolean)
+            - Whether to display error messages
 
     Returns:
         None

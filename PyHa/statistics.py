@@ -12,6 +12,13 @@ def checkVerbose(
     verbose):
     """
     Adds the ability to toggle on/off all error messages and warnings.
+
+    Args:
+        errorMessage (string)
+            - Error message to be displayed
+
+        verbose (boolean)
+            - Whether to display error messages
     """
     if(verbose):
         print(errorMessage)
@@ -63,6 +70,9 @@ def clip_general(automated_df, human_df, verbose=True):
 
         human_df (Dataframe)
             - Dataframe of human labels for one clip.
+
+        verbose (boolean):
+            - whether to display error messages
 
     Returns:
         Dataframe with general clip overlap statistics comparing the automated
@@ -167,7 +177,8 @@ def automated_labeling_statistics(
         automated_df,
         manual_df,
         stats_type="IoU",
-        threshold=0.5):
+        threshold=0.5,
+        verbose = True):
     """
     Function that will allow users to easily pass in two dataframes of manual
     labels and automated labels, and a dataframe is returned with statistics
@@ -197,6 +208,9 @@ def automated_labeling_statistics(
             IoU threshold for determining true positives, false positives, and
             false negatives.
             - default: 0.5
+
+        verbose (boolean)
+            - whether to display error messages
 
     Returns:
         Dataframe of statistics comparing automated labels and human labels for
@@ -585,7 +599,7 @@ def clip_catch(automated_df, manual_df):
 #    return IoU_Statistics
 
 # Consider adding in a new manual_id parameter here
-def global_statistics(statistics_df, manual_id = 'N/A'):
+def global_statistics(statistics_df, manual_id = 'N/A', verbose = True):
     """
     Function that takes the output of dataset_IoU Statistics and outputs a
     global count of true positives and false positives, as well as computing \
@@ -599,6 +613,9 @@ def global_statistics(statistics_df, manual_id = 'N/A'):
             - String to control the "MANUAL ID" column of the csv file
               format that is used in PyHa.
             - default: "N/A"
+
+        verbose (boolean)
+            - whether to display error messages
 
     Returns:
         Dataframe of global IoU statistics which include the number of true
