@@ -11,6 +11,22 @@ import numpy as np
 import seaborn as sns
 from .IsoAutio import *
 
+def checkVerbose(
+    errorMessage, 
+    verbose):
+    """
+    Adds the ability to toggle on/off all error messages and warnings.
+    
+    Args:
+        errorMessage (string)
+            - Error message to be displayed
+
+        verbose (boolean)
+            - Whether to display error messages
+    """
+    if(verbose):
+        print(errorMessage)
+
 def spectrogram_graph(
         clip_name,
         sample_rate,
@@ -244,7 +260,8 @@ def spectrogram_visualization(
         isolation_parameters=None,
         log_scale=False,
         save_fig=False,
-        normalize_local_scores=False):
+        normalize_local_scores=False,
+        verbose=True):
     """
     Wrapper function for the local_line_graph and spectrogram_graph functions
     for ease of use. Processes clip for local scores to be used for the
@@ -276,6 +293,9 @@ def spectrogram_visualization(
         save_fig (boolean)
             - Whether the plots should be saved in a directory as a png file.
 
+        verbose (boolean)
+            - Whether to display error messages
+
     Returns:
         None
     """
@@ -287,7 +307,7 @@ def spectrogram_visualization(
         SIGNAL, SAMPLE_RATE = librosa.load(clip_path, sr=None, mono=True)
         SIGNAL = SIGNAL * 32768
     except BaseException:
-        print("Failure in loading", clip_path)
+        checkVerbose("Failure in loading" + clip_path, verbose)
         return
     # Downsample the audio if the sample rate > 44.1 kHz
     # Force everything into the human hearing range.
@@ -298,7 +318,7 @@ def spectrogram_visualization(
                 SIGNAL, int(len(SIGNAL) * rate_ratio))
             SAMPLE_RATE = 44100
     except BaseException:
-        print("Failure in downsampling", clip_path)
+        checkVerbose("Failure in downsampling" + clip_path, verbose)
         return
 
     # Converting to Mono if Necessary
@@ -319,7 +339,7 @@ def spectrogram_visualization(
                     # Initializing Microfaune hybrid CNN-RNN with new weights
                     detector = RNNDetector(weight_path)
                 except BaseException:
-                    print("Error in weight path:", weight_path)
+                    checkVerbose("Error in weight path:" + weight_path, verbose)
                     return
             try:
                 # Computing Mel Spectrogram of the audio clip
@@ -328,10 +348,10 @@ def spectrogram_visualization(
                 global_score, local_score = detector.predict(microfaune_features)
                 local_scores = local_score[0].tolist()
             except BaseException:
-                print(
+                checkVerbose(
                     "Skipping " +
                     clip_path +
-                    " due to error in Microfaune Prediction")
+                    " due to error in Microfaune Prediction", verbose)
         elif (isolation_parameters["model"] == 'tweetynet'):
             # Initializing the detector to baseline or with retrained weights
             device = torch.device('cpu')
@@ -343,10 +363,10 @@ def spectrogram_visualization(
                 predictions, local_score = detector.predict(tweetynet_features, model_weights=weight_path)
                 local_scores = local_score[0].tolist()
             except BaseException:
-                print(
+                checkVerbose(
                     "Skipping " +
                     clip_path +
-                    " due to error in TweetyNet Prediction")
+                    " due to error in TweetyNet Prediction", verbose)
                 return None
 
     # In the case where the user wants to look at automated bird labels
@@ -389,8 +409,8 @@ def spectrogram_visualization(
                 normalize_local_scores=normalize_local_scores)
 
         if (len(automated_df["IN FILE"].unique()) > 1):
-            print("\nWarning: This function only generates spectrograms for one clip. " +
-                  "automated_df has annotations for more than one clip.")
+            checkVerbose("\nWarning: This function only generates spectrograms for one clip. " +
+                  "automated_df has annotations for more than one clip.", verbose)
     else:
         automated_df = pd.DataFrame()
 
