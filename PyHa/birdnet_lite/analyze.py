@@ -15,6 +15,7 @@ import math
 import time
 import pandas as pd
 from sys import exit
+from tqdm import tqdm
 
 def loadModel():
 
@@ -252,7 +253,7 @@ def analyze(audio_path, output_path = None, lat=-1, lon=-1, week=-1, overlap=0.0
         except:
              print("Error processing file: {}".format(datafile))
     elif len(dataset) > 0:
-        for datafile in dataset:         
+        for datafile in tqdm(dataset, desc=f"Processing labels for {audio_path}", colour='green'):         
             try:
                 # Read audio data
                 audioData, clip_length = readAudioData(datafile, overlap, sample_rate)

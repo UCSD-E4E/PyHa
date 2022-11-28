@@ -11,6 +11,7 @@ import scipy.signal as scipy_signal
 import numpy as np
 from math import ceil
 from copy import deepcopy
+from tqdm import tqdm
 
 def build_isolation_parameters_microfaune(
         technique,
@@ -801,7 +802,7 @@ def generate_automated_labels_microfaune(
     # init labels dataframe
     annotations = pd.DataFrame()
     # generate local scores for every bird file in chosen directory
-    for audio_file in os.listdir(audio_dir):
+    for audio_file in tqdm(os.listdir(audio_dir), desc=f"Processing labels for {audio_dir}", colour='green'):
         # skip directories
         if os.path.isdir(audio_dir + audio_file):
             continue
@@ -919,7 +920,7 @@ def generate_automated_labels_tweetynet(
     # init labels dataframe
     annotations = pd.DataFrame()
     # generate local scores for every bird file in chosen directory
-    for audio_file in os.listdir(audio_dir):
+    for audio_file in tqdm(os.listdir(audio_dir), desc=f"Processing labels for {audio_dir}", colour='green'):
         # skip directories
         if os.path.isdir(audio_dir + audio_file):
             continue
