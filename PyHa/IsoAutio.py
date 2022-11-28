@@ -9,7 +9,7 @@ import librosa
 import pandas as pd
 import scipy.signal as scipy_signal
 import numpy as np
-from math import ceil
+from math import ceil, floor
 from copy import deepcopy
 from tqdm import tqdm
 
@@ -1173,9 +1173,9 @@ def add_confidence_to_annotations(clip_df, local_score_array):
         #the local score array
         start_time =  annotation_data["OFFSET"]
         end_time = annotation_data["OFFSET"] + annotation_data["DURATION"]
-        start_index = math.floor(start_time * index_per_seconds)
-        end_index = math.floor((end_time * index_per_seconds))
-        max_index = math.floor((clip_length * index_per_seconds))
+        start_index = floor(start_time * index_per_seconds)
+        end_index = floor((end_time * index_per_seconds))
+        max_index = floor((clip_length * index_per_seconds))
         
         #Compute the local maximum in this chunk in the local scores
         max_score = max(local_score_array[start_index: min(end_index, max_index)])
