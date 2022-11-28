@@ -15,6 +15,7 @@ import math
 import time
 import pandas as pd
 from sys import exit
+from tqdm import tqdm
 
 def loadModel():
 
@@ -161,7 +162,6 @@ def analyzeAudioData(chunks, lat, lon, week, sensitivity, overlap, interpreter, 
 
         # Make prediction
         p = predict([sig, mdata], interpreter, sensitivity, num_predictions)
-
         # Save result and timestamp
         pred_end = pred_start + 3.0
         detections[str(pred_start) + ';' + str(pred_end)] = p
@@ -172,19 +172,28 @@ def analyzeAudioData(chunks, lat, lon, week, sensitivity, overlap, interpreter, 
     return detections
 
 def writeResultsToDf(df, detections, min_conf, output_metadata):
-
+    #print(df)
     rcnt = 0
     row = pd.DataFrame(output_metadata, index = [0])
     
     for d in detections:
         for entry in detections[d]:
-            if entry[1] >= min_conf and (entry[0] in WHITE_LIST or len(WHITE_LIST) == 0):
+            if (entry[1] >= min_conf and  entry[0] in WHITE_LIST or len(WHITE_LIST) == 0): #
                 time_interval = d.split(';')
                 row['OFFSET'] = float(time_interval[0])
                 row['DURATION'] = float(time_interval[1])-float(time_interval[0])
                 row['MANUAL ID'] = entry[0].split('_')[0]
+                row['CONFIDENCE'] = entry[1]
                 df = pd.concat([df,row], ignore_index=True)
                 rcnt += 1
+            #else:
+            #    time_interval = d.split(';')
+            #    row['OFFSET'] = float(time_interval[0])
+            #    row['DURATION'] = float(time_interval[1])-float(time_interval[0])
+            #    row['MANUAL ID'] = "NO CONFIDENCE"
+            #    row['CONFIDENCE'] = 0
+            #    df = pd.concat([df,row], ignore_index=True)
+            #    rcnt += 1
     print('DONE! WROTE', rcnt, 'RESULTS.')
     return df
 
@@ -225,7 +234,7 @@ def analyze(audio_path, output_path = None, lat=-1, lon=-1, week=-1, overlap=0.0
     sensitivity = max(0.5, min(1.0 - (sensitivity - 1.0), 1.5))
     sample_rate = 48000
     df_columns = {'FOLDER' : 'str', 'IN FILE' :'str', 'CLIP LENGTH' : 'float64', 'CHANNEL' : 'int64', 'OFFSET' : 'float64',
-                'DURATION' : 'float64', 'SAMPLE RATE' : 'int64','MANUAL ID' : 'str'}
+                'DURATION' : 'float64', 'SAMPLE RATE' : 'int64','MANUAL ID' : 'str', 'CONFIDENCE': 'float64',}
     df = pd.DataFrame({c: pd.Series(dtype=t) for c, t in df_columns.items()})
     output_metadata = {}
     output_metadata['CHANNEL'] = 0 # Setting channel to 0 by default
@@ -252,7 +261,7 @@ def analyze(audio_path, output_path = None, lat=-1, lon=-1, week=-1, overlap=0.0
         except:
              print("Error processing file: {}".format(datafile))
     elif len(dataset) > 0:
-        for datafile in dataset:         
+        for datafile in tqdm(dataset, desc=f"Processing labels for {audio_path}", colour='green'):         
             try:
                 # Read audio data
                 audioData, clip_length = readAudioData(datafile, overlap, sample_rate)

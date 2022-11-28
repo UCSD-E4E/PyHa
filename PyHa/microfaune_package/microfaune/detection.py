@@ -134,6 +134,7 @@ class RNNDetector:
         """
         scores = []
         local_scores = []
+        #print("PREDICTION HERE!!!")
         for x in X:
             s, local_s = self.model.predict(x[np.newaxis, ...])
             scores.append(s[0])
