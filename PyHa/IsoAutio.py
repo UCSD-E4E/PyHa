@@ -749,8 +749,10 @@ def generate_automated_labels_birdnet(audio_dir, isolation_parameters):
         Dataframe of automated labels for the audio clip(s) in audio_dir.
     """
     annotations = analyze(audio_path=audio_dir, **isolation_parameters)
-    return annotations
-
+    local_scores_dir  = {}
+    for file in np.unique(annotations["IN FILE"]):
+        local_scores_dir[file] = annotations["CONFIDENCE"].to_list()
+    return annotations, local_scores_dir
 def generate_automated_labels_microfaune(
         audio_dir,
         isolation_parameters,
@@ -801,6 +803,8 @@ def generate_automated_labels_microfaune(
 
     # init labels dataframe
     annotations = pd.DataFrame()
+    local_score_dir = {}
+
     # generate local scores for every bird file in chosen directory
     for audio_file in tqdm(os.listdir(audio_dir), desc=f"Processing labels for {audio_dir}", colour='green'):
         # skip directories
@@ -848,6 +852,8 @@ def generate_automated_labels_microfaune(
         # get duration of clip
         duration = len(SIGNAL) / SAMPLE_RATE
 
+        local_score_dir[audio_file] = local_scores[0]
+        #print(local_scores[0])
         try:
             # Running moment to moment algorithm and appending to a master
             # dataframe.
@@ -860,7 +866,13 @@ def generate_automated_labels_microfaune(
                 isolation_parameters,
                 manual_id=manual_id,
                 normalize_local_scores=normalize_local_scores)
-            # print(new_entry)
+            #print(new_entry)
+
+            #determine confidence of annotations
+            new_entry = add_confidence_to_annotations(new_entry, local_scores[0])
+
+            #print(new_entry)
+
             if annotations.empty:
                 annotations = new_entry
             else:
@@ -871,7 +883,7 @@ def generate_automated_labels_microfaune(
             continue
     # Quick fix to indexing
     annotations.reset_index(inplace=True, drop=True)
-    return annotations
+    return annotations, local_score_dir
 
 def generate_automated_labels_tweetynet(
         audio_dir,
@@ -919,6 +931,7 @@ def generate_automated_labels_tweetynet(
 
     # init labels dataframe
     annotations = pd.DataFrame()
+    local_score_dir = {}
     # generate local scores for every bird file in chosen directory
     for audio_file in tqdm(os.listdir(audio_dir), desc=f"Processing labels for {audio_dir}", colour='green'):
         # skip directories
@@ -982,6 +995,10 @@ def generate_automated_labels_tweetynet(
                     manual_id=manual_id,
                     normalize_local_scores=normalize_local_scores)
             # print(new_entry)
+
+            new_entry = add_confidence_to_annotations(new_entry, local_scores[0])
+
+
             if annotations.empty:
                 annotations = new_entry
             else:
@@ -990,9 +1007,10 @@ def generate_automated_labels_tweetynet(
             print("Error in isolating bird calls from", audio_file)
             print(e)
             continue
+        local_score_dir[audio_file] = local_scores[0]
     # Quick fix to indexing
     annotations.reset_index(inplace=True, drop=True)
-    return annotations
+    return annotations,local_score_dir
 
 
 def generate_automated_labels(
@@ -1001,7 +1019,8 @@ def generate_automated_labels(
         manual_id="bird",
         weight_path=None,
         normalized_sample_rate=44100,
-        normalize_local_scores=False):
+        normalize_local_scores=False,
+        include_local_scores=False):
     """
     Function that generates the bird labels across a folder of audio clips
     given the isolation_parameters
@@ -1028,13 +1047,18 @@ def generate_automated_labels(
         normalize_local_scores (bool)
             - Set whether or not to normalize the local scores.
 
+    include_local_scores (bool)
+            - Set whether or not to also output local_scores for ROC curve generation
+
     Returns:
         Dataframe of automated labels for the audio clips in audio_dir.
+        If include_local_scores = True, it outputs a tuple containing the dataframe of automated labels
+        and a directory containing the local scores of each file as used by the generate ROC curve functions
     """
 
     #try:
     if(isolation_parameters["model"] == 'microfaune'):
-        annotations = generate_automated_labels_microfaune(
+        annotations, local_scores = generate_automated_labels_microfaune(
                         audio_dir=audio_dir,
                         isolation_parameters=isolation_parameters,
                         manual_id=manual_id,
@@ -1049,10 +1073,10 @@ def generate_automated_labels(
             'threshold_const', 'chunk_size']
         for key in keys_to_delete:
             birdnet_parameters.pop(key, None)
-        annotations = generate_automated_labels_birdnet(
+        annotations, local_scores = generate_automated_labels_birdnet(
                         audio_dir, birdnet_parameters)
     elif(isolation_parameters['model'] == 'tweetynet'):
-        annotations = generate_automated_labels_tweetynet(
+        annotations, local_scores = generate_automated_labels_tweetynet(
                         audio_dir=audio_dir,
                         isolation_parameters=isolation_parameters,
                         manual_id=manual_id,
@@ -1065,7 +1089,10 @@ def generate_automated_labels(
     # except:
     #     print("Error. Check your isolation_parameters")
     #     return None
-    return annotations
+    if (include_local_scores) : 
+        return annotations, local_scores
+    else: 
+        return annotations
 
 def kaleidoscope_conversion(df):
     """
@@ -1087,6 +1114,76 @@ def kaleidoscope_conversion(df):
 
     kaleidoscope_df = pd.concat(kaleidoscope_df, axis=1, keys=headers)
     return kaleidoscope_df
+
+
+def add_confidence_to_annotations(clip_df, local_score_array):
+    """
+        Adds confidence of each annotation from a local_score array.
+        Takes the maximum normalized local score value within each
+        annotation as the confidence
+
+        Args:
+            clip_df: (Dataframe)
+                - Dataframe containing the automated annotations of a single
+                clip 
+
+            local_score_array: (Numpy Array)
+                - array of local_scores from predict functions
+
+        Returns:
+            clip_df with an extra column containing the confidence of each annotation
+    """
+    #data prep for processing
+    local_score_array = normalize(local_score_array, 0, 1)
+    clip_df["CONFIDENCE"] = 0
+    confidence_array = []
+
+    for i in range(clip_df.shape[0]):
+        annotation_data = clip_df.iloc[i]
+        # now iterate through the local_score array for each chunk
+        clip_length = annotation_data["CLIP LENGTH"]
+        #seconds_per_index = clip_length/len(local_score_clip)
+        index_per_seconds = len(local_score_array)/clip_length
+        
+        #Get the starting and ending index of that chunk as respective to
+        #the local score array
+        start_time =  annotation_data["OFFSET"]
+        end_time = annotation_data["OFFSET"] + annotation_data["DURATION"]
+        start_index = math.floor(start_time * index_per_seconds)
+        end_index = math.floor((end_time * index_per_seconds))
+        max_index = math.floor((clip_length * index_per_seconds))
+        
+        #Compute the local maximum in this chunk in the local scores
+        max_score = max(local_score_array[start_index: min(end_index, max_index)])
+        confidence_array.append(max_score)
+    clip_df["CONFIDENCE"] = confidence_array
+    return clip_df
+
+def normalize(arr, t_min, t_max):
+    """
+        normalize local_score for better confidence value
+
+        Args:
+            arr: (Numpy Array)
+                - Local Score array.
+
+            t_min: (int)
+                - minimum value to set.
+
+            t_max: (int)
+                - maximum value to set.
+
+        Returns:
+            Numpy array of the normalized local score array.
+        """
+    norm_arr = []
+    diff = t_max - t_min
+    arr_min = min(arr)
+    diff_arr = max(arr) - arr_min
+    for i in arr:
+        temp = (((i - arr_min)*diff)/diff_arr) + t_min
+        norm_arr.append(temp)
+    return norm_arr
 
 # def annotation_combiner(df):
 #    # Initializing the output Pandas dataframe
