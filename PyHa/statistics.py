@@ -19,6 +19,8 @@ def annotation_duration_statistics(df):
         Pandas Dataframe containing count, mean, mode, standard deviation, and
         IQR values based on annotation duration.
     """
+    assert isinstance(df,pd.DataFrame)
+    assert "DURATION" in df.columns
     # Reading in the Duration column of the passed in dataframe as a Python
     # list
     annotation_lengths = df["DURATION"].to_list()
@@ -58,6 +60,16 @@ def clip_general(automated_df, human_df):
         Dataframe with general clip overlap statistics comparing the automated
         and human labeling.
     """
+    # verifying dataframe inputs as well as proper Kaleidoscope formatting
+    assert isinstance(automated_df,pd.DataFrame)
+    assert "MANUAL ID" in automated_df.columns
+    assert "CLIP LENGTH" in automated_df.columns
+    assert "SAMPLE RATE" in automated_df.columns
+    assert isinstance(human_df,pd.DataFrame)
+    assert "MANUAL ID" in human_df.columns
+    assert "CLIP LENGTH" in human_df.columns
+    assert "SAMPLE RATE" in human_df.columns
+
     # This looks at one class across one clip
     clip_class = human_df["MANUAL ID"]
     clip_class = list(dict.fromkeys(clip_class))[0]
@@ -71,7 +83,7 @@ def clip_general(automated_df, human_df):
 
     folder_name = automated_df["FOLDER"].to_list()[0]
     clip_name = automated_df["IN FILE"].to_list()[0]
-    # Placing 1s wherever the au
+    # Placing 1's wherever the automated labels occur in the clip
     for row in automated_df.index:
         minval = int(round(automated_df["OFFSET"][row] * SAMPLE_RATE, 0))
         maxval = int(
@@ -147,7 +159,7 @@ def clip_general(automated_df, human_df):
              'RECALL': recall,
              "F1": f1,
              'Global IoU': IoU}
-
+    ### TODO rework to only use dictionaries, and provide the option to change to a dataframe later
     return pd.DataFrame(entry, index=[0])
 
 
@@ -192,6 +204,17 @@ def automated_labeling_statistics(
         Dataframe of statistics comparing automated labels and human labels for
         multiple clips.
     """
+
+    assert isinstance(automated_df,pd.DataFrame)
+    
+    assert isinstance(manual_df,pd.DataFrame)
+
+    assert isinstance(stats_type,str)
+    stats_type_options = ["IoU","general"]
+    assert stats_type in stats_type_options
+    assert isinstance(threshold,float) 
+    assert threshold > 0 and threshold < 1
+
     # Getting a list of clips
     clips = automated_df["IN FILE"].to_list()
     # Removing duplicates
@@ -244,6 +267,10 @@ def global_dataset_statistics(statistics_df, manual_id = "bird"):
     Returns:
         Dataframe of global statistics for the multiple audio clips' labelling.
     """
+    assert isinstance(statistics_df,pd.DataFrame)
+    assert "TRUE POSITIVE" in statistics_df.columns and "FALSE POSITIVE" in statistics_df.columns
+    assert "FALSE NEGATIVE" in statistics_df.columns and "TRUE NEGATIVE" in statistics_df.columns
+    assert "UNION" in statistics_df.columns  
     tp_sum = statistics_df["TRUE POSITIVE"].sum()
     fp_sum = statistics_df["FALSE POSITIVE"].sum()
     fn_sum = statistics_df["FALSE NEGATIVE"].sum()
@@ -258,6 +285,7 @@ def global_dataset_statistics(statistics_df, manual_id = "bird"):
              'RECALL': round(recall, 6),
              'F1': round(f1, 6),
              'Global IoU': round(IoU, 6)}
+    ## TODO rework as a native python dict
     return pd.DataFrame.from_dict([entry])
 
 # TODO rework this function to implement some linear algebra, right now the
@@ -286,6 +314,14 @@ def clip_IoU(automated_df, manual_df):
               row contains the IoU of each automated annotation with respect to
               a human label.
     """
+    assert isinstance(automated_df,pd.DataFrame)
+    assert "CLIP LENGTH" in automated_df.columns
+    assert "SAMPLE RATE" in automated_df.columns
+    assert "OFFSET" in automated_df.columns
+    assert isinstance(manual_df,pd.DataFrame)
+    assert "CLIP LENGTH" in manual_df.columns
+    assert "SAMPLE RATE" in manual_df.columns
+    assert "OFFSET" in manual_df.columns
 
     automated_df.reset_index(inplace=True, drop=True)
     manual_df.reset_index(inplace=True, drop=True)
@@ -366,7 +402,7 @@ def clip_IoU(automated_df, manual_df):
     return IoU_Matrix
 
 
-def matrix_IoU_Scores(IoU_Matrix, manual_df, threshold):
+def matrix_IoU_Scores(IoU_Matrix, manual_df, threshold = 0.5):
     """
     Function that takes in the IoU Matrix from the clip_IoU function and ouputs
     the number of true positives and false positives, as well as calculating
@@ -390,6 +426,15 @@ def matrix_IoU_Scores(IoU_Matrix, manual_df, threshold):
         Dataframe of clip statistics such as True Positive, False Negative,
         False Positive, Precision, Recall, and F1 values for an audio clip.
     """
+
+    assert isinstance(IoU_Matrix,np.ndarray)
+    assert isinstance(manual_df,pd.DataFrame)
+    assert "MANUAL ID" in manual_df.columns
+    assert "FOLDER" in manual_df.columns
+    assert "IN FILE" in manual_df.columns
+    assert isinstance(threshold,float)
+    assert threshold > 0 and threshold < 1
+
     clip_class = manual_df["MANUAL ID"][0]
     audio_dir = manual_df["FOLDER"][0]
     filename = manual_df["IN FILE"][0]
@@ -434,7 +479,7 @@ def matrix_IoU_Scores(IoU_Matrix, manual_df, threshold):
              'PRECISION': precision,
              'RECALL': recall,
              'F1': f1}
-
+    # TODO change to native python dict
     return pd.DataFrame.from_dict([entry])
 
 
@@ -453,6 +498,16 @@ def clip_catch(automated_df, manual_df):
         Numpy Array of statistics regarding the amount of overlap between the
         manual and automated labels relative to the number of samples.
     """
+
+    assert isinstance(automated_df,pd.DataFrame)
+    assert "CLIP LENGTH" in automated_df.columns
+    assert "SAMPLE RATE" in automated_df.columns
+    assert "OFFSET" in automated_df.columns
+    assert isinstance(manual_df,pd.DataFrame)
+    assert "CLIP LENGTH" in manual_df.columns
+    assert "SAMPLE RATE" in manual_df.columns
+    assert "OFFSET" in manual_df.columns
+
     # resetting the indices to make this function work
     automated_df.reset_index(inplace=True, drop=True)
     manual_df.reset_index(inplace=True, drop=True)
@@ -616,6 +671,11 @@ def global_statistics(statistics_df, manual_id = 'N/A'):
         Recall, and F1 metrics as well
     """
 
+    assert isinstance(statistics_df,pd.DataFrame)
+    assert "TRUE POSITIVE" in statistics_df.columns and "FALSE NEGATIVE" in statistics_df.columns
+    assert "FALSE POSITIVE" in statistics_df.columns
+    assert isinstance(manual_id,str)
+
     #data_class = statistics_df["MANUAL ID"][0]
     # taking the sum of the number of true positives and false positives.
     tp_sum = statistics_df["TRUE POSITIVE"].sum()
@@ -660,6 +720,11 @@ def dataset_Catch(automated_df, manual_df):
         Dataframe of human labels with a column for the catch values of each
         label.
     """
+
+    assert isinstance(automated_df,pd.DataFrame)
+    assert "IN FILE" in automated_df.columns
+    assert isinstance(manual_df,pd.DataFrame)
+
     # Getting a list of clips
     clips = automated_df["IN FILE"].to_list()
     # Removing duplicates
@@ -725,6 +790,12 @@ def clip_statistics(
         Dataframe with clip overlap statistics comparing automated and human 
         labeling for multiple classes.
     """
+
+    assert isinstance(automated_df,pd.DataFrame)
+    assert "MANUAL ID" in automated_df.columns
+    assert isinstance(manual_df,pd.DataFrame)
+    assert "MANUAL ID" in manual_df.columns
+
     # Creating a list of classes from the automated dataframe
     automated_class_list = automated_df["MANUAL ID"].to_list()
     automated_class_list = list(dict.fromkeys(automated_class_list))
@@ -766,6 +837,9 @@ def class_statistics(clip_statistics):
     Returns:
         Dataframe of global efficacy statistics for multiple classes.
     """
+    assert isinstance(clip_statistics,pd.DataFrame)
+    assert "MANUAL ID" in clip_statistics.columns
+
     # Initializing the output dataframe
     class_statistics = pd.DataFrame()
     # creating a list of the unique classes being passed in.

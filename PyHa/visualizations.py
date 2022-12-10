@@ -49,6 +49,15 @@ def spectrogram_graph(
     Returns:
         None
     """
+
+    assert isinstance(clip_name,str)
+    assert isinstance(sample_rate,int)
+    assert isinstance(samples,np.ndarray)
+    assert automated_df is None or isinstance(automated_df,pd.DataFrame)
+    assert premade_annotations_df is None or isinstance(premade_annotations_df,pd.DataFrame)
+    assert isinstance(premade_annotations_label,str)
+    assert isinstance(save_fig,bool)
+
     # Calculating the length of the audio clip
     duration = samples.shape[0] / sample_rate
     time_stamps = np.arange(0, duration, step=1)
@@ -151,9 +160,26 @@ def local_line_graph(
         save_fig (boolean)
             - Whether the clip should be saved in a directory as a png file.
 
+        normalize_local_scores (boolean)
+            - Whether the local scores will be forced to a range where the max local score is 1.
+            All values / max_score
+
     Returns:
         None
     """
+
+    assert isinstance(local_scores,list)
+    assert isinstance(clip_name,str)
+    assert isinstance(sample_rate,int)
+    assert sample_rate > 0
+    assert isinstance(samples,np.ndarray)
+    assert automated_df is None or isinstance(automated_df,pd.DataFrame)
+    assert premade_annotations_df is None or isinstance(premade_annotations_df,pd.DataFrame)
+    assert isinstance(premade_annotations_label,str)
+    assert isinstance(log_scale,bool)
+    assert isinstance(save_fig,bool)
+    assert isinstance(normalize_local_scores,bool)
+    
     # Calculating the length of the audio clip
     duration = samples.shape[0] / sample_rate
     # Calculating the number of local scores outputted by Microfaune
