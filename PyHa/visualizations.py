@@ -179,7 +179,7 @@ def local_line_graph(
     assert isinstance(log_scale,bool)
     assert isinstance(save_fig,bool)
     assert isinstance(normalize_local_scores,bool)
-    
+
     # Calculating the length of the audio clip
     duration = samples.shape[0] / sample_rate
     # Calculating the number of local scores outputted by Microfaune
@@ -304,6 +304,15 @@ def spectrogram_visualization(
     Returns:
         None
     """
+    assert isinstance(clip_path,str)
+    assert weight_path is None or isinstance(weight_path,str)
+    assert premade_annotations_df is None or isinstance(premade_annotations_df,pd.DataFrame)
+    assert isinstance(premade_annotations_label,str)
+    assert automated_df is None or isinstance(automated_df,pd.DataFrame)
+    assert isolation_parameters is None or isinstance(isolation_parameters,dict)
+    assert isinstance(log_scale,bool)
+    assert isinstance(save_fig,bool)
+    assert isinstance(normalize_local_scores,bool)
 
     # Loading in the clip with Microfaune's built-in loading function
     try:
@@ -460,6 +469,17 @@ def binary_visualization(automated_df, human_df, save_fig=False):
     Returns:
         Dataframe with statistics comparing the automated and human labeling.
     """
+
+    assert isinstance(automated_df,pd.DataFrame)
+    assert isinstance(human_df,pd.DataFrame)
+    assert isinstance(save_fig,bool)
+    assert "CLIP LENGTH" in automated_df.columns
+    assert "SAMPLE RATE" in automated_df.columns
+    assert "OFFSET"      in automated_df.columns
+    assert "DURATION"    in human_df.columns
+    assert "DURATION"    in automated_df.columns
+
+
     duration = automated_df["CLIP LENGTH"].to_list()[0]
     SAMPLE_RATE = automated_df["SAMPLE RATE"].to_list()[0]
     # Initializing two arrays that will represent the
@@ -576,6 +596,16 @@ def annotation_duration_histogram(
     Returns:
         Histogram of the length of the annotations.
     """
+    assert isinstance(annotation_df,pd.DataFrame)
+    assert "DURATION" in annotation_df.columns
+    assert isinstance(n_bins,int)
+    assert n_bins > 0 and n_bins <= annotation_df.shape[0]
+    assert min_length is None or isinstance(min_length,float) or isinstance(min_length,int)
+    assert max_length is None or isinstance(max_length,float) or isinstance(max_length,int)
+    assert isinstance(save_fig,bool)
+    assert isinstance(title,str)
+    assert isinstance(filename,str)
+
     # Create the initial histogram
     duration = annotation_df["DURATION"].to_list()
     fig, ax = plt.subplots()
