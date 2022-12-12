@@ -92,18 +92,35 @@ def spectrogram_graph(
     # if automated_df is not None:
     if not automated_df.empty:
         ndx = 0
+        label_list = []
         for row in automated_df.index:
+            #Check if new label needs to be made for this group
+            annotation = premade_annotations_df["MANUAL ID"][row]
+            if(annotation not in label_list):
+                ndx=0
+                label_list.append(annotation)
+            else:
+                ndx=1
+
             minval = automated_df["OFFSET"][row]
             maxval = automated_df["OFFSET"][row] + \
                 automated_df["DURATION"][row]
             axs.axvspan(xmin=minval, xmax=maxval, facecolor="yellow",
-                           alpha=0.4, label="_" * ndx + "Automated Labels")
-            ndx += 1
+                           alpha=0.4, label="_" * ndx + annotation)
 
     # Adding in the optional premade annotations from a Pandas DataFrame
     if not premade_annotations_df.empty:
         ndx = 0
+        label_list = []
         for row in premade_annotations_df.index:
+            #Check if new label needs to be made for this group
+            annotation = premade_annotations_df["MANUAL ID"][row]
+            if(annotation not in label_list):
+                ndx=0
+                label_list.append(annotation)
+            else:
+                ndx=1
+
             minval = premade_annotations_df["OFFSET"][row]
             maxval = premade_annotations_df["OFFSET"][row] + \
                 premade_annotations_df["DURATION"][row]
@@ -114,8 +131,7 @@ def spectrogram_graph(
                 alpha=0.4,
                 label="_" *
                 ndx +
-                premade_annotations_label)
-            ndx += 1
+                annotation)
     axs.legend()
 
     # save graph
