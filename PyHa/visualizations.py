@@ -89,35 +89,47 @@ def spectrogram_graph(
     axs.set_ylim(0, 22050)
     axs.grid(which='major', linestyle='-')
 
+    colors = ['b','g','r','c','m','y']
+    clen = len(colors)
     # if automated_df is not None:
     if not automated_df.empty:
         ndx = 0
+        color = 0
+        label_colors = {}
         label_list = []
         for row in automated_df.index:
             #Check if new label needs to be made for this group
+            #If so, make new label and assign new color to label
             annotation = premade_annotations_df["MANUAL ID"][row]
             if(annotation not in label_list):
                 ndx=0
+                color+=1
                 label_list.append(annotation)
+                label_colors.update({annotation : colors[color%clen]})
             else:
                 ndx=1
 
             minval = automated_df["OFFSET"][row]
             maxval = automated_df["OFFSET"][row] + \
                 automated_df["DURATION"][row]
-            axs.axvspan(xmin=minval, xmax=maxval, facecolor="yellow",
+            axs.axvspan(xmin=minval, xmax=maxval, facecolor=label_colors[annotation],
                            alpha=0.4, label="_" * ndx + annotation)
 
     # Adding in the optional premade annotations from a Pandas DataFrame
     if not premade_annotations_df.empty:
         ndx = 0
+        color = 0
+        label_colors = {}
         label_list = []
         for row in premade_annotations_df.index:
             #Check if new label needs to be made for this group
+            #If so, make new label and assign new color to label
             annotation = premade_annotations_df["MANUAL ID"][row]
             if(annotation not in label_list):
                 ndx=0
+                color+=1
                 label_list.append(annotation)
+                label_colors.update({annotation : colors[color%clen]})
             else:
                 ndx=1
 
@@ -127,7 +139,7 @@ def spectrogram_graph(
             axs.axvspan(
                 xmin=minval,
                 xmax=maxval,
-                facecolor="red",
+                facecolor=label_colors[annotation],
                 alpha=0.4,
                 label="_" *
                 ndx +
