@@ -16,7 +16,7 @@ def build_isolation_parameters_microfaune(
         technique,
         threshold_type,
         threshold_const,
-        threshold_min=0,
+        threshold_min=0.0,
         window_size=1.0,
         chunk_size=2.0):
     """
@@ -55,6 +55,23 @@ def build_isolation_parameters_microfaune(
             - Python dictionary that controls how to go about isolating
               automated labels from audio.
     """
+    technique_options = ["steinberg", "simple", "stack", "chunk"]
+    assert isinstance(technique,str)
+    assert technique in technique_options
+    threshold_options = ["mean", "median", "standard deviation", "pure"]
+    assert isinstance(threshold_type,str)
+    assert threshold in threshold_options
+    assert isinstance(threshold_const,float) or isinstance(threshold_const,int)
+    if threshold_type == "pure":
+        assert threshold_const > 0 and threshold_const < 1
+    assert isinstance(threshold_min,float)
+    assert threshold_min > 0 and threshold_min < 1
+    assert isinstance(window_size,int) or isinstance(window_size,float)
+    assert window_size > 0
+    assert isinstance(chunk_size,int) or isinstance(chunk_size,float)
+    assert chunk_size > 0
+    
+
     isolation_parameters = {
         "technique": technique,
         "threshold_type": threshold_type,
@@ -113,6 +130,19 @@ def isolate(
         Dataframe of automated labels for the audio clip based on passed in
         isolation technique.
     """
+
+    assert isinstance(local_scores,np.ndarray)
+    assert isinstance(SIGNAL,np.ndarray)
+    assert isinstance(SAMPLE_RATE,int)
+    assert SAMPLE_RATE > 0
+    assert isinstance(audio_dir,str)
+    assert isinstance(filename,str)
+    assert isinstance(isolation_parameters,dict)
+    assert isinstance(manual_id,str)
+    assert isinstance(normalize_local_scores,bool)
+    assert "technique" in dict.fromkeys(isolation_parameters)
+    potential_isolation_techniques = {"simple","steinberg","stack","chunk"}
+    assert isolation_parameters["technique"] in potential_isolation_techniques
 
     # normalize the local scores so that the max value is 1.
     #if normalize_local_scores:
@@ -187,6 +217,13 @@ def threshold(local_scores, isolation_parameters):
             - threshold at which the local scores in the local score array of
               an audio clip will be viewed as a positive ID.
     """
+
+    assert isinstance(local_scores,np.ndarray)
+    assert isinstance(isolation_parameters,dict)
+    potential_threshold_types = {"median","mean","standard deviation","threshold_const"}
+    assert isolation_parameters["threshold_type"] in potential_threshold_types
+
+
     if isolation_parameters["threshold_type"] == "median":
         thresh = np.median(local_scores) \
             * isolation_parameters["threshold_const"]
@@ -258,6 +295,16 @@ def steinberg_isolate(
     Returns:
         Pandas Dataframe of automated labels for the audio clip.
     """
+
+    assert isinstance(local_scores,np.ndarray)
+    assert isinstance(SIGNAL,np.ndarray)
+    assert isinstance(SAMPLE_RATE,int)
+    assert SAMPLE_RATE > 0
+    assert isinstance(audio_dir,str)
+    assert isinstance(filename,str)
+    assert isinstance(isolation_parameters,dict)
+    assert "window_size" in dict.fromkeys(isolation_parameters)
+
     # calculate original duration
     old_duration = len(SIGNAL) / SAMPLE_RATE
     # create entry for audio clip
@@ -382,10 +429,22 @@ def simple_isolate(
     Returns:
         Pandas Dataframe of automated labels for the audio clip.
     """
+
+    assert isinstance(local_scores,np.ndarray)
+    assert isinstance(SIGNAL,np.ndarray)
+    assert isinstance(SAMPLE_RATE,int)
+    assert SAMPLE_RATE > 0
+    assert isinstance(audio_dir,str)
+    assert isinstance(filename,str)
+    assert isinstance(isolation_parameters,dict)
+    assert isinstance(manual_id,str)
+
     # Calculating threshold that defines the creation of the automated labels
     # for an audio clip
+    threshold_min = 0
     thresh = threshold(local_scores, isolation_parameters)
-
+    if "threshold_min" in dict.fromkeys(isolation_parameters):
+        threshold_min = isolation_parameters["threshold_min"]
     # calculate original duration
     old_duration = len(SIGNAL) / SAMPLE_RATE
 
@@ -413,7 +472,7 @@ def simple_isolate(
         # Start of a new sequence.
         if (current_score >= thresh and
                 annotation_start == 0 and
-                current_score >= isolation_parameters["threshold_min"]):
+                current_score >= threshold_min):
             # signal a start of a new sequence.
             annotation_start = 1
             call_start = float(ndx * time_per_score)
@@ -487,9 +546,21 @@ def stack_isolate(
     Returns:
         Pandas Dataframe of automated labels for the audio clip.
     """
+
+    assert isinstance(local_scores,np.ndarray)
+    assert isinstance(SIGNAL,np.ndarray)
+    assert isinstance(SAMPLE_RATE,int)
+    assert SAMPLE_RATE > 0
+    assert isinstance(audio_dir,str)
+    assert isinstance(filename,str)
+    assert isinstance(isolation_parameters,dict)
+    assert isinstance(manual_id,str)
+
     # configuring the threshold based on isolation parameters
     thresh = threshold(local_scores, isolation_parameters)
-
+    threshold_min = 0
+    if "threshold_min" in dict.fromkeys(isolation_parameters):
+        threshold_min = isolation_parameters["threshold_min"]
     # calculate original duration
     old_duration = len(SIGNAL) / SAMPLE_RATE
 
@@ -528,7 +599,7 @@ def stack_isolate(
             entry['MANUAL ID'].append(manual_id)
         # pushing onto the stack whenever a sample is above the threshold
         if (local_scores[ndx] >= thresh and
-                local_scores[ndx] >= isolation_parameters["threshold_min"]):
+                local_scores[ndx] >= threshold_min):
             # in case this is the start of a new annotation
             if stack_counter == 0:
                 call_start = float(ndx * time_per_score)
@@ -619,9 +690,21 @@ def chunk_isolate(
     Returns:
         Pandas Dataframe of automated labels for the audio clip.
     """
+
+    assert isinstance(local_scores,np.ndarray)
+    assert isinstance(SIGNAL,np.ndarray)
+    assert isinstance(SAMPLE_RATE,int)
+    assert SAMPLE_RATE > 0
+    assert isinstance(audio_dir,str)
+    assert isinstance(filename,str)
+    assert isinstance(isolation_parameters,dict)
+    assert isinstance(manual_id,str)
+
     # configuring the threshold based on isolation parameters
     thresh = threshold(local_scores, isolation_parameters)
-
+    threshold_min = 0
+    if "threshold_min" in dict.fromkeys(isolation_parameters):
+        threshold_min = isolation_parameters["threshold_min"]
     # calculate original duration
     old_duration = len(SIGNAL) / SAMPLE_RATE
 
@@ -654,7 +737,7 @@ def chunk_isolate(
         # comparing the largest local score value to the threshold.
         # the case for if we label the chunk as an annotation
         if max(chunk) >= thresh and max(
-                chunk) >= isolation_parameters["threshold_min"]:
+                chunk) >= threshold_min:
             # Creating the time stamps for the annotation.
             # Requires converting from local score index to time in seconds.
             annotation_start = chunk_start / scores_per_second
@@ -730,6 +813,7 @@ def generate_automated_labels_birdnet(audio_dir, isolation_parameters):
     Returns:
         Dataframe of automated labels for the audio clip(s) in audio_dir.
     """
+
     annotations = analyze(audio_path=audio_dir, **isolation_parameters)
     return annotations
 
@@ -767,11 +851,15 @@ def generate_automated_labels_microfaune(
         Dataframe of automated labels for the audio clips in audio_dir.
     """
 
-    # init detector
-    # Use Default Microfaune Detector
-    # TODO
-    # Expand to neural networks beyond just microfaune
-    #Add flag to work for creating tweetynet model.
+
+    assert isinstance(audio_dir,str)
+    assert isinstance(isolation_parameters,dict)
+    assert isinstance(manual_id,str)
+    assert weight_path is None or isinstance(weight_path,str)
+    assert isinstance(normalize_local_scores,bool)
+    assert isinstance(normalized_sample_rate,int)
+    assert normalized_sample_rate > 0
+    
     if weight_path is None:
         detector = RNNDetector()
     # Use Custom weights for Microfaune Detector
@@ -893,6 +981,14 @@ def generate_automated_labels_tweetynet(
         Dataframe of automated labels for the audio clips in audio_dir.
     """
 
+    assert isinstance(audio_dir,str)
+    assert isinstance(isolation_parameters,dict)
+    assert isinstance(manual_id,str)
+    assert isinstance(weight_path,str) or weight_path is None
+    assert isinstance(normalized_sample_rate,int)
+    assert normalized_sample_rate > 0
+    assert isinstance(normalize_local_scores,bool)
+
     # init detector
     device = torch.device('cpu')
     detector = TweetyNetModel(2, (1, 86, 86), 86, device)
@@ -1013,6 +1109,14 @@ def generate_automated_labels(
         Dataframe of automated labels for the audio clips in audio_dir.
     """
 
+    assert isinstance(audio_dir,str)
+    assert isinstance(isolation_parameters,dict)
+    assert isinstance(manual_id,str)
+    assert weight_path is None or isinstance(weight_path,str)
+    assert isinstance(normalized_sample_rate,int)
+    assert normalized_sample_rate > 0
+    assert isinstance(normalize_local_scores,bool)
+
     #try:
     if(isolation_parameters["model"] == 'microfaune'):
         annotations = generate_automated_labels_microfaune(
@@ -1061,6 +1165,12 @@ def kaleidoscope_conversion(df):
     Returns:
         Pandas Dataframe compatible with Kaleidoscope.
     """
+
+    assert isinstance(df,pd.DataFrame)
+    assert "FOLDER" in df.columns and "IN FILE" in df.columns 
+    assert "OFFSET" in df.columns and "DURATION" in df.columns
+    assert "CHANNEL" in df.columns and "MANUAL ID" in df.columns
+
     kaleidoscope_df = [df["FOLDER"].str.rstrip("/\\"), df["IN FILE"], df["CHANNEL"],
                        df["OFFSET"], df["DURATION"], df["MANUAL ID"]]
     headers = ["FOLDER", "IN FILE", "CHANNEL",
@@ -1068,33 +1178,3 @@ def kaleidoscope_conversion(df):
 
     kaleidoscope_df = pd.concat(kaleidoscope_df, axis=1, keys=headers)
     return kaleidoscope_df
-
-# def annotation_combiner(df):
-#    # Initializing the output Pandas dataframe
-#    combined_annotation_df = pd.DataFrame()
-    # looping through each annotation in the passed in dataframe
-#    for annotation in df.index:
-    # the case for the first iteration.
-#        if combined_annotation_df.empty:
-#            combined_annotation_df = df.loc[annotation,:]
-#        else:
-#            combined_annotation_df = combined_annotation_df.append()
-# keeps track of how many annotations have been added to the current
-# annotation.
-#        annotation_chain_count = 0
-# Boolean to keep track whether or not an annotation should be combined with
-# the current annotation
-#        chain_break = False
-    # keeping track of where the current annotation starts
-#        cur_offset = df.loc[annotation,"OFFSET"]
-#        cur_duration = df.loc[annotation,"DURATION"]
-#        start_offset = cur_offset+cur_duration
-#        while chain_break == False:
-#            annotation_chain_count = annotation_chain_count + 1
-#            next_offset = df.loc[annotation+annotation_chain_count,"OFFSET"]
-#            next_duration df.loc[annotation+annotation_chain_count,"DURATION"]
-    # case in which an annotation overlaps
-#            if next_offset <= start_offset:
-
-
-#        annotation = annotation + annotation_chain_count - 1

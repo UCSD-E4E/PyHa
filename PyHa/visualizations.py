@@ -265,7 +265,7 @@ def spectrogram_visualization(
         weight_path=None,
         premade_annotations_df=None,
         premade_annotations_label="Human Labels",
-        automated_df=None,
+        build_automated_df=None,
         isolation_parameters=None,
         log_scale=False,
         save_fig=False,
@@ -290,7 +290,7 @@ def spectrogram_visualization(
             - String that serves as the descriptor for the premade_annotations
               dataframe.
 
-        automated_df (Dataframe)
+        build_automated_df (bool)
             - Whether the audio clip should be labelled by the isolate function
               and subsequently plotted.
 
@@ -308,7 +308,7 @@ def spectrogram_visualization(
     assert weight_path is None or isinstance(weight_path,str)
     assert premade_annotations_df is None or isinstance(premade_annotations_df,pd.DataFrame)
     assert isinstance(premade_annotations_label,str)
-    assert automated_df is None or isinstance(automated_df,pd.DataFrame)
+    assert build_automated_df is None or isinstance(build_automated_df,bool)
     assert isolation_parameters is None or isinstance(isolation_parameters,dict)
     assert isinstance(log_scale,bool)
     assert isinstance(save_fig,bool)
@@ -383,10 +383,10 @@ def spectrogram_visualization(
     # In the case where the user wants to look at automated bird labels
     if premade_annotations_df is None:
             premade_annotations_df = pd.DataFrame()
-
+    automated_df = None
     # Generate labels based on the model
-    if (automated_df is not None):
-        if (isinstance(automated_df, bool) and not automated_df):
+    if (build_automated_df is not None):
+        if (isinstance(build_automated_df, bool) and not build_automated_df):
             automated_df = pd.DataFrame()
             pass
         # Check if Microfaune or TweetyNET was used to generate local scores
@@ -599,7 +599,7 @@ def annotation_duration_histogram(
     assert isinstance(annotation_df,pd.DataFrame)
     assert "DURATION" in annotation_df.columns
     assert isinstance(n_bins,int)
-    assert n_bins > 0 and n_bins <= annotation_df.shape[0]
+    assert n_bins > 0
     assert min_length is None or isinstance(min_length,float) or isinstance(min_length,int)
     assert max_length is None or isinstance(max_length,float) or isinstance(max_length,int)
     assert isinstance(save_fig,bool)
