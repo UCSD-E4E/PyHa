@@ -28,7 +28,7 @@ def checkVerbose(
         print(errorMessage)
 
 def rand_warm_col():
-        return (0.65+ np.random.rand()/3, np.random.rand(), np.random.rand()/3)
+        return (0.5+ np.random.rand()/2, np.random.rand(), np.random.rand()/3)
 
 def spectrogram_graph(
         clip_name,
