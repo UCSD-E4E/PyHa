@@ -11,6 +11,8 @@ import numpy as np
 import seaborn as sns
 from .IsoAutio import *
 
+label_colors = {}
+
 def checkVerbose(
     errorMessage, 
     verbose):
@@ -37,8 +39,7 @@ def spectrogram_graph(
         automated_df=None,
         premade_annotations_df=None,
         premade_annotations_label="Human Labels",
-        save_fig=False,
-        label_colors={}):
+        save_fig=False,):
     """
     Function that produces graphs with the spectrogram of an audio
     clip. Now integrated with Pandas so you can visualize human and
