@@ -89,13 +89,14 @@ def spectrogram_graph(
     axs.set_ylim(0, 22050)
     axs.grid(which='major', linestyle='-')
 
-    colors = ['b','g','r','c','m','y']
+    # num_colors = automated_df["MANUAL ID"].unique()
+    colors = ['xkcd:bright red','xkcd:bright orange','xkcd:yellow','xkcd:bright green','xkcd:crimson','xkcd:goldenrod','xkcd:pumpkin','xkcd:green']
     clen = len(colors)
+    label_colors = {}
     # if automated_df is not None:
     if not automated_df.empty:
         ndx = 0
         color = 0
-        label_colors = {}
         label_list = []
         for row in automated_df.index:
             #Check if new label needs to be made for this group
@@ -103,23 +104,26 @@ def spectrogram_graph(
             annotation = premade_annotations_df["MANUAL ID"][row]
             if(annotation not in label_list):
                 ndx=0
-                color+=1
                 label_list.append(annotation)
-                label_colors.update({annotation : colors[color%clen]})
+                if annotation not in label_colors.keys():
+                    label_colors.update({annotation : colors[color%clen]})
+                    color+=1
             else:
                 ndx=1
 
             minval = automated_df["OFFSET"][row]
             maxval = automated_df["OFFSET"][row] + \
                 automated_df["DURATION"][row]
-            axs.axvspan(xmin=minval, xmax=maxval, facecolor=label_colors[annotation],
-                           alpha=0.4, label="_" * ndx + annotation)
+            axs.axvspan(xmin=minval, 
+                        xmax=maxval, 
+                        facecolor=label_colors[annotation],
+                        alpha=0.4, 
+                        label="_" * ndx + annotation)
 
     # Adding in the optional premade annotations from a Pandas DataFrame
     if not premade_annotations_df.empty:
         ndx = 0
         color = 0
-        label_colors = {}
         label_list = []
         for row in premade_annotations_df.index:
             #Check if new label needs to be made for this group
@@ -127,9 +131,10 @@ def spectrogram_graph(
             annotation = premade_annotations_df["MANUAL ID"][row]
             if(annotation not in label_list):
                 ndx=0
-                color+=1
                 label_list.append(annotation)
-                label_colors.update({annotation : colors[color%clen]})
+                if annotation not in label_colors.keys():
+                    label_colors.update({annotation : colors[color%clen]})
+                    color+=1
             else:
                 ndx=1
 
