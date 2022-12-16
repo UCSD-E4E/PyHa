@@ -1,5 +1,8 @@
 from .microfaune_package.microfaune.detection import RNNDetector
 from .microfaune_package.microfaune import audio
+from .tweetynet_package.tweetynet.TweetyNetModel import TweetyNetModel
+from .tweetynet_package.tweetynet.Load_data_functions import compute_features
+import torch
 import matplotlib.pyplot as plt
 import pandas as pd
 import scipy.signal as scipy_signal
@@ -46,6 +49,15 @@ def spectrogram_graph(
     Returns:
         None
     """
+
+    assert isinstance(clip_name,str)
+    assert isinstance(sample_rate,int)
+    assert isinstance(samples,np.ndarray)
+    assert automated_df is None or isinstance(automated_df,pd.DataFrame)
+    assert premade_annotations_df is None or isinstance(premade_annotations_df,pd.DataFrame)
+    assert isinstance(premade_annotations_label,str)
+    assert isinstance(save_fig,bool)
+
     # Calculating the length of the audio clip
     duration = samples.shape[0] / sample_rate
     time_stamps = np.arange(0, duration, step=1)
@@ -148,9 +160,26 @@ def local_line_graph(
         save_fig (boolean)
             - Whether the clip should be saved in a directory as a png file.
 
+        normalize_local_scores (boolean)
+            - Whether the local scores will be forced to a range where the max local score is 1.
+            All values / max_score
+
     Returns:
         None
     """
+
+    assert isinstance(local_scores,list)
+    assert isinstance(clip_name,str)
+    assert isinstance(sample_rate,int)
+    assert sample_rate > 0
+    assert isinstance(samples,np.ndarray)
+    assert automated_df is None or isinstance(automated_df,pd.DataFrame)
+    assert premade_annotations_df is None or isinstance(premade_annotations_df,pd.DataFrame)
+    assert isinstance(premade_annotations_label,str)
+    assert isinstance(log_scale,bool)
+    assert isinstance(save_fig,bool)
+    assert isinstance(normalize_local_scores,bool)
+
     # Calculating the length of the audio clip
     duration = samples.shape[0] / sample_rate
     # Calculating the number of local scores outputted by Microfaune
@@ -175,6 +204,7 @@ def local_line_graph(
     fig.suptitle("Spectrogram and Local Scores for " + clip_name)
     # score line plot - top plot
     axs[0].plot(time_stamps, local_scores)
+    #Look into this and their relation.
     axs[0].set_xlim(0, duration)
     if log_scale:
         axs[0].set_yscale('log')
@@ -230,13 +260,12 @@ def local_line_graph(
 # TODO rework function so that instead of generating the automated labels, it
 # takes the automated_df as input same as it does with the manual dataframe.
 
-
 def spectrogram_visualization(
         clip_path,
         weight_path=None,
         premade_annotations_df=None,
         premade_annotations_label="Human Labels",
-        automated_df=None,
+        build_automated_df=None,
         isolation_parameters=None,
         log_scale=False,
         save_fig=False,
@@ -261,7 +290,7 @@ def spectrogram_visualization(
             - String that serves as the descriptor for the premade_annotations
               dataframe.
 
-        automated_df (Dataframe)
+        build_automated_df (bool)
             - Whether the audio clip should be labelled by the isolate function
               and subsequently plotted.
 
@@ -275,6 +304,15 @@ def spectrogram_visualization(
     Returns:
         None
     """
+    assert isinstance(clip_path,str)
+    assert weight_path is None or isinstance(weight_path,str)
+    assert premade_annotations_df is None or isinstance(premade_annotations_df,pd.DataFrame)
+    assert isinstance(premade_annotations_label,str)
+    assert build_automated_df is None or isinstance(build_automated_df,bool)
+    assert isolation_parameters is None or isinstance(isolation_parameters,dict)
+    assert isinstance(log_scale,bool)
+    assert isinstance(save_fig,bool)
+    assert isinstance(normalize_local_scores,bool)
 
     # Loading in the clip with Microfaune's built-in loading function
     try:
@@ -325,25 +363,54 @@ def spectrogram_visualization(
                     "Skipping " +
                     clip_path +
                     " due to error in Microfaune Prediction")
+        elif (isolation_parameters["model"] == 'tweetynet'):
+            # Initializing the detector to baseline or with retrained weights
+            device = torch.device('cpu')
+            detector = TweetyNetModel(2, (1, 86, 86), 86, device, binary = False)
+
+            try:
+                #need a function to convert a signal into a spectrogram and then window it
+                tweetynet_features = compute_features([SIGNAL])
+                predictions, local_score = detector.predict(tweetynet_features, model_weights=weight_path)
+                local_scores = local_score[0].tolist()
+            except BaseException:
+                print(
+                    "Skipping " +
+                    clip_path +
+                    " due to error in TweetyNet Prediction")
+                return None
 
     # In the case where the user wants to look at automated bird labels
     if premade_annotations_df is None:
             premade_annotations_df = pd.DataFrame()
-
+    automated_df = None
     # Generate labels based on the model
-    if (automated_df is not None):
-        if (isinstance(automated_df, bool) and not automated_df):
+    if (build_automated_df is not None):
+        if (isinstance(build_automated_df, bool) and not build_automated_df):
             automated_df = pd.DataFrame()
             pass
-        # For Microfaune
+        # Check if Microfaune or TweetyNET was used to generate local scores
         if (local_scores is not None):
-            automated_df = isolate(
-                    local_score[0],
-                    SIGNAL,
-                    SAMPLE_RATE,
-                    audio_dir = "",
-                    filename = "",
-                    isolation_parameters=isolation_parameters)
+            # TweetyNET techniques and output
+            if (isolation_parameters["model"] == "tweetynet"
+                and isolation_parameters["tweety_output"]):
+                automated_df = predictions_to_kaleidoscope(
+                                predictions, 
+                                SIGNAL, 
+                                "Doesn't", 
+                                "Doesn't", 
+                                "Matter", 
+                                SAMPLE_RATE)
+            # Isolation techniques
+            else: 
+                automated_df = isolate(
+                        local_score[0],
+                        SIGNAL,
+                        SAMPLE_RATE,
+                        audio_dir = "",
+                        filename = "",
+                        isolation_parameters=isolation_parameters)
+        # Catch, generate the labels for other models
         else:
             automated_df = generate_automated_labels(
                 audio_dir=clip_path,
@@ -381,7 +448,6 @@ def spectrogram_visualization(
             premade_annotations_label=premade_annotations_label,
             save_fig=save_fig)
 
-
 def binary_visualization(automated_df, human_df, save_fig=False):
     """
     Function to visualize automated and human annotation scores across an audio
@@ -403,6 +469,17 @@ def binary_visualization(automated_df, human_df, save_fig=False):
     Returns:
         Dataframe with statistics comparing the automated and human labeling.
     """
+
+    assert isinstance(automated_df,pd.DataFrame)
+    assert isinstance(human_df,pd.DataFrame)
+    assert isinstance(save_fig,bool)
+    assert "CLIP LENGTH" in automated_df.columns
+    assert "SAMPLE RATE" in automated_df.columns
+    assert "OFFSET"      in automated_df.columns
+    assert "DURATION"    in human_df.columns
+    assert "DURATION"    in automated_df.columns
+
+
     duration = automated_df["CLIP LENGTH"].to_list()[0]
     SAMPLE_RATE = automated_df["SAMPLE RATE"].to_list()[0]
     # Initializing two arrays that will represent the
@@ -519,13 +596,25 @@ def annotation_duration_histogram(
     Returns:
         Histogram of the length of the annotations.
     """
+    assert isinstance(annotation_df,pd.DataFrame)
+    assert "DURATION" in annotation_df.columns
+    assert isinstance(n_bins,int)
+    assert n_bins > 0
+    assert min_length is None or isinstance(min_length,float) or isinstance(min_length,int)
+    assert max_length is None or isinstance(max_length,float) or isinstance(max_length,int)
+    assert isinstance(save_fig,bool)
+    assert isinstance(title,str)
+    assert isinstance(filename,str)
+
     # Create the initial histogram
     duration = annotation_df["DURATION"].to_list()
+    fig, ax = plt.subplots()
     sns_hist = sns.histplot(
         data=duration,
         bins=n_bins,
         line_kws=dict(edgecolor="k", linewidth=2),
-        stat="count")
+        stat="count",
+        ax=ax)
 
     # Modify the length of the x-axis as specified
     if max_length is not None and min_length is not None:
