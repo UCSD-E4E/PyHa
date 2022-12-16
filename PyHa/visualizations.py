@@ -27,6 +27,9 @@ def checkVerbose(
     if(verbose):
         print(errorMessage)
 
+def rand_warm_col():
+        return (0.65+ np.random.rand()/3, np.random.rand(), np.random.rand()/3)
+
 def spectrogram_graph(
         clip_name,
         sample_rate,
@@ -34,8 +37,8 @@ def spectrogram_graph(
         automated_df=None,
         premade_annotations_df=None,
         premade_annotations_label="Human Labels",
-        save_fig=False
-        label_colors = {}):
+        save_fig=False,
+        label_colors={}):
     """
     Function that produces graphs with the spectrogram of an audio
     clip. Now integrated with Pandas so you can visualize human and
@@ -107,7 +110,8 @@ def spectrogram_graph(
                 ndx=0
                 label_list.append(annotation)
                 if annotation not in label_colors.keys():
-                    label_colors.update({annotation : colors[color%clen]})
+                    if color<clen: label_colors.update({annotation : colors[color]} )
+                    else: label_colors.update({annotation : rand_warm_col()})
                     color+=1
             else:
                 ndx=1
@@ -134,7 +138,8 @@ def spectrogram_graph(
                 ndx=0
                 label_list.append(annotation)
                 if annotation not in label_colors.keys():
-                    label_colors.update({annotation : colors[color%clen]})
+                    if color<clen: label_colors.update({annotation : colors[color]} )
+                    else: label_colors.update({annotation : rand_warm_col()})
                     color+=1
             else:
                 ndx=1
