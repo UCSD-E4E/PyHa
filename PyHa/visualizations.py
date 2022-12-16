@@ -34,7 +34,8 @@ def spectrogram_graph(
         automated_df=None,
         premade_annotations_df=None,
         premade_annotations_label="Human Labels",
-        save_fig=False):
+        save_fig=False
+        label_colors = {}):
     """
     Function that produces graphs with the spectrogram of an audio
     clip. Now integrated with Pandas so you can visualize human and
@@ -92,7 +93,7 @@ def spectrogram_graph(
     # num_colors = automated_df["MANUAL ID"].unique()
     colors = ['xkcd:bright red','xkcd:bright orange','xkcd:yellow','xkcd:bright green','xkcd:crimson','xkcd:goldenrod','xkcd:pumpkin','xkcd:green']
     clen = len(colors)
-    label_colors = {}
+
     # if automated_df is not None:
     if not automated_df.empty:
         ndx = 0
