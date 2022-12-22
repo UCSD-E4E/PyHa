@@ -5,13 +5,12 @@ from .tweetynet_package.tweetynet.Load_data_functions import compute_features
 import torch
 import librosa
 import matplotlib.pyplot as plt
+from matplotlib.cm import get_cmap
 import pandas as pd
 import scipy.signal as scipy_signal
 import numpy as np
 import seaborn as sns
 from .IsoAutio import *
-
-label_colors = {}
 
 def checkVerbose(
     errorMessage, 
@@ -29,323 +28,21 @@ def checkVerbose(
     if(verbose):
         print(errorMessage)
 
-def rand_warm_col():
-        return (0.5+ np.random.rand()/2, np.random.rand(), np.random.rand()/3)
+def get_clip_name(clip_path):
+    clip_path = clip_path.rstrip('/')
 
-def spectrogram_graph(
-        clip_name,
-        sample_rate,
-        samples,
-        automated_df=None,
-        premade_annotations_df=None,
-        premade_annotations_label="Human Labels",
-        save_fig=False,):
-    """
-    Function that produces graphs with the spectrogram of an audio
-    clip. Now integrated with Pandas so you can visualize human and
-    automated annotations.
+    last_sep=clip_path.rfind('/')+1
+    if last_sep==-1:
+        return clip_path
 
-    Args:
-        clip_name (string)
-            - Directory of the clip.
+    return clip_path[last_sep:]
 
-        sample_rate (int)
-            - Sample rate of the audio clip, usually 44100.
-
-        samples (list of ints)
-            - Each of the samples from the audio clip.
-
-        automated_df (Dataframe)
-            - Dataframe of automated labelling of the clip.
-
-        premade_annotations_df (Dataframe)
-            - Dataframe labels that have been made outside of the scope of this
-              function.
-
-        premade_annotations_label (string)
-            - Descriptor of premade_annotations_df
-
-        save_fig (boolean)
-            - Whether the clip should be saved in a directory as a png file.
-
-    Returns:
-        None
-    """
-    # Calculating the length of the audio clip
-    duration = samples.shape[0] / sample_rate
-    time_stamps = np.arange(0, duration, step=1)
-
-    # general graph features
-    fig, axs = plt.subplots(1)
-    fig.set_figwidth(22)
-    fig.set_figheight(5)
-    fig.suptitle("Spectrogram for " + clip_name)
-
-    # spectrogram plot
-    # Will require the input of a pandas dataframe
-    Pxx, freqs, bins, im = axs.specgram(
-                                            samples,
-                                            Fs=sample_rate,
-                                            NFFT=4096,
-                                            noverlap=2048,
-                                            window=np.hanning(4096),
-                                            cmap="ocean")
-    axs.set_xlim(0, duration)
-    axs.set_ylim(0, 22050)
-    axs.grid(which='major', linestyle='-')
-
-    # num_colors = automated_df["MANUAL ID"].unique()
-    colors = ['xkcd:bright red','xkcd:bright orange','xkcd:yellow','xkcd:bright green','xkcd:crimson','xkcd:goldenrod','xkcd:pumpkin','xkcd:green']
-    clen = len(colors)
-
-    # if automated_df is not None:
-    if not automated_df.empty:
-        ndx = 0
-        color = 0
-        label_list = []
-        for row in automated_df.index:
-            #Check if new label needs to be made for this group
-            #If so, make new label and assign new color to label
-            annotation = premade_annotations_df["MANUAL ID"][row]
-            if(annotation not in label_list):
-                ndx=0
-                label_list.append(annotation)
-                if annotation not in label_colors.keys():
-                    if color<clen: label_colors.update({annotation : colors[color]} )
-                    else: label_colors.update({annotation : rand_warm_col()})
-                    color+=1
-            else:
-                ndx=1
-
-            minval = automated_df["OFFSET"][row]
-            maxval = automated_df["OFFSET"][row] + \
-                automated_df["DURATION"][row]
-            axs.axvspan(xmin=minval, 
-                        xmax=maxval, 
-                        facecolor=label_colors[annotation],
-                        alpha=0.4, 
-                        label="_" * ndx + annotation)
-
-    # Adding in the optional premade annotations from a Pandas DataFrame
-    if not premade_annotations_df.empty:
-        ndx = 0
-        color = 0
-        label_list = []
-        for row in premade_annotations_df.index:
-            #Check if new label needs to be made for this group
-            #If so, make new label and assign new color to label
-            annotation = premade_annotations_df["MANUAL ID"][row]
-            if(annotation not in label_list):
-                ndx=0
-                label_list.append(annotation)
-                if annotation not in label_colors.keys():
-                    if color<clen: label_colors.update({annotation : colors[color]} )
-                    else: label_colors.update({annotation : rand_warm_col()})
-                    color+=1
-            else:
-                ndx=1
-
-            minval = premade_annotations_df["OFFSET"][row]
-            maxval = premade_annotations_df["OFFSET"][row] + \
-                premade_annotations_df["DURATION"][row]
-            axs.axvspan(
-                xmin=minval,
-                xmax=maxval,
-                facecolor=label_colors[annotation],
-                alpha=0.4,
-                label="_" *
-                ndx +
-                annotation)
-    axs.legend()
-
-    # save graph
-    if save_fig:
-        plt.savefig(clip_name + "_Local_Score_Graph.png")
-
-def local_line_graph(
-        local_scores,
-        clip_name,
-        sample_rate,
-        samples,
-        automated_df=None,
-        premade_annotations_df=None,
-        premade_annotations_label="Human Labels",
-        log_scale=False,
-        save_fig=False,
-        normalize_local_scores=False):
-    """
-    Function that produces graphs with the local score plot and spectrogram of
-    an audio clip. Now integrated with Pandas so you can visualize human and
-    automated annotations.
-
-    Args:
-        local_scores (list of floats)
-            - Local scores for the clip determined by the RNN.
-
-        clip_name (string)
-            - Directory of the clip.
-
-        sample_rate (int)
-            - Sample rate of the audio clip, usually 44100.
-
-        samples (list of ints)
-            - Each of the samples from the audio clip.
-
-        automated_df (Dataframe)
-            - Dataframe of automated labelling of the clip.
-
-        premade_annotations_df (Dataframe)
-            - Dataframe labels that have been made outside of the scope of this
-              function.
-
-        premade_annotations_label (string)
-            - Descriptor of premade_annotations_df
-
-        log_scale (boolean)
-            - Whether the axis for local scores should be logarithmically
-              scaled on the plot.
-
-        save_fig (boolean)
-            - Whether the clip should be saved in a directory as a png file.
-
-    Returns:
-        None
-    """
-    # Calculating the length of the audio clip
-    duration = samples.shape[0] / sample_rate
-    # Calculating the number of local scores outputted by Microfaune
-    num_scores = len(local_scores)
-    # the case for normalizing the local scores between [0,1]
-    if normalize_local_scores:
-        local_scores_max = max(local_scores)
-        for ndx in range(num_scores):
-            local_scores[ndx] = local_scores[ndx] / local_scores_max
-    # Making sure that the local score of the x-axis are the same across the
-    # spectrogram and the local score plot
-    step = duration / num_scores
-    time_stamps = np.arange(0, duration, step)
-
-    if len(time_stamps) > len(local_scores):
-        time_stamps = time_stamps[:-1]
-
-    # general graph features
-    fig, axs = plt.subplots(2)
-    fig.set_figwidth(22)
-    fig.set_figheight(10)
-    fig.suptitle("Spectrogram and Local Scores for " + clip_name)
-    # score line plot - top plot
-    axs[0].plot(time_stamps, local_scores)
-    #Look into this and their relation.
-    axs[0].set_xlim(0, duration)
-    if log_scale:
-        axs[0].set_yscale('log')
-    else:
-        axs[0].set_ylim(0, 1)
-    axs[0].grid(which='major', linestyle='-')
-    # Adding in the optional automated labels from a Pandas DataFrame
-    # if automated_df is not None:
-    if not automated_df.empty:
-        ndx = 0
-        for row in automated_df.index:
-            minval = automated_df["OFFSET"][row]
-            maxval = automated_df["OFFSET"][row] + \
-                automated_df["DURATION"][row]
-            axs[0].axvspan(xmin=minval, xmax=maxval, facecolor="yellow",
-                           alpha=0.4, label="_" * ndx + "Automated Labels")
-            ndx += 1
-    # Adding in the optional premade annotations from a Pandas DataFrame
-    if not premade_annotations_df.empty:
-        ndx = 0
-        for row in premade_annotations_df.index:
-            minval = premade_annotations_df["OFFSET"][row]
-            maxval = premade_annotations_df["OFFSET"][row] + \
-                premade_annotations_df["DURATION"][row]
-            axs[0].axvspan(
-                xmin=minval,
-                xmax=maxval,
-                facecolor="red",
-                alpha=0.4,
-                label="_" *
-                ndx +
-                premade_annotations_label)
-            ndx += 1
-    axs[0].legend()
-
-    # spectrogram - bottom plot
-    # Will require the input of a pandas dataframe
-    Pxx, freqs, bins, im = axs[1].specgram(
-                                            samples,
-                                            Fs=sample_rate,
-                                            NFFT=4096,
-                                            noverlap=2048,
-                                            window=np.hanning(4096),
-                                            cmap="ocean")
-    axs[1].set_xlim(0, duration)
-    axs[1].set_ylim(0, 22050)
-    axs[1].grid(which='major', linestyle='-')
-
-    # save graph
-    if save_fig:
-        plt.savefig(clip_name + "_Local_Score_Graph.png")
-
-# TODO rework function so that instead of generating the automated labels, it
-# takes the automated_df as input same as it does with the manual dataframe.
-
-def spectrogram_visualization(
-        clip_path,
-        weight_path=None,
-        premade_annotations_df=None,
-        premade_annotations_label="Human Labels",
-        automated_df=None,
-        isolation_parameters=None,
-        log_scale=False,
-        save_fig=False,
-        normalize_local_scores=False,
-        verbose=True):
-    """
-    Wrapper function for the local_line_graph and spectrogram_graph functions
-    for ease of use. Processes clip for local scores to be used for the
-    local_line_graph function.
-
-    Args:
-        clip_path (string)
-            - Path to an audio clip.
-
-        weight_path (string)
-            - Weights to be used for RNNDetector.
-
-        premade_annotations_df (Dataframe)
-            - Dataframe of annotations to be displayed that have been created
-              outside of the function.
-
-        premade_annotations_label (string)
-            - String that serves as the descriptor for the premade_annotations
-              dataframe.
-
-        automated_df (Dataframe)
-            - Whether the audio clip should be labelled by the isolate function
-              and subsequently plotted.
-
-        log_scale (boolean)
-            - Whether the axis for local scores should be logarithmically
-              scaled on the plot.
-
-        save_fig (boolean)
-            - Whether the plots should be saved in a directory as a png file.
-
-        verbose (boolean)
-            - Whether to display error messages
-
-    Returns:
-        None
-    """
-
-    # Reading in the audio file using librosa, converting to single channeled data with original sample rate
-    # Reason for the factor for the signal is explained here: https://stackoverflow.com/questions/53462062/pyaudio-bytes-data-to-librosa-floating-point-time-series
-    # Librosa scales down to [-1, 1], but the models require the range [-32768, 32767], so the multiplication is required
+# TODO Check if * 32768 is needed now that signal is not being passed to model
+# Returns the signal and sample rate of the passed clip
+def clip_info(clip_path, verbose):
     try:
         SIGNAL, SAMPLE_RATE = librosa.load(clip_path, sr=None, mono=True)
-        SIGNAL = SIGNAL * 32768
+        # SIGNAL = SIGNAL * 32768
     except BaseException:
         checkVerbose("Failure in loading" + clip_path, verbose)
         return
@@ -361,121 +58,304 @@ def spectrogram_visualization(
         checkVerbose("Failure in downsampling" + clip_path, verbose)
         return
 
-    # Converting to Mono if Necessary
-    if len(SIGNAL.shape) == 2:
-        # averaging the two channels together
-        SIGNAL = SIGNAL.sum(axis=1) / 2
+    return SIGNAL, SAMPLE_RATE
 
-    # Generate parameters for specific models
-    local_scores = None
-    if(isolation_parameters is not None):
-        if(isolation_parameters["model"] == 'microfaune'):
-            # Initializing the detector to baseline or with retrained weights
-            if weight_path is None:
-                # Microfaune RNNDetector class
-                detector = RNNDetector()
-            else:
-                try:
-                    # Initializing Microfaune hybrid CNN-RNN with new weights
-                    detector = RNNDetector(weight_path)
-                except BaseException:
-                    checkVerbose("Error in weight path:" + weight_path, verbose)
-                    return
-            try:
-                # Computing Mel Spectrogram of the audio clip
-                microfaune_features = detector.compute_features([SIGNAL])
-                # Running the Mel Spectrogram through the RNN
-                global_score, local_score = detector.predict(microfaune_features)
-                local_scores = local_score[0].tolist()
-            except BaseException:
-                checkVerbose(
-                    "Skipping " +
-                    clip_path +
-                    " due to error in Microfaune Prediction", verbose)
-        elif (isolation_parameters["model"] == 'tweetynet'):
-            # Initializing the detector to baseline or with retrained weights
-            device = torch.device('cpu')
-            detector = TweetyNetModel(2, (1, 86, 86), 86, device, binary = False)
+# Plot spectrogram from a given clip path
+def draw_spectrogram(clip_path, samples, sample_rate, save_fig=False):
+    duration = samples.shape[0] / sample_rate
+    time_stamps = np.arange(0, duration, step=1)
 
-            try:
-                #need a function to convert a signal into a spectrogram and then window it
-                tweetynet_features = compute_features([SIGNAL])
-                predictions, local_score = detector.predict(tweetynet_features, model_weights=weight_path)
-                local_scores = local_score[0].tolist()
-            except BaseException:
-                checkVerbose(
-                    "Skipping " +
-                    clip_path +
-                    " due to error in TweetyNet Prediction", verbose)
-                return None
+    # general graph features
+    fig, axs = plt.subplots(1)
+    fig.set_figwidth(22)
+    fig.set_figheight(5)
+    fig.suptitle("Spectrogram for " + clip_path)
 
-    # In the case where the user wants to look at automated bird labels
-    if premade_annotations_df is None:
-            premade_annotations_df = pd.DataFrame()
+    # spectrogram plot
+    axs.specgram(samples,
+                 Fs=sample_rate,
+                 NFFT=4096,
+                 noverlap=2048,
+                 window=np.hanning(4096),
+                 cmap="ocean")
 
-    # Generate labels based on the model
-    if (automated_df is not None):
-        if (isinstance(automated_df, bool) and not automated_df):
-            automated_df = pd.DataFrame()
-            pass
-        # Check if Microfaune or TweetyNET was used to generate local scores
-        if (local_scores is not None):
-            # TweetyNET techniques and output
-            if (isolation_parameters["model"] == "tweetynet"
-                and isolation_parameters["tweety_output"]):
-                automated_df = predictions_to_kaleidoscope(
-                                predictions, 
-                                SIGNAL, 
-                                "Doesn't", 
-                                "Doesn't", 
-                                "Matter", 
-                                SAMPLE_RATE)
-            # Isolation techniques
-            else: 
-                automated_df = isolate(
-                        local_score[0],
-                        SIGNAL,
-                        SAMPLE_RATE,
-                        audio_dir = "",
-                        filename = "",
-                        isolation_parameters=isolation_parameters)
-        # Catch, generate the labels for other models
+    axs.set_xlim(0, duration)
+    axs.set_ylim(0, 22050)
+    axs.grid(which='major', linestyle='-')
+
+    # save graph
+    if save_fig:
+        plt.savefig(get_clip_name(clip_path) + "_Spectrogram_Graph.png")
+
+# Get a list of colors
+# cmap: colormap to get colors from
+# iters: number of colors to generate,
+#        given by (2**iters)-1
+def get_colors(cmap,iters):
+    colors = []
+    # For each iteration, add the colors 
+    # halfway between all the previously added colors
+    for i in range(1,iters+1):
+        offset=1/(2**i)
+        colors.extend([cmap(n) for n in np.linspace(offset,1-offset,2**(i-1))])
+    return colors
+
+# Updates label_colors with the annotation and a new color
+def get_label_color(annotation, label_colors):
+    cmap = get_cmap('hsv')
+    possible_colors = []
+
+    if annotation not in list(label_colors.keys()):
+        # If not enough colors, generate more
+        # From all the generated colors that are not in label_colors,
+        # update label_colors with first
+        num_colors=3
+        while not possible_colors:
+            num_colors+=1
+            colors = get_colors(cmap, num_colors)
+            possible_colors = list(set(colors)-set(label_colors.values()))
+        label_colors.update({annotation : possible_colors[0]})
+
+def draw_labels(
+        clip_name,
+        df, 
+        df_source, 
+        samples, 
+        sample_rate, 
+        label_colors={}, 
+        __label_colors = {},
+        save_fig=False):
+    """
+    Draw the labeled sections from a given dataframe
+    Args:
+        df (dataframe)
+            - Dataframe to get labels from
+
+        df_source (str)
+            - Where the dataframe came from, used for titling graph
+
+        samples (numpy ndarray)
+            - Signal from recording, used to determine duration
+            
+        sample_rate (int)
+            - Sample rate of signal, used to determine duration
+
+        label_colors (dict)
+            - Specify what colors any given label should use,
+            updates __label_colors with those values
+
+        __label_colors (dict)
+            - Because function default args are initialized at the program
+            start and dictionaries are mutable, __label_colors serves as a 
+            static variable so long as it is never overwritten, but modified
+            instead
+
+        save_fig (boolean)
+            - Whether to save graph
+    Returns:
+        __label_colors (dict)
+    """
+    __label_colors.update(label_colors)
+
+    # General graph features
+    duration = samples.shape[0] / sample_rate
+    fig, axs = plt.subplots(1)
+    fig.set_figwidth(22)
+    fig.set_figheight(5)
+    fig.suptitle(df_source + " Labels")
+    axs.set_xlim(0, duration)
+
+    ndx = 0
+    label_list = []
+    for row in df.index:
+        # Determine whether to add a new label and give it a color
+        annotation = df["MANUAL ID"][row]
+        if(annotation not in label_list):
+            label_list.append(annotation)
+            get_label_color(annotation, __label_colors)
+            ndx=0
         else:
-            automated_df = generate_automated_labels(
-                audio_dir=clip_path,
-                isolation_parameters=isolation_parameters,
-                weight_path=weight_path,
-                normalized_sample_rate=SAMPLE_RATE,
-                normalize_local_scores=normalize_local_scores)
+            ndx=1
 
-        if (len(automated_df["IN FILE"].unique()) > 1):
-            checkVerbose("\nWarning: This function only generates spectrograms for one clip. " +
-                  "automated_df has annotations for more than one clip.", verbose)
+        # Plot clip and its label as a rectangl
+        minval = df["OFFSET"][row]
+        maxval = df["OFFSET"][row] + \
+                 df["DURATION"][row]
+
+        axs.axvspan(xmin=minval, 
+                    xmax=maxval,
+                    facecolor=__label_colors[annotation],
+                    alpha=0.5, 
+                    label="_" * ndx + annotation)
+
+    axs.legend()
+
+    # save graph
+    if save_fig:
+        plt.savefig(clip_name + df_source + "_Label_Graph.png")
+
+    return __label_colors
+
+
+def line_graph(
+        clip_name,
+        rnn_scores,
+        duration,
+        normalize=False,
+        log_scale=False,
+        save_fig=False):
+    """
+    Args:
+        clip_name (str)
+        - Name of clip to draw scores for 
+
+        rnn_scores (list of floats)
+        - Scores to plot
+
+        duration (float)
+        - Length of signal, determines length of graph's x-axis
+
+        normalize (boolean)
+        - Whether to normalize scores
+
+        log_scale (boolean)
+        - Whether to draw with log scale
+
+        save_fig (boolean)
+        - Whether to save figure
+
+    Returns:
+        Nothing
+    """
+
+    # General graph features
+    fig, axs = plt.subplots(1)
+    fig.set_figwidth(22)
+    fig.set_figheight(5)
+    fig.suptitle("Local Scores for " + clip_name)
+    axs.set_xlim(0, duration)
+
+    # Helper variables
+    num_scores=len(rnn_scores)
+    step = duration / num_scores
+    time_stamps = np.arange(0, duration, step)
+
+    # Normalize scores
+    if normalize:
+        max_score = max(rnn_scores)
+        rnn_scores = [score/max_score for score in rnn_scores]
+
+    # Set vertical scale
+    if log_scale:
+        axs.set_yscale('log')
     else:
-        automated_df = pd.DataFrame()
+        axs.set_ylim(0,1)
 
-    # If local scores were generated, plot them AND spectrogram
-    if (local_scores is not None):
-        local_line_graph(
-                local_scores,
-                clip_path,
-                SAMPLE_RATE,
-                SIGNAL,
-                automated_df,
-                premade_annotations_df,
-                premade_annotations_label=premade_annotations_label,
+    # Draw graph
+    axs.plot(time_stamps, rnn_scores)
+
+    # save graph
+    if save_fig:
+        plt.savefig(clip_name + "_Line_Graph.png")
+
+
+# TODO Determine whether to draw local line graph
+def spectrogram_visualization(
+        clip_path,
+        rnn_scores=None,
+        automated_df=None,
+        manual_df=None,
+        label_colors={},
+        normalize_scores=False,
+        log_scale=False,
+        save_fig=False,
+        return_colors=False,
+        verbose=True):
+    """
+    Draws spectrogram for given clip, and the labels for any passed dataframes
+
+    Args:
+        clip_path (str)
+        - Path to find clip that will be displayed
+        scores 
+
+        rnn_scores (list of floats)
+        - Local scores for the clip determined by the RNN. Will be graphed
+        if passed
+
+        log_scale (boolean)
+        - Whether to use log scale for line graph
+
+        normalize_scores (boolean)
+        - Whether to normalize the rnn scores
+
+        automated_df (dataframe)
+        - Dataframe with automated labels
+
+        manual_df (dataframe)
+        - Dataframe with manual labels
+
+        label_colors (dict)
+        - Specifies colors that labels should user
+
+        save_fig (bool)
+        - Whether to save resulting figures
+
+        verbose (boolean)
+        - Whether to display error messages
+
+        Returns:
+            label_colors if return_colors is true
+    """
+
+    # clip_name = os.path.basename(os.path.normpath(clip_path))
+    clip_name = get_clip_name(clip_path)
+
+    SIGNAL, SAMPLE_RATE = clip_info(clip_path, verbose)
+    duration = len(SIGNAL)/SAMPLE_RATE
+
+    #Draw spectrogram
+    draw_spectrogram(clip_path, SIGNAL, SAMPLE_RATE, save_fig=save_fig)
+
+    #Draw line graph of RNN scores
+    if rnn_scores is not None:
+        line_graph(
+                clip_name,
+                rnn_scores,
+                duration,
+                normalize=normalize_scores,
                 log_scale=log_scale,
-                save_fig=save_fig,
-                normalize_local_scores=normalize_local_scores)
-    else:
-        spectrogram_graph(
-            clip_path,
-            SAMPLE_RATE,
-            SIGNAL,
-            automated_df=automated_df,
-            premade_annotations_df=premade_annotations_df,
-            premade_annotations_label=premade_annotations_label,
-            save_fig=save_fig)
+                save_fig=save_fig)
+
+    # Draw automated labels
+    if automated_df is not None:
+        automated_df = automated_df[automated_df["IN FILE"]==clip_name]
+        label_colors = draw_labels(
+                clip_name,
+                automated_df, 
+                "Model", 
+                SIGNAL, 
+                SAMPLE_RATE, 
+                label_colors=label_colors,
+                save_fig=save_fig)
+
+    # Draw manual labels
+    if manual_df is not None:
+        manual_df = manual_df[manual_df["IN FILE"]==clip_name]
+        label_colors = draw_labels(
+                clip_name,
+                manual_df, 
+                "Human", 
+                SIGNAL, 
+                SAMPLE_RATE, 
+                label_colors=label_colors,
+                save_fig=save_fig)
+
+    if return_colors:
+        return label_colors
+
+
+
 
 def binary_visualization(automated_df, human_df, save_fig=False):
     """
@@ -502,12 +382,11 @@ def binary_visualization(automated_df, human_df, save_fig=False):
     SAMPLE_RATE = automated_df["SAMPLE RATE"].to_list()[0]
     # Initializing two arrays that will represent the
     # labels with respect to the audio clip
-    # print(SIGNAL.shape)
     human_arr = np.zeros((int(SAMPLE_RATE * duration),))
     bot_arr = np.zeros((int(SAMPLE_RATE * duration),))
 
     folder_name = automated_df["FOLDER"].to_list()[0]
-    clip_name = automated_df["IN FILE"].to_list()[0]
+    clip_path = automated_df["IN FILE"].to_list()[0]
     # Placing 1s wherever the au
     for row in automated_df.index:
         minval = int(round(automated_df["OFFSET"][row] * SAMPLE_RATE, 0))
@@ -542,38 +421,38 @@ def binary_visualization(automated_df, human_df, save_fig=False):
     plt.figure(figsize=(22, 10))
     plt.subplot(7, 1, 1)
     plt.plot(human_arr)
-    plt.title("Ground Truth for " + clip_name)
+    plt.title("Ground Truth for " + clip_path)
     plt.subplot(7, 1, 2)
     plt.plot(bot_arr)
-    plt.title("Automated Label for " + clip_name)
+    plt.title("Automated Label for " + clip_path)
 
     # Visualizing True Positives for the Automated Labeling
     plt.subplot(7, 1, 3)
     plt.plot(true_positive_arr)
-    plt.title("True Positive for " + clip_name)
+    plt.title("True Positive for " + clip_path)
 
     # Visualizing False Negatives for the Automated Labeling
     plt.subplot(7, 1, 4)
     plt.plot(false_negative_arr)
-    plt.title("False Negative for " + clip_name)
+    plt.title("False Negative for " + clip_path)
 
     plt.subplot(7, 1, 5)
     plt.plot(false_positive_arr)
-    plt.title("False Positive for " + clip_name)
+    plt.title("False Positive for " + clip_path)
 
     plt.subplot(7, 1, 6)
     plt.plot(true_negative_arr)
-    plt.title("True Negative for " + clip_name)
+    plt.title("True Negative for " + clip_path)
 
     plt.subplot(7, 1, 7)
     plt.plot(IoU_arr)
-    plt.title("Union for " + clip_name)
+    plt.title("Union for " + clip_path)
 
     plt.tight_layout()
     if save_fig:
-        x = clip_name.split(".")
-        clip_name = x[0]
-        plt.save_fig(clip_name + "_label_plot.png")
+        x = clip_path.split(".")
+        clip_path = x[0]
+        plt.save_fig(clip_path + "_label_plot.png")
 
 def annotation_duration_histogram(
     annotation_df,
