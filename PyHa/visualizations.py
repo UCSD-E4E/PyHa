@@ -37,7 +37,6 @@ def get_clip_name(clip_path):
 
     return clip_path[last_sep:]
 
-# TODO Check if * 32768 is needed now that signal is not being passed to model
 # Returns the signal and sample rate of the passed clip
 def clip_info(clip_path, verbose):
     try:
@@ -259,7 +258,6 @@ def line_graph(
         plt.savefig(clip_name + "_Line_Graph.png")
 
 
-# TODO Determine whether to draw local line graph
 def spectrogram_visualization(
         clip_path,
         rnn_scores=None,
