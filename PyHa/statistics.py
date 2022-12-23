@@ -1,11 +1,28 @@
 import pandas as pd
 from scipy import stats
 import numpy as np
-
+import time
 
 # Function that takes in a pandas dataframe of annotations and outputs a
 # dataframe of the mean, median, mode, quartiles, and standard deviation of
 # the annotation durations.
+
+def checkVerbose(
+    errorMessage, 
+    verbose):
+    """
+    Adds the ability to toggle on/off all error messages and warnings.
+
+    Args:
+        errorMessage (string)
+            - Error message to be displayed
+
+        verbose (boolean)
+            - Whether to display error messages
+    """
+    if(verbose):
+        print(errorMessage)
+
 def annotation_duration_statistics(df):
     """
     Function that calculates basic statistics related to the duration of
@@ -41,7 +58,7 @@ def annotation_duration_statistics(df):
     return pd.DataFrame.from_dict([entry])
 
 
-def clip_general(automated_df, human_df):
+def clip_general(automated_df, human_df, verbose=True):
     """
     Function to generate a dataframe with statistics relating to the efficacy
     of the automated label compared to the human label.
@@ -55,6 +72,9 @@ def clip_general(automated_df, human_df):
 
         human_df (Dataframe)
             - Dataframe of human labels for one clip.
+
+        verbose (boolean):
+            - whether to display error messages
 
     Returns:
         Dataframe with general clip overlap statistics comparing the automated
@@ -80,7 +100,7 @@ def clip_general(automated_df, human_df):
     # print(SIGNAL.shape)
     human_arr = np.zeros((int(SAMPLE_RATE * duration),))
     bot_arr = np.zeros((int(SAMPLE_RATE * duration),))
-
+    
     folder_name = automated_df["FOLDER"].to_list()[0]
     clip_name = automated_df["IN FILE"].to_list()[0]
     # Placing 1's wherever the automated labels occur in the clip
@@ -105,7 +125,7 @@ def clip_general(automated_df, human_df):
 
     human_arr_flipped = 1 - human_arr
     bot_arr_flipped = 1 - bot_arr
-
+    
     true_positive_arr = human_arr * bot_arr
     false_negative_arr = human_arr * bot_arr_flipped
     false_positive_arr = human_arr_flipped * bot_arr
@@ -139,8 +159,8 @@ def clip_general(automated_df, human_df):
         f1 = 2 * (recall * precision) / (recall + precision)
         IoU = true_positive_count / union_count
     except BaseException:
-        print('''Error calculating statistics, likely due
-        to zero division, setting values to zero''')
+        checkVerbose('''Error calculating statistics, likely due
+        to zero division, setting values to zero''', verbose)
         f1 = 0
         precision = 0
         recall = 0
@@ -169,7 +189,8 @@ def automated_labeling_statistics(
         automated_df,
         manual_df,
         stats_type="IoU",
-        threshold=0.5):
+        threshold=0.5,
+        verbose = True):
     """
     Function that will allow users to easily pass in two dataframes of manual
     labels and automated labels, and a dataframe is returned with statistics
@@ -200,6 +221,9 @@ def automated_labeling_statistics(
             false negatives.
             - default: 0.5
 
+        verbose (boolean)
+            - whether to display error messages
+
     Returns:
         Dataframe of statistics comparing automated labels and human labels for
         multiple clips.
@@ -221,10 +245,17 @@ def automated_labeling_statistics(
     clips = list(dict.fromkeys(clips))
     # Initializing the returned dataframe
     statistics_df = pd.DataFrame()
+
+    num_errors = 0
+    num_processed = 0
+
+    start_time = time.time()
     # Looping through each audio clip
     for clip in clips:
+        num_processed += 1
         clip_automated_df = automated_df[automated_df["IN FILE"] == clip]
-        clip_manual_df = manual_df[manual_df["IN FILE"] == clip]
+        # In case the extension for manual_df is different from the clip extension, just check the name before the extension
+        clip_manual_df = manual_df[manual_df["IN FILE"].str.startswith(".".join(clip.split(".")[:-1]))]
         try:
             if stats_type == "general":
                 clip_stats_df = clip_general(
@@ -241,11 +272,16 @@ def automated_labeling_statistics(
                     statistics_df = clip_stats_df
                 else:
                     statistics_df = statistics_df.append(clip_stats_df)
-
         except BaseException as e:
-            print("Something went wrong with: " + clip)
-            print(e)
+            num_errors += 1
+            #print("Something went wrong with: " + clip)
+            #print(e)
             continue
+        if num_processed % 50 == 0:
+            print("Processed", num_processed, "clips in", int((time.time() - start_time) * 10) / 10.0, 'seconds')
+            start_time = time.time()
+    if num_errors > 0:
+        checkVerbose("Something went wrong with" + num_errors + "clips out of" + str(len(clips)) + "clips", verbose)
     statistics_df.reset_index(inplace=True, drop=True)
     return statistics_df
 
@@ -287,13 +323,6 @@ def global_dataset_statistics(statistics_df, manual_id = "bird"):
              'Global IoU': round(IoU, 6)}
     ## TODO rework as a native python dict
     return pd.DataFrame.from_dict([entry])
-
-# TODO rework this function to implement some linear algebra, right now the
-# nested for loop won't handle larger loads well To make a global matrix, find
-# the clip with the most amount of automated labels and set that to the number
-# of columns I believe this is currently the largest bottleneck in terms of
-# temporal performance.
-
 
 def clip_IoU(automated_df, manual_df):
     """
@@ -342,65 +371,42 @@ def clip_IoU(automated_df, manual_df):
 
     # Initializing arrays that will represent each of the human and automated
     # labels
-    bot_arr = np.zeros((int(duration * SAMPLE_RATE)))
-    human_arr = np.zeros((int(duration * SAMPLE_RATE)))
+    bot_arr = np.zeros((automated_row_count, int(duration * SAMPLE_RATE)))
+    human_arr = np.zeros((manual_row_count, int(duration * SAMPLE_RATE)))
+    
+    # Fill array with automated labels 
+    for row in automated_df.index:
+        # Determine the beginning of an automated label
+        minval = int(round(automated_df["OFFSET"][row] * SAMPLE_RATE, 0))
+        # Determining the ending of an automated label
+        maxval = int(round((automated_df["OFFSET"][row] + automated_df["DURATION"][row]) * 
+                SAMPLE_RATE,0))
+        # Placing the label relative to the clip
+        bot_arr[row][minval:maxval] = 1
 
-    # Looping through each human label
+    # Fill array with human labels
     for row in manual_df.index:
-        # print(row)
         # Determining the beginning of a human label
         minval = int(round(manual_df["OFFSET"][row] * SAMPLE_RATE, 0))
         # Determining the end of a human label
-        maxval = int(
-            round(
-                (manual_df["OFFSET"][row] +
-                 manual_df["DURATION"][row]) *
-                SAMPLE_RATE,
-                0))
+        maxval = int(round((manual_df["OFFSET"][row] + manual_df["DURATION"][row]) *
+                SAMPLE_RATE,0))
         # Placing the label relative to the clip
-        human_arr[minval:maxval] = 1
-        # Looping through each automated label
-        for column in automated_df.index:
-            # Determining the beginning of an automated label
-            minval = int(
-                round(
-                    automated_df["OFFSET"][column] *
-                    SAMPLE_RATE,
-                    0))
-            # Determining the ending of an automated label
-            maxval = int(
-                round(
-                    (automated_df["OFFSET"][column] +
-                     automated_df["DURATION"][column]) *
-                    SAMPLE_RATE,
-                    0))
-            # Placing the label relative to the clip
-            bot_arr[minval:maxval] = 1
-            # Determining the overlap between the human label and the automated
-            # label
-            intersection = human_arr * bot_arr
-            # Determining the union between the human label and the automated
-            # label
-            union = human_arr + bot_arr
-            union[union == 2] = 1
-            # Determining how much of the human label and the automated label
-            # overlap with respect to time
-            intersection_count = np.count_nonzero(
-                intersection == 1) / SAMPLE_RATE
-            # Determining the span of the human label and the automated label
-            # with respect to time.
-            union_count = np.count_nonzero(union == 1) / SAMPLE_RATE
-            # Placing the Intersection over Union Percentage into it's
-            # respective position in the array.
-            IoU_Matrix[row, column] = round(
-                intersection_count / union_count, 4)
-            # Resetting the automated label to zero
-            bot_arr[bot_arr == 1] = 0
-        # Resetting the human label to zero
-        human_arr[human_arr == 1] = 0
+        human_arr[row][minval:maxval] = 1
 
-    return IoU_Matrix
-
+    # Multiply every row in human by every row in bot
+    IoU_Matrix = np.matmul(human_arr, bot_arr.transpose())
+    
+    # Compare each human annotation to every automated annotation
+    for i in range(manual_row_count):
+        for j in range(automated_row_count):
+            # Skip comparision if there is no intersection, since IoU = 0 anyway 
+            if IoU_Matrix[i][j] == 0:
+                continue
+            # Sum logicial ORR of time bins shared by the human and bot annotations
+            IoU_Matrix[i][j] /= np.sum(np.logical_or(human_arr[i], bot_arr[j]))
+            IoU_Matrix[i][j] = round(IoU_Matrix[i][j], 4)
+    return np.nan_to_num(IoU_Matrix)
 
 def matrix_IoU_Scores(IoU_Matrix, manual_df, threshold = 0.5):
     """
@@ -463,9 +469,7 @@ def matrix_IoU_Scores(IoU_Matrix, manual_df, threshold = 0.5):
         precision = round(tp_count / (tp_count + fp_count), 4)
         f1 = round(2 * (recall * precision) / (recall + precision), 4)
     except ZeroDivisionError:
-        print(
-            "Division by zero setting precision, recall, and f1 to zero on " +
-            filename)
+#        print("Division by zero setting precision, recall, and f1 to zero on", filename)
         recall = 0
         precision = 0
         f1 = 0
@@ -650,7 +654,7 @@ def clip_catch(automated_df, manual_df):
 #    return IoU_Statistics
 
 # Consider adding in a new manual_id parameter here
-def global_statistics(statistics_df, manual_id = 'N/A'):
+def global_statistics(statistics_df, manual_id = 'N/A', verbose = True):
     """
     Function that takes the output of dataset_IoU Statistics and outputs a
     global count of true positives and false positives, as well as computing \
@@ -664,6 +668,9 @@ def global_statistics(statistics_df, manual_id = 'N/A'):
             - String to control the "MANUAL ID" column of the csv file
               format that is used in PyHa.
             - default: "N/A"
+
+        verbose (boolean)
+            - whether to display error messages
 
     Returns:
         Dataframe of global IoU statistics which include the number of true
@@ -687,8 +694,8 @@ def global_statistics(statistics_df, manual_id = 'N/A'):
         recall = tp_sum / (tp_sum + fn_sum)
         f1 = 2 * (precision * recall) / (precision + recall)
     except ZeroDivisionError:
-        print('''Error in calculating Precision, Recall, and F1. Likely due to
-        zero division, setting values to zero''')
+        checkVerbose('''Error in calculating Precision, Recall, and F1. Likely due to
+        zero division, setting values to zero''', verbose)
         precision = 0
         recall = 0
         f1 = 0

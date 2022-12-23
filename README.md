@@ -16,6 +16,7 @@ PyHa = Python + Piha (referring to a bird species of our interest known as the s
 
 ## Installation and Setup
 1. Navigate to a desired folder and clone the repository onto your local machine. `git clone https://github.com/UCSD-E4E/PyHa.git`
+- If you wish to reduce the size of the repository on your local machine you can alternatively use `git clone https://github.com/UCSD-E4E/PyHa.git --depth 1` which will only install the most up-to-date version of the repo without its history.
 2. Install [Miniconda](https://docs.conda.io/en/latest/miniconda.html) or [Miniforge](https://github.com/conda-forge/miniforge).
 3. Install the conda environment by running `conda env create --file conda_environments/{filename}`, where `filename` is the name of the yaml containing the environment for your OS.
 4. Run `conda activate species-id` to activate the conda environment used to develop the package.
@@ -49,7 +50,8 @@ isolation_parameters = {
     "custom_list" : "",
     "filetype" : "",
     "num_predictions" : 0,
-    "write_to_csv" : False
+    "write_to_csv" : False,
+    "verbose" : True
 }
 ```
 
@@ -67,6 +69,7 @@ isolation_parameters = {
     "threshold_min" : 0.0,
     "window_size" : 0.0,
     "chunk_size" : 0.0,
+    "verbose" : True
 }
 ```
 
@@ -89,15 +92,37 @@ isolation_parameters = {
     "threshold_min" : 0.0,
     "window_size" : 0.0,
     "chunk_size" : 0.0,
+    "verbose" : True
 }
 ```
 
 The `tweety_output` parameter sets whether to use TweetyNET's original output or isolation techniques. If set to `False`, TweetyNET will use the specified `technique` parameter.
 
+<!-- annotation_post_processing.py file -->
+
+<details>
+ <summary>annotation_post_processing.py file</summary>
+
+### [`annotation_chunker`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/annotation_post_processing.py)
+*Found in [`annotation_post_processing.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/annotation_post_processing.py)*
+
+This function converts a Kaleidoscope-formatted Dataframe containing annotations to uniform chunks of `chunk_length`. Drops any annotation that less than chunk_length.
+
+| Parameter | Type |  Description |
+| --- | --- | --- |
+| `kaleidoscope_df` | Dataframe | Dataframe of automated or human labels in Kaleidoscope format |
+| `chunk_length` | int | Duration in seconds of each annotation chunk |
+
+This function returns a dataframe with annotations converted to uniform second chunks.
+
+Usage: `annotation_chunker(kaleidoscope_df, chunk_length)`
+</details>
+
+
 <!-- IsoAutio.py file -->
 
 <details>
- <summary>IsoAutio.py files</summary>
+ <summary>IsoAutio.py file</summary>
 
 ### [`isolate`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)
 *Found in [`IsoAutio.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAutio.py)*
@@ -566,17 +591,18 @@ This function returns a histogram with the length of the annotations.
 Usage: `binary_visualization(annotation_df, n_bins, min_length, max_length, save_fig, filename)`
 </details>
 
-
-All files in the `microfaune_package` directory are from the [microfaune repository](https://github.com/microfaune/microfaune), and their associated documentation can be found there.  
-
 All files in the `birdnet_lite` directory are from a [modified version](https://github.com/UCSD-E4E/BirdNET-Lite) of the [BirdNET Lite repository](https://github.com/kahst/BirdNET-Lite), and their associated documentation can be found there.  
+
+All files in the `microfaune_package` directory are from the [microfaune repository](https://github.com/microfaune/microfaune), and their associated documentation can be found there.    
+
+All files in the `tweetynet` directory are from the [tweetynet repository](https://github.com/yardencsGitHub/tweetynet), and their associated documentation can be found there.  
 
 All files in the `tweetynet` directory are from the [tweetynet repository](https://github.com/yardencsGitHub/tweetynet), and their associated documentation can be found there.  
 
 ## Examples
 *These examples were created on an Ubuntu 16.04 machine. Results may vary between different Operating Systems and Tensorflow versions.*
 
-Examples using Microfaune were created using this dictionary for the `isolation_parameters`:
+Examples using Microfaune were created using the following dictionary for `isolation_parameters`:
 
 ```json
 isolation_parameters = {
@@ -607,6 +633,11 @@ annotation_duration_statistics(manual_df)
 ```
 ![image](https://user-images.githubusercontent.com/44332326/127575181-9ce49439-5396-425d-a1d5-148ef47db373.png)
 
+### Function that converts annotations into 3 second chunks
+```python
+annotation_chunker(automated_df, 3)
+```
+![annotation chunker](https://user-images.githubusercontent.com/33042752/176480538-671b731d-89ad-402c-a603-8a0ee35124f6.png)
 
 ### Helper function to convert to kaleidoscope-compatible format
 ```python
@@ -711,3 +742,15 @@ stats_df = automated_labeling_statistics(automated_df,manual_df,stats_type = "Io
 global_stats_df = global_statistics(stats_df)
 ```
 ![image](https://user-images.githubusercontent.com/44332326/127575798-f84540ea-5121-4e7a-83c4-4ca5ad02e9d0.png)
+
+All relevant audio from the PyHa tutorial can be found within the ["TEST" folder](https://drive.google.com/drive/u/0/folders/1lIweB8rF9JZhu6imkuTg_No0i04ClDh1).
+In order to replicate the results displayed in the GitHub repository, make sure
+the audio clips are located in a folder called "TEST" in the same directory
+path as we had in the Jupyter Notebook tutorial.
+
+All audio clips can be found on [xeno-canto.org](xeno-canto.org) under the Creative Commons 
+Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0) 
+[https://creativecommons.org/licenses/by-nc-sa/4.0/ license](https://creativecommons.org/licenses/by-nc-sa/4.0/ license).
+
+The manual labels provided for this dataset are automatically downloaded as a .csv when
+the repository is cloned.

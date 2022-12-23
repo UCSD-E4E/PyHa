@@ -27,6 +27,7 @@ dependencies:
   - decorator=5.0.7=pyhd8ed1ab_0
   - defusedxml=0.7.1=pyhd8ed1ab_0
   - entrypoints=0.3=pyhd8ed1ab_1003
+  - ffmpeg=4.2.2=he774522_0
   - freetype=2.10.4=h546665d_1
   - gast=0.4.0=pyh9f0ad1d_0
   - google-pasta=0.2.0=pyh8c360ce_0

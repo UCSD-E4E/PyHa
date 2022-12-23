@@ -8,7 +8,6 @@ TEST/ScreamingPiha1.wav
 TEST/ScreamingPiha1.wav
 PyHa/tweetynet_package/tweetynet/__pycache__/*
 PyHa/tweetynet_package/tweetynet/__pycache__/
-mixed_bird_manual.csv
 outputs/result.csv
 PyHa/birdnet_lite/__pycache__/analyze.cpython-37.pyc
 *.wav
@@ -18,3 +17,15 @@ PyHa_Testing-Copy1.ipynb
 PyHa_Testing.ipynb
 
 
+PyHa/microfaune_package/microfaune/__pycache__/*
+PyHa/tweetynet_package/tweetynet/__pycache__/*
+PyHa/birdnet_lite/__pycache__/*
+mixed_bird_manual.csv
+outputs/result.csv
+*.mp3
+*.flac
+outputs/*
+*.ipynb
+!PyHa_Tutorial.ipynb
+*.csv
+!ScreamingPiha_Manual_Labels.csv

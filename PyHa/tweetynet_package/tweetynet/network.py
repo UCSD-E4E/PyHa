@@ -1,6 +1,6 @@
 """
 TweetyNet model
-These are the custom Convolutional 2D layers that have a similar padding behvior as Tensorflow
+These are the custom Convolutional 2D layers that have a similar padding behavior as Tensorflow
 , but in Pytorch
 """
 import torch

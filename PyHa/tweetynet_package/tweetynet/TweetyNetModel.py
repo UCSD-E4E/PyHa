@@ -143,5 +143,4 @@ class TweetyNetModel:
         for i in arr:
             temp = (((i - arr_min)*diff)/diff_arr) + t_min
             norm_arr.append(temp)
-        print(max(norm_arr))
         return norm_arr
