@@ -567,6 +567,12 @@ def annotation_duration_histogram(
         sns_hist.get_figure().savefig(filename)
 
 def get_local_scores(clip_path, isolation_parameters, weight_path=None, verbose=True):
+
+    assert isinstance(clip_path, str)
+    assert isinstance(isolation_parameters, dict)
+    assert isinstance(weight_path, str)
+    assert isinstance(verbose, bool)
+
     # Reading in the audio file using librosa, converting to single channeled data with original sample rate
     # Reason for the factor for the signal is explained here: https://stackoverflow.com/questions/53462062/pyaudio-bytes-data-to-librosa-floating-point-time-series
     # Librosa scales down to [-1, 1], but the models require the range [-32768, 32767], so the multiplication is required
