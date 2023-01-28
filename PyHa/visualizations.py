@@ -41,9 +41,9 @@ def get_clip_name(clip_path):
 def clip_info(clip_path, verbose):
     try:
         SIGNAL, SAMPLE_RATE = librosa.load(clip_path, sr=None, mono=True)
-        # SIGNAL = SIGNAL * 32768
+        SIGNAL = SIGNAL * 32768
     except BaseException:
-        checkVerbose("Failure in loading" + clip_path, verbose)
+        checkVerbose("Failure in loading " + clip_path, verbose)
         return
     # Downsample the audio if the sample rate > 44.1 kHz
     # Force everything into the human hearing range.
@@ -154,7 +154,7 @@ def draw_labels(
     Returns:
         __label_colors (dict)
     """
-    assert isinstance(df, pd.Dataframe)
+    assert isinstance(df, pd.DataFrame)
     assert isinstance(df_source, str)
     assert isinstance(samples, np.ndarray)
     assert isinstance(sample_rate, int)
@@ -319,12 +319,13 @@ def spectrogram_visualization(
         Returns:
             label_colors if return_colors is true
     """
-    assert isinstance(rnn_scores, list)
-    assert [isinstance(item, float) for item in rnn_scores]
+    assert isinstance(rnn_scores, list) or rnn_scores is None
+    if rnn_scores is not None:
+        assert [isinstance(item, float) for item in rnn_scores]
     assert isinstance(log_scale, bool)
     assert isinstance(normalize_scores, bool)
-    assert isinstance(manual_df, pd.Dataframe) or manual_df is None
-    assert isinstance(automated_df, pd.Dataframe) or automated_df is None
+    assert isinstance(manual_df, pd.DataFrame) or manual_df is None
+    assert isinstance(automated_df, pd.DataFrame) or automated_df is None
     assert isinstance(label_colors, dict)
     assert isinstance(save_fig, bool)
     assert isinstance(verbose, bool)
@@ -564,3 +565,52 @@ def annotation_duration_histogram(
     # Save the histogram if specified
     if save_fig:
         sns_hist.get_figure().savefig(filename)
+
+def get_local_scores(clip_path, isolation_parameters, weight_path=None, verbose=True):
+    # Reading in the audio file using librosa, converting to single channeled data with original sample rate
+    # Reason for the factor for the signal is explained here: https://stackoverflow.com/questions/53462062/pyaudio-bytes-data-to-librosa-floating-point-time-series
+    # Librosa scales down to [-1, 1], but the models require the range [-32768, 32767], so the multiplication is required
+    SIGNAL, SAMPLE_RATE = clip_info(clip_path, True)
+    local_scores = None
+    if(isolation_parameters["model"] == 'microfaune'):
+        # Initializing the detector to baseline or with retrained weights
+        if weight_path is None:
+            # Microfaune RNNDetector class
+            detector = RNNDetector()
+        else:
+            try:
+            # Initializing Microfaune hybrid CNN-RNN with new weights
+                detector = RNNDetector(weight_path)
+            except BaseException:
+                checkVerbose("Error in weight path:" + weight_path, verbose)
+                return
+        try:
+            # Computing Mel Spectrogram of the audio clip
+            microfaune_features = detector.compute_features([SIGNAL])
+            # Running the Mel Spectrogram through the RNN
+            global_score, local_score = detector.predict(microfaune_features)
+            local_scores = local_score[0].tolist()
+        except BaseException:
+                checkVerbose(
+                        "Skipping " +
+                        clip_path +
+
+                        " due to error in Microfaune Prediction", verbose)
+    elif (isolation_parameters["model"] == 'tweetynet'):
+        # Initializing the detector to baseline or with retrained weights
+            device = torch.device('cpu')
+            detector = TweetyNetModel(2, (1, 86, 86), 86, device, binary = False)
+
+            try:
+                #need a function to convert a signal into a spectrogram and then window it
+                tweetynet_features = compute_features([SIGNAL])
+                predictions, local_score = detector.predict(tweetynet_features, model_weights=weight_path)
+                local_scores = local_score[0].tolist()
+            except BaseException:
+
+                checkVerbose(
+                        "Skipping " +
+                        clip_path +
+                        " due to error in TweetyNet Prediction", verbose)
+                return None
+    return local_scores
