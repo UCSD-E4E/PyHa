@@ -205,7 +205,7 @@ def draw_labels(
 
 def line_graph(
         clip_name,
-        rnn_scores,
+        local_scores,
         duration,
         normalize=False,
         log_scale=False,
@@ -215,7 +215,7 @@ def line_graph(
         clip_name (str)
         - Name of clip to draw scores for 
 
-        rnn_scores (list of floats)
+        local_scores (list of floats)
         - Scores to plot
 
         duration (float)
@@ -234,8 +234,8 @@ def line_graph(
         Nothing
     """
     assert isinstance(clip_name, str)
-    assert isinstance(rnn_scores, list)
-    assert [isinstance(entry, float) for entry in rnn_scores]
+    assert isinstance(local_scores, list)
+    assert [isinstance(entry, float) for entry in local_scores]
     assert isinstance(duration, float)
     assert isinstance(normalize, bool)
     assert isinstance(log_scale, bool)
@@ -249,14 +249,14 @@ def line_graph(
     axs.set_xlim(0, duration)
 
     # Helper variables
-    num_scores=len(rnn_scores)
+    num_scores=len(local_scores)
     step = duration / num_scores
     time_stamps = np.arange(0, duration, step)
 
     # Normalize scores
     if normalize:
-        max_score = max(rnn_scores)
-        rnn_scores = [score/max_score for score in rnn_scores]
+        max_score = max(local_scores)
+        local_scores = [score/max_score for score in local_scores]
 
     # Set vertical scale
     if log_scale:
@@ -265,7 +265,7 @@ def line_graph(
         axs.set_ylim(0,1)
 
     # Draw graph
-    axs.plot(time_stamps, rnn_scores)
+    axs.plot(time_stamps, local_scores)
 
     # save graph
     if save_fig:
@@ -274,7 +274,7 @@ def line_graph(
 
 def spectrogram_visualization(
         clip_path,
-        rnn_scores=None,
+        local_scores=None,
         automated_df=None,
         manual_df=None,
         label_colors={},
@@ -291,7 +291,7 @@ def spectrogram_visualization(
         - Path to find clip that will be displayed
         scores 
 
-        rnn_scores (list of floats)
+        local_scores (list of floats)
         - Local scores for the clip determined by the RNN. Will be graphed
         if passed
 
@@ -319,9 +319,9 @@ def spectrogram_visualization(
         Returns:
             label_colors if return_colors is true
     """
-    assert isinstance(rnn_scores, list) or rnn_scores is None
-    if rnn_scores is not None:
-        assert [isinstance(item, float) for item in rnn_scores]
+    assert isinstance(local_scores, list) or local_scores is None
+    if local_scores is not None:
+        assert [isinstance(item, float) for item in local_scores]
     assert isinstance(log_scale, bool)
     assert isinstance(normalize_scores, bool)
     assert isinstance(manual_df, pd.DataFrame) or manual_df is None
@@ -342,10 +342,10 @@ def spectrogram_visualization(
     draw_spectrogram(clip_path, SIGNAL, SAMPLE_RATE, save_fig=save_fig)
 
     #Draw line graph of RNN scores
-    if rnn_scores is not None:
+    if local_scores is not None:
         line_graph(
                 clip_name,
-                rnn_scores,
+                local_scores,
                 duration,
                 normalize=normalize_scores,
                 log_scale=log_scale,
@@ -570,7 +570,7 @@ def get_local_scores(clip_path, isolation_parameters, weight_path=None, verbose=
 
     assert isinstance(clip_path, str)
     assert isinstance(isolation_parameters, dict)
-    assert isinstance(weight_path, str)
+    assert isinstance(weight_path, str) or weight_path is None
     assert isinstance(verbose, bool)
 
     # Reading in the audio file using librosa, converting to single channeled data with original sample rate
