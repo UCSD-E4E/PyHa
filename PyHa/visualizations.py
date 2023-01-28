@@ -154,6 +154,13 @@ def draw_labels(
     Returns:
         __label_colors (dict)
     """
+    assert isinstance(df, pd.Dataframe)
+    assert isinstance(df_source, str)
+    assert isinstance(samples, np.ndarray)
+    assert isinstance(sample_rate, int)
+    assert isinstance(label_colors, dict)
+    assert isinstance(__label_colors, dict)
+
     __label_colors.update(label_colors)
 
     # General graph features
@@ -226,6 +233,13 @@ def line_graph(
     Returns:
         Nothing
     """
+    assert isinstance(clip_name, str)
+    assert isinstance(rnn_scores, list)
+    assert [isinstance(entry, float) for entry in rnn_scores]
+    assert isinstance(duration, float)
+    assert isinstance(normalize, bool)
+    assert isinstance(log_scale, bool)
+    assert isinstance(save_fig, bool)
 
     # General graph features
     fig, axs = plt.subplots(1)
@@ -305,6 +319,17 @@ def spectrogram_visualization(
         Returns:
             label_colors if return_colors is true
     """
+    assert isinstance(rnn_scores, list)
+    assert [isinstance(item, float) for item in rnn_scores]
+    assert isinstance(log_scale, bool)
+    assert isinstance(normalize_scores, bool)
+    assert isinstance(manual_df, pd.Dataframe) or manual_df is None
+    assert isinstance(automated_df, pd.Dataframe) or automated_df is None
+    assert isinstance(label_colors, dict)
+    assert isinstance(save_fig, bool)
+    assert isinstance(verbose, bool)
+
+
 
     # clip_name = os.path.basename(os.path.normpath(clip_path))
     clip_name = get_clip_name(clip_path)
@@ -376,6 +401,17 @@ def binary_visualization(automated_df, human_df, save_fig=False):
     Returns:
         Dataframe with statistics comparing the automated and human labeling.
     """
+
+    assert isinstance(automated_df,pd.DataFrame)
+    assert isinstance(human_df,pd.DataFrame)
+    assert isinstance(save_fig,bool)
+    assert "CLIP LENGTH" in automated_df.columns
+    assert "SAMPLE RATE" in automated_df.columns
+    assert "OFFSET"      in automated_df.columns
+    assert "DURATION"    in human_df.columns
+    assert "DURATION"    in automated_df.columns
+
+
     duration = automated_df["CLIP LENGTH"].to_list()[0]
     SAMPLE_RATE = automated_df["SAMPLE RATE"].to_list()[0]
     # Initializing two arrays that will represent the
@@ -491,6 +527,16 @@ def annotation_duration_histogram(
     Returns:
         Histogram of the length of the annotations.
     """
+    assert isinstance(annotation_df,pd.DataFrame)
+    assert "DURATION" in annotation_df.columns
+    assert isinstance(n_bins,int)
+    assert n_bins > 0
+    assert min_length is None or isinstance(min_length,float) or isinstance(min_length,int)
+    assert max_length is None or isinstance(max_length,float) or isinstance(max_length,int)
+    assert isinstance(save_fig,bool)
+    assert isinstance(title,str)
+    assert isinstance(filename,str)
+
     # Create the initial histogram
     duration = annotation_df["DURATION"].to_list()
     fig, ax = plt.subplots()

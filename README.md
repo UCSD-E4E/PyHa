@@ -597,6 +597,8 @@ All files in the `microfaune_package` directory are from the [microfaune reposit
 
 All files in the `tweetynet` directory are from the [tweetynet repository](https://github.com/yardencsGitHub/tweetynet), and their associated documentation can be found there.  
 
+All files in the `tweetynet` directory are from the [tweetynet repository](https://github.com/yardencsGitHub/tweetynet), and their associated documentation can be found there.  
+
 ## Examples
 *These examples were created on an Ubuntu 16.04 machine. Results may vary between different Operating Systems and Tensorflow versions.*
 
