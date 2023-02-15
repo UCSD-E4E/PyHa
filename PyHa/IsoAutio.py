@@ -27,6 +27,10 @@ def checkVerbose(
             - Python Dictionary that controls the various label creation
               techniques.
     """
+    assert isinstance(errorMessage,str)
+    assert isinstance(isolation_parameters,dict)
+    assert 'verbose' in isolation_parameters.keys()
+    
     if(isolation_parameters['verbose']):
         print(errorMessage)
 
