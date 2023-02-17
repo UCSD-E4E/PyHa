@@ -27,6 +27,10 @@ def checkVerbose(
             - Python Dictionary that controls the various label creation
               techniques.
     """
+    assert isinstance(errorMessage,str)
+    assert isinstance(isolation_parameters,dict)
+    assert 'verbose' in isolation_parameters.keys()
+    
     if(isolation_parameters['verbose']):
         print(errorMessage)
 
@@ -930,6 +934,8 @@ def generate_automated_labels_microfaune(
         except BaseException:
             checkVerbose("Failed to load" + audio_file, isolation_parameters)
             continue
+        except KeyboardInterupt:
+            sys.exit("Keyboard interupt")
 
         # downsample the audio if the sample rate isn't 44.1 kHz
         # Force everything into the human hearing range.
@@ -944,7 +950,9 @@ def generate_automated_labels_microfaune(
             checkVerbose("Failed to Downsample" + audio_file, isolation_parameters)
             # resample produces unreadable float32 array so convert back
             # SIGNAL = np.asarray(SIGNAL, dtype=np.int16)
-
+        except KeyboardInterupt:
+            sys.exit("Keyboard interupt")
+            
         # print(SIGNAL.shape)
         # convert stereo to mono if needed
         # Might want to compare to just taking the first set of data.
@@ -957,7 +965,9 @@ def generate_automated_labels_microfaune(
         except BaseException as e:
             checkVerbose("Error in detection, skipping" + audio_file, isolation_parameters)
             continue
-
+        except KeyboardInterupt:
+            sys.exit("Keyboard interupt")
+            
         # get duration of clip
         duration = len(SIGNAL) / SAMPLE_RATE
 
@@ -983,6 +993,8 @@ def generate_automated_labels_microfaune(
             checkVerbose("Error in isolating bird calls from" + audio_file, isolation_parameters)
 
             continue
+        except KeyboardInterupt:
+            sys.exit("Keyboard interupt")
     # Quick fix to indexing
     annotations.reset_index(inplace=True, drop=True)
     return annotations
@@ -1057,7 +1069,9 @@ def generate_automated_labels_tweetynet(
         except BaseException:
             checkVerbose("Failed to load" + audio_file, isolation_parameters)
             continue
-
+        except KeyboardInterupt:
+            sys.exit("Keyboard interupt")
+            
         # downsample the audio if the sample rate isn't 44.1 kHz
         # Force everything into the human hearing range.
         # May consider reworking this function so that it upsamples as well
@@ -1069,7 +1083,9 @@ def generate_automated_labels_tweetynet(
                 SAMPLE_RATE = normalized_sample_rate
         except:
             checkVerbose("Failed to Downsample" + audio_file, isolation_parameters)
-
+        except KeyboardInterupt:
+            sys.exit("Keyboard interupt")
+            
         # convert stereo to mono if needed
         # Might want to compare to just taking the first set of data.
         if len(SIGNAL.shape) == 2:
@@ -1081,7 +1097,9 @@ def generate_automated_labels_tweetynet(
         except BaseException as e:
             checkVerbose("Error in detection, skipping" + audio_file, isolation_parameters)
             continue
-
+        except KeyboardInterupt:
+            sys.exit("Keyboard interupt")
+            
         try:
             # Running moment to moment algorithm and appending to a master
             # dataframe. 
@@ -1113,6 +1131,8 @@ def generate_automated_labels_tweetynet(
             checkVerbose("Error in isolating bird calls from" + audio_file, isolation_parameters)
 
             continue
+        except KeyboardInterupt:
+            sys.exit("Keyboard interupt")
     # Quick fix to indexing
     annotations.reset_index(inplace=True, drop=True)
     return annotations
