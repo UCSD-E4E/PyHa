@@ -11,6 +11,7 @@ import scipy.signal as scipy_signal
 import numpy as np
 from math import ceil
 from copy import deepcopy
+import sys
 
 
 def checkVerbose(
@@ -1073,9 +1074,7 @@ def generate_automated_labels_tweetynet(
             checkVerbose("Failed to load" + audio_file, isolation_parameters)
             continue
             
-        # downsample the audio if the sample rate isn't 44.1 kHz
-        # Force everything into the human hearing range.
-        # May consider reworking this function so that it upsamples as well
+        # Resample the audio if it isn't the normalized sample rate
         try:
             if SAMPLE_RATE != normalized_sample_rate:
                 rate_ratio = normalized_sample_rate / SAMPLE_RATE
