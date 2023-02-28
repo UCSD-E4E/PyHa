@@ -929,7 +929,7 @@ def generate_automated_labels_microfaune(
         # Reading in the audio files using librosa, converting to single channeled data with original sample rate
         # Reason for the factor for the signal is explained here: https://stackoverflow.com/questions/53462062/pyaudio-bytes-data-to-librosa-floating-point-time-series
         # Librosa scales down to [-1, 1], but the models require the range [-32768, 32767]
-        try:
+        try: 
             SIGNAL, SAMPLE_RATE = librosa.load(audio_dir + audio_file, sr=None, mono=True)
             SIGNAL = SIGNAL * 32768
         except KeyboardInterrupt:
