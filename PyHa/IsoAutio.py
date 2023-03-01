@@ -11,6 +11,7 @@ import scipy.signal as scipy_signal
 import numpy as np
 from math import ceil
 from copy import deepcopy
+from sys import exit
 
 
 def checkVerbose(
@@ -931,6 +932,8 @@ def generate_automated_labels_microfaune(
         try:
             SIGNAL, SAMPLE_RATE = librosa.load(audio_dir + audio_file, sr=None, mono=True)
             SIGNAL = SIGNAL * 32768
+        except KeyboardInterrupt:
+            exit("Keyboard interrupt")
         except BaseException:
             checkVerbose("Failed to load" + audio_file, isolation_parameters)
             continue
@@ -944,11 +947,13 @@ def generate_automated_labels_microfaune(
                 SIGNAL = scipy_signal.resample(
                     SIGNAL, int(len(SIGNAL) * rate_ratio))
                 SAMPLE_RATE = normalized_sample_rate
+        except KeyboardInterrupt:
+            exit("Keyboard interrupt")
         except:
             checkVerbose("Failed to Downsample" + audio_file, isolation_parameters)
             # resample produces unreadable float32 array so convert back
             # SIGNAL = np.asarray(SIGNAL, dtype=np.int16)
-
+            
         # print(SIGNAL.shape)
         # convert stereo to mono if needed
         # Might want to compare to just taking the first set of data.
@@ -958,10 +963,13 @@ def generate_automated_labels_microfaune(
         try:
             microfaune_features = detector.compute_features([SIGNAL])
             global_score, local_scores = detector.predict(microfaune_features)
+        except KeyboardInterrupt:
+            exit("Keyboard interrupt")
         except BaseException as e:
             checkVerbose("Error in detection, skipping" + audio_file, isolation_parameters)
             continue
-
+        
+            
         # get duration of clip
         duration = len(SIGNAL) / SAMPLE_RATE
 
@@ -982,6 +990,8 @@ def generate_automated_labels_microfaune(
                 annotations = new_entry
             else:
                 annotations = annotations.append(new_entry)
+        except KeyboardInterrupt:
+            exit("Keyboard interrupt")
         except BaseException as e:
 
             checkVerbose("Error in isolating bird calls from" + audio_file, isolation_parameters)
@@ -1058,22 +1068,24 @@ def generate_automated_labels_tweetynet(
         try:
             SIGNAL, SAMPLE_RATE = librosa.load(audio_dir + audio_file, sr=None, mono=True)
             SIGNAL = SIGNAL * 32768
+        except KeyboardInterrupt:
+            exit("Keyboard interrupt")
         except BaseException:
             checkVerbose("Failed to load" + audio_file, isolation_parameters)
             continue
-
-        # downsample the audio if the sample rate isn't 44.1 kHz
-        # Force everything into the human hearing range.
-        # May consider reworking this function so that it upsamples as well
+            
+        # Resample the audio if it isn't the normalized sample rate
         try:
             if SAMPLE_RATE != normalized_sample_rate:
                 rate_ratio = normalized_sample_rate / SAMPLE_RATE
                 SIGNAL = scipy_signal.resample(
                     SIGNAL, int(len(SIGNAL) * rate_ratio))
                 SAMPLE_RATE = normalized_sample_rate
+        except KeyboardInterrupt:
+            exit("Keyboard interrupt")
         except:
             checkVerbose("Failed to Downsample" + audio_file, isolation_parameters)
-
+            
         # convert stereo to mono if needed
         # Might want to compare to just taking the first set of data.
         if len(SIGNAL.shape) == 2:
@@ -1082,10 +1094,12 @@ def generate_automated_labels_tweetynet(
         try:
             tweetynet_features = compute_features([SIGNAL])
             predictions, local_scores = detector.predict(tweetynet_features, model_weights=weight_path, norm=normalize_local_scores)
+        except KeyboardInterrupt:
+            exit("Keyboard interrupt")
         except BaseException as e:
             checkVerbose("Error in detection, skipping" + audio_file, isolation_parameters)
             continue
-
+           
         try:
             # Running moment to moment algorithm and appending to a master
             # dataframe. 
@@ -1112,6 +1126,8 @@ def generate_automated_labels_tweetynet(
                 annotations = new_entry
             else:
                 annotations = annotations.append(new_entry)
+        except KeyboardInterrupt:
+            exit("Keyboard interrupt")
         except BaseException as e:
 
             checkVerbose("Error in isolating bird calls from" + audio_file, isolation_parameters)
