@@ -249,6 +249,8 @@ def analyze(audio_path, output_path = None, lat=-1, lon=-1, week=-1, overlap=0.0
                     os.makedirs(output_directory)
                 output_file = os.path.join(output_directory, 'result.csv')
             df = writeResultsToDf(df, detections, min_conf, output_metadata)
+        except KeyboardInterrupt:
+            exit("Keyboard interrupt")
         except:
              print("Error processing file: {}".format(datafile))
     elif len(dataset) > 0:
@@ -263,6 +265,8 @@ def analyze(audio_path, output_path = None, lat=-1, lon=-1, week=-1, overlap=0.0
                 output_metadata['IN FILE'] = os.path.split(datafile)[1]
                 output_metadata['CLIP LENGTH'] = clip_length
                 df = writeResultsToDf(df, detections, min_conf, output_metadata)
+            except KeyboardInterrupt:
+                exit("Keyboard interrupt")
             except:
                 print("Error in processing file: {}".format(datafile)) 
         if output_path is None:

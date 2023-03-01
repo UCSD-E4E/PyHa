@@ -11,7 +11,7 @@ import scipy.signal as scipy_signal
 import numpy as np
 from math import ceil
 from copy import deepcopy
-import sys
+from sys import exit
 
 
 def checkVerbose(
@@ -933,7 +933,7 @@ def generate_automated_labels_microfaune(
             SIGNAL, SAMPLE_RATE = librosa.load(audio_dir + audio_file, sr=None, mono=True)
             SIGNAL = SIGNAL * 32768
         except KeyboardInterrupt:
-            sys.exit("Keyboard interrupt")
+            exit("Keyboard interrupt")
         except BaseException:
             checkVerbose("Failed to load" + audio_file, isolation_parameters)
             continue
@@ -948,7 +948,7 @@ def generate_automated_labels_microfaune(
                     SIGNAL, int(len(SIGNAL) * rate_ratio))
                 SAMPLE_RATE = normalized_sample_rate
         except KeyboardInterrupt:
-            sys.exit("Keyboard interrupt")
+            exit("Keyboard interrupt")
         except:
             checkVerbose("Failed to Downsample" + audio_file, isolation_parameters)
             # resample produces unreadable float32 array so convert back
@@ -964,7 +964,7 @@ def generate_automated_labels_microfaune(
             microfaune_features = detector.compute_features([SIGNAL])
             global_score, local_scores = detector.predict(microfaune_features)
         except KeyboardInterrupt:
-            sys.exit("Keyboard interrupt")
+            exit("Keyboard interrupt")
         except BaseException as e:
             checkVerbose("Error in detection, skipping" + audio_file, isolation_parameters)
             continue
@@ -991,7 +991,7 @@ def generate_automated_labels_microfaune(
             else:
                 annotations = annotations.append(new_entry)
         except KeyboardInterrupt:
-            sys.exit("Keyboard interrupt")
+            exit("Keyboard interrupt")
         except BaseException as e:
 
             checkVerbose("Error in isolating bird calls from" + audio_file, isolation_parameters)
@@ -1069,7 +1069,7 @@ def generate_automated_labels_tweetynet(
             SIGNAL, SAMPLE_RATE = librosa.load(audio_dir + audio_file, sr=None, mono=True)
             SIGNAL = SIGNAL * 32768
         except KeyboardInterrupt:
-            sys.exit("Keyboard interrupt")
+            exit("Keyboard interrupt")
         except BaseException:
             checkVerbose("Failed to load" + audio_file, isolation_parameters)
             continue
@@ -1082,7 +1082,7 @@ def generate_automated_labels_tweetynet(
                     SIGNAL, int(len(SIGNAL) * rate_ratio))
                 SAMPLE_RATE = normalized_sample_rate
         except KeyboardInterrupt:
-            sys.exit("Keyboard interrupt")
+            exit("Keyboard interrupt")
         except:
             checkVerbose("Failed to Downsample" + audio_file, isolation_parameters)
             
@@ -1095,7 +1095,7 @@ def generate_automated_labels_tweetynet(
             tweetynet_features = compute_features([SIGNAL])
             predictions, local_scores = detector.predict(tweetynet_features, model_weights=weight_path, norm=normalize_local_scores)
         except KeyboardInterrupt:
-            sys.exit("Keyboard interrupt")
+            exit("Keyboard interrupt")
         except BaseException as e:
             checkVerbose("Error in detection, skipping" + audio_file, isolation_parameters)
             continue
@@ -1127,7 +1127,7 @@ def generate_automated_labels_tweetynet(
             else:
                 annotations = annotations.append(new_entry)
         except KeyboardInterrupt:
-            sys.exit("Keyboard interrupt")
+            exit("Keyboard interrupt")
         except BaseException as e:
 
             checkVerbose("Error in isolating bird calls from" + audio_file, isolation_parameters)
