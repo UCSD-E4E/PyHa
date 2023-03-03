@@ -3,6 +3,7 @@ from .microfaune_package.microfaune.detection import RNNDetector
 from .microfaune_package.microfaune import audio
 from .tweetynet_package.tweetynet.TweetyNetModel import TweetyNetModel
 from .tweetynet_package.tweetynet.Load_data_functions import compute_features, predictions_to_kaleidoscope
+from .dsp_tools import local_score_filtering
 import os
 import torch
 import librosa
@@ -179,6 +180,16 @@ def isolate(
     #        local_scores[ndx] = local_scores[ndx] / local_scores_max
     # initializing the output dataframe that will contain labels across a
     # single clip
+
+    # Filtering the local score arrays if desired
+    if "filter_local_scores" in dict.fromkeys(isolation_parameters):
+        assert isinstance(isolation_parameters["filter_local_scores"],tuple)
+        assert len(isolation_parameters["filter_local_scores"]) == 2
+        normalized_cutoff_freq = isolation_parameters["filter_local_scores"][0]
+        order = isolation_parameters["filter_local_scores"][1]
+        local_scores = local_score_filtering(local_scores,normalized_cutoff_freq,order)
+
+
     isolation_df = pd.DataFrame()
 
     # deciding which isolation technique to deploy for a given clip based on
