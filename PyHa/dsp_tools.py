@@ -47,7 +47,7 @@ def filter_data(local_score_arr,b,a):
             - Local score array that has been filtered by a low pass filter
 
     """
-    assert isinstance(local_score_arr,np.ndarray)
+    assert isinstance(local_score_arr,np.ndarray) or isinstance(local_score_arr,list)
     assert isinstance(b, np.ndarray)
     assert isinstance(a, np.ndarray)
 
@@ -73,7 +73,7 @@ def local_score_filtering(local_score_arr, normalized_cutoff, order):
             - local score array that has been filtered by a low pass filter
         
     """
-    assert isinstance(local_score_arr,np.ndarray)
+    assert isinstance(local_score_arr,np.ndarray) or isinstance(local_score_arr,list)
     assert isinstance(normalized_cutoff,float)
     assert normalized_cutoff > 0 and normalized_cutoff < 1
     b, a = build_low_pass_filter(normalized_cutoff=normalized_cutoff, order=order)

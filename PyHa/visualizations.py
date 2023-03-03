@@ -2,6 +2,7 @@ from .microfaune_package.microfaune.detection import RNNDetector
 from .microfaune_package.microfaune import audio
 from .tweetynet_package.tweetynet.TweetyNetModel import TweetyNetModel
 from .tweetynet_package.tweetynet.Load_data_functions import compute_features
+from .dsp_tools import local_score_filtering
 import torch
 import librosa
 import matplotlib.pyplot as plt
@@ -185,7 +186,7 @@ def local_line_graph(
         None
     """
 
-    assert isinstance(local_scores,list)
+    assert isinstance(local_scores,list) or isinstance(local_scores,np.ndarray)
     assert isinstance(clip_name,str)
     assert isinstance(sample_rate,int)
     assert sample_rate > 0
@@ -453,6 +454,12 @@ def spectrogram_visualization(
 
     # If local scores were generated, plot them AND spectrogram
     if (local_scores is not None):
+        if "filter_local_scores" in dict.fromkeys(isolation_parameters):
+            assert isinstance(isolation_parameters["filter_local_scores"],tuple)
+            assert len(isolation_parameters["filter_local_scores"]) == 2
+            normalized_cutoff_freq = isolation_parameters["filter_local_scores"][0]
+            order = isolation_parameters["filter_local_scores"][1]
+            local_scores = local_score_filtering(local_scores,normalized_cutoff_freq,order)
         local_line_graph(
                 local_scores,
                 clip_path,
