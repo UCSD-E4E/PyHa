@@ -281,7 +281,7 @@ def automated_labeling_statistics(
             print("Processed", num_processed, "clips in", int((time.time() - start_time) * 10) / 10.0, 'seconds')
             start_time = time.time()
     if num_errors > 0:
-        checkVerbose("Something went wrong with" + num_errors + "clips out of" + str(len(clips)) + "clips", verbose)
+        checkVerbose("Something went wrong with " + str(num_errors) + " clips out of " + str(len(clips)) + " clips", verbose)
     statistics_df.reset_index(inplace=True, drop=True)
     return statistics_df
 
