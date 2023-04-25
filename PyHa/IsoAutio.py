@@ -923,7 +923,7 @@ def generate_automated_labels_microfaune(
     # generate local scores for every bird file in chosen directory
     for audio_file in os.listdir(audio_dir):
         # skip directories
-        if os.path.isdir(audio_dir + audio_file):
+        if os.path.isdir(os.path.join(audio_dir,audio_file)):
             continue
 
         # Reading in the audio files using librosa, converting to single channeled data with original sample rate
@@ -1059,7 +1059,7 @@ def generate_automated_labels_tweetynet(
     # generate local scores for every bird file in chosen directory
     for audio_file in os.listdir(audio_dir):
         # skip directories
-        if os.path.isdir(audio_dir + audio_file):
+        if os.path.isdir(os.path.join(audio_dir,audio_file)):
             continue
 
         # Reading in the audio files using librosa, converting to single channeled data with original sample rate
