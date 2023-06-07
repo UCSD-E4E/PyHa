@@ -116,6 +116,54 @@ This function converts a Kaleidoscope-formatted Dataframe containing annotations
 This function returns a dataframe with annotations converted to uniform second chunks.
 
 Usage: `annotation_chunker(kaleidoscope_df, chunk_length)`
+
+### [`dynamic_yan_chunking`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/annotation_post_processing.py)
+*Found in [`annotation_post_processing.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/annotation_post_processing.py)*
+
+This function converts a Dataframe containing binary bird annotations to uniform chunks of `chunk_length`. Drops any annotation shorter than `min_length`. Annotations shorter than or equal to `chunk_length` are placed into three chunks with the annotation at the start, middle, and end of the respective chunk. Annotations longer than `chunk_length` are chunked using a sliding window.
+
+| Parameter | Type |  Description |
+| --- | --- | --- |
+| `df` | Dataframe | Dataframe of automated or human labels |
+| `chunk_length` | int | Duration in seconds of each annotation chunk |
+| `min_length` | float | Duration in seconds to ignore annotations shorter than |
+| `only_slide` | bool | If true, only annotations greater than `chunk_length` are chunked |
+
+This function returns a dataframe with annotations converted to uniform second chunks.
+
+Usage: `dynamic_yan_chunking(df, chunk_length, min_length, only_slide)`
+
+### [`convolving_chunk`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/annotation_post_processing.py)
+*Found in [`annotation_post_processing.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/annotation_post_processing.py)*
+
+This helper function converts a single Dataframe row containing a binary bird annotation to uniform chunks of `chunk_length`. Drops any annotation shorter than `min_length`. Annotations shorter than or equal to `chunk_length` are placed into three chunks with the annotation at the start, middle, and end of the respective chunk. Annotations longer than `chunk_length` are chunked using a sliding window.
+
+| Parameter | Type |  Description |
+| --- | --- | --- |
+| `row` | Series | Dataframe row of a single automated or human label |
+| `chunk_length` | int | Duration in seconds of each annotation chunk |
+| `min_length` | float | Duration in seconds to ignore annotations shorter than |
+| `only_slide` | bool | If true, only annotations greater than `chunk_length` are chunked |
+
+This function returns a dataframe with annotations converted to uniform second chunks.
+
+Usage: `convolving_chunk(row, chunk_length, min_length, only_slide)`
+
+### [`create_chunk_row`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/annotation_post_processing.py)
+*Found in [`annotation_post_processing.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/annotation_post_processing.py)*
+
+This helper function takes in a Dataframe containing binary bird annotations and appends a single row to the Dataframe before returning it.
+
+| Parameter | Type |  Description |
+| --- | --- | --- |
+| `row` | Series | Dataframe row of a single automated or human label |
+| `rows_to_add` | Dataframe | Dataframe of automated or human labels |
+| `new_start` | float | The start time in seconds of the annotation in `row` |
+| `duration` | int | The duration in seconds of the entire annotation in `row` |
+
+This function returns a dataframe of annotations with the newly appended row.
+
+Usage: `create_chunk_row(row, rows_to_add, new_start, duration)`
 </details>
 
 
