@@ -91,9 +91,9 @@ def create_chunk_row(row, rows_to_add, new_start, duration):
             - Dataframe of labels
         
         new_start (float)
-            - The start of the annotation in row
+            - The start time of the annotation in row
 
-        duration (float)
+        duration (int)
             - The duration of the annotation in row
     Returns:
         Dataframe of labels with the newly appended row
@@ -104,12 +104,12 @@ def create_chunk_row(row, rows_to_add, new_start, duration):
     rows_to_add.append(chunk_row.to_frame().T)
     return rows_to_add
 
-def convolving_chunk(row, chunk_length=3, len_min=0.4, only_slide=False):
+def convolving_chunk(row, chunk_length=3, min_length=0.4, only_slide=False):
     """
     Helper function that converts a Dataframe row containing a binary
     annotation to uniform chunks of chunk_length. 
 
-    Note: Annotations of length shorter than len_min are ignored. Annotations
+    Note: Annotations of length shorter than min_length are ignored. Annotations
     that are shorter than or equal to chunk_length are chopped into three chunks
     where the annotation is placed at the start, middle, and end. Annotations
     that are longer than chunk_length are chunked used a sliding window.
@@ -121,7 +121,7 @@ def convolving_chunk(row, chunk_length=3, len_min=0.4, only_slide=False):
         chunk_length (int)
             - duration in seconds to set all annotation chunks
         
-        len_min (float)
+        min_length (float)
             - duration in seconds to ignore annotations shorter in length
 
         only_slide (bool)
@@ -137,7 +137,7 @@ def convolving_chunk(row, chunk_length=3, len_min=0.4, only_slide=False):
     chunk_half_duration = chunk_length / 2
     
     #Ignore small duration (could be errors, play with this value)
-    if duration < len_min:
+    if duration < min_length:
         return chunk_df
     
     if duration <= chunk_length and not only_slide:
@@ -175,15 +175,15 @@ def convolving_chunk(row, chunk_length=3, len_min=0.4, only_slide=False):
 
     return chunk_df
 
-def dynamic_yan_chunking(df, chunk_length=3, len_min=0.4, only_slide=False):
+def dynamic_yan_chunking(df, chunk_length=3, min_length=0.4, only_slide=False):
     """
     Function that converts a Dataframe containing binary
     annotations to uniform chunks of chunk_length. 
 
-    Note: Annotations of length shorter than len_min are ignored. Annotations
-    that are shorter than or equal to chunk_length are chopped into three chunks
+    Note: Annotations shorter than min_length are ignored. Annotations
+    shorter than or equal to chunk_length are chopped into three chunks
     where the annotation is placed at the start, middle, and end. Annotations
-    that are longer than chunk_length are chunked used a sliding window.
+    longer than chunk_length are chunked used a sliding window.
 
     Args:
         df (Dataframe)
@@ -192,8 +192,8 @@ def dynamic_yan_chunking(df, chunk_length=3, len_min=0.4, only_slide=False):
         chunk_length (int)
             - duration in seconds to set all annotation chunks
         
-        len_min (float)
-            - duration in seconds to ignore annotations shorter in length
+        min_length (float)
+            - duration in seconds to ignore annotations shorter than
 
         only_slide (bool)
             - If True, only annotations greater than chunk_length are chunked
@@ -204,7 +204,7 @@ def dynamic_yan_chunking(df, chunk_length=3, len_min=0.4, only_slide=False):
     return_df = pd.DataFrame(columns=df.columns)
     
     for _, row in df.iterrows():
-        chunk_df = convolving_chunk(row, len_min=len_min, chunk_length=chunk_length, only_slide=only_slide)
+        chunk_df = convolving_chunk(row, min_length=min_length, chunk_length=chunk_length, only_slide=only_slide)
         return_df = pd.concat([return_df, chunk_df],  ignore_index=True)
     
     return return_df
