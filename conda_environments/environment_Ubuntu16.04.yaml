@@ -194,7 +194,12 @@ dependencies:
   - zlib=1.2.11=h7b6447c_3
   - pip:
     - numpy==1.18.5
+    - nvidia-cublas-cu11==11.10.3.66
+    - nvidia-cuda-nvrtc-cu11==11.7.99
+    - nvidia-cuda-runtime-cu11==11.7.99
+    - nvidia-cudnn-cu11==8.5.0.96
     - opt-einsum==3.3.0
     - scipy==1.4.1
     - tensorflow-estimator==2.3.0
+    - torch==1.13.1
 prefix: /home/jacob/anaconda3/envs/species-id
