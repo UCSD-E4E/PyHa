@@ -95,7 +95,7 @@ class TweetyNetModel:
         self.model.eval()
         local_score = []
         dataiter = iter(test_data_loader)
-        _, label, uid = dataiter.next()
+        _, label, uid = next(dataiter)
         time_bin = float(window_size)/label.shape[1]
         st_time = np.array([time_bin*n for n in range(label.shape[1])])
 
