@@ -1071,7 +1071,7 @@ def generate_automated_labels_tweetynet(
         except KeyboardInterrupt:
             exit("Keyboard interrupt")
         except BaseException:
-            checkVerbose("Failed to load" + audio_file, isolation_parameters)
+            checkVerbose("Failed to load " + audio_file, isolation_parameters)
             continue
             
         # Resample the audio if it isn't the normalized sample rate
@@ -1084,7 +1084,7 @@ def generate_automated_labels_tweetynet(
         except KeyboardInterrupt:
             exit("Keyboard interrupt")
         except:
-            checkVerbose("Failed to Downsample" + audio_file, isolation_parameters)
+            checkVerbose("Failed to Downsample " + audio_file, isolation_parameters)
             
         # convert stereo to mono if needed
         # Might want to compare to just taking the first set of data.
@@ -1097,7 +1097,8 @@ def generate_automated_labels_tweetynet(
         except KeyboardInterrupt:
             exit("Keyboard interrupt")
         except BaseException as e:
-            checkVerbose("Error in detection, skipping" + audio_file, isolation_parameters)
+            checkVerbose("Error in detection, skipping " + audio_file, isolation_parameters)
+            print(e)
             continue
            
         try:
@@ -1129,9 +1130,8 @@ def generate_automated_labels_tweetynet(
         except KeyboardInterrupt:
             exit("Keyboard interrupt")
         except BaseException as e:
-
-            checkVerbose("Error in isolating bird calls from" + audio_file, isolation_parameters)
-
+            checkVerbose("Error in isolating bird calls from " + audio_file, isolation_parameters)
+            print(e)
             continue
     # Quick fix to indexing
     annotations.reset_index(inplace=True, drop=True)
