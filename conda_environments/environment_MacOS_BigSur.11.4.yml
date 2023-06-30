@@ -198,5 +198,10 @@ dependencies:
   - zipp=3.4.1=pyhd8ed1ab_0
   - zlib=1.2.11=h7795811_1010
   - zstd=1.4.9=h582d3a0_0
+  - pip:
+    - nvidia-cublas-cu11==11.10.3.66
+    - nvidia-cuda-nvrtc-cu11==11.7.99
+    - nvidia-cuda-runtime-cu11==11.7.99
+    - nvidia-cudnn-cu11==8.5.0.96
+    - torch==1.13.1
 prefix: /home/jacob/miniconda3/envs/species-id
-

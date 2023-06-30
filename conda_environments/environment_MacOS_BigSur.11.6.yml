@@ -365,8 +365,13 @@ dependencies:
     - jmespath==0.10.0
     - mediapipe==0.8.8.1
     - numpy==1.21.2
+    - nvidia-cublas-cu11==11.10.3.66
+    - nvidia-cuda-nvrtc-cu11==11.7.99
+    - nvidia-cuda-runtime-cu11==11.7.99
+    - nvidia-cudnn-cu11==8.5.0.96
     - opencv-contrib-python==4.5.5.62
     - protobuf==3.19.4
     - s3transfer==0.5.1
+    - torch==1.13.1
     - typing-extensions==3.10.0.2
 prefix: /Users/mugetronblue/opt/anaconda3
