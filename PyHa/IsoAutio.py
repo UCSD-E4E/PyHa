@@ -930,12 +930,12 @@ def generate_automated_labels_microfaune(
         # Reason for the factor for the signal is explained here: https://stackoverflow.com/questions/53462062/pyaudio-bytes-data-to-librosa-floating-point-time-series
         # Librosa scales down to [-1, 1], but the models require the range [-32768, 32767]
         try:
-            SIGNAL, SAMPLE_RATE = librosa.load(audio_dir + audio_file, sr=None, mono=True)
+            SIGNAL, SAMPLE_RATE = librosa.load(os.path.join(audio_dir, audio_file), sr=None, mono=True)
             SIGNAL = SIGNAL * 32768
         except KeyboardInterrupt:
             exit("Keyboard interrupt")
         except BaseException:
-            checkVerbose("Failed to load" + audio_file, isolation_parameters)
+            checkVerbose("Failed to load " + audio_file, isolation_parameters)
             continue
 
         # downsample the audio if the sample rate isn't 44.1 kHz
@@ -950,7 +950,7 @@ def generate_automated_labels_microfaune(
         except KeyboardInterrupt:
             exit("Keyboard interrupt")
         except:
-            checkVerbose("Failed to Downsample" + audio_file, isolation_parameters)
+            checkVerbose("Failed to downsample " + audio_file, isolation_parameters)
             # resample produces unreadable float32 array so convert back
             # SIGNAL = np.asarray(SIGNAL, dtype=np.int16)
             
@@ -966,7 +966,7 @@ def generate_automated_labels_microfaune(
         except KeyboardInterrupt:
             exit("Keyboard interrupt")
         except BaseException as e:
-            checkVerbose("Error in detection, skipping" + audio_file, isolation_parameters)
+            checkVerbose("Error in detection, skipping " + audio_file, isolation_parameters)
             continue
         
             
@@ -994,7 +994,7 @@ def generate_automated_labels_microfaune(
             exit("Keyboard interrupt")
         except BaseException as e:
 
-            checkVerbose("Error in isolating bird calls from" + audio_file, isolation_parameters)
+            checkVerbose("Error in isolating bird calls from " + audio_file, isolation_parameters)
 
             continue
     # Quick fix to indexing
@@ -1066,7 +1066,7 @@ def generate_automated_labels_tweetynet(
         # Reason for the factor for the signal is explained here: https://stackoverflow.com/questions/53462062/pyaudio-bytes-data-to-librosa-floating-point-time-series
         # Librosa scales down to [-1, 1], but the models require the range [-32768, 32767], so the multiplication is required
         try:
-            SIGNAL, SAMPLE_RATE = librosa.load(audio_dir + audio_file, sr=None, mono=True)
+            SIGNAL, SAMPLE_RATE = librosa.load(os.path.join(audio_dir, audio_file), sr=None, mono=True)
             SIGNAL = SIGNAL * 32768
         except KeyboardInterrupt:
             exit("Keyboard interrupt")
@@ -1084,7 +1084,7 @@ def generate_automated_labels_tweetynet(
         except KeyboardInterrupt:
             exit("Keyboard interrupt")
         except:
-            checkVerbose("Failed to Downsample " + audio_file, isolation_parameters)
+            checkVerbose("Failed to downsample " + audio_file, isolation_parameters)
             
         # convert stereo to mono if needed
         # Might want to compare to just taking the first set of data.
