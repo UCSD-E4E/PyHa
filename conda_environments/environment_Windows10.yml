@@ -175,6 +175,10 @@ dependencies:
     - google-auth-oauthlib==0.4.6
     - keras==2.8.0
     - libclang==14.0.1
+    - nvidia-cublas-cu11==11.10.3.66
+    - nvidia-cuda-nvrtc-cu11==11.7.99
+    - nvidia-cuda-runtime-cu11==11.7.99
+    - nvidia-cudnn-cu11==8.5.0.96
     - oauthlib==3.2.0
     - opt-einsum==3.3.0
     - pyasn1==0.4.8
@@ -188,4 +192,5 @@ dependencies:
     - tensorflow==2.8.0
     - tensorflow-io-gcs-filesystem==0.25.0
     - tf-estimator-nightly==2.8.0.dev2021122109
+    - torch==1.13.1
 prefix: C:\Users\Jacob\miniconda3\envs\species-id

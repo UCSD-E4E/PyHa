@@ -212,9 +212,13 @@ def predictions_to_kaleidoscope(predictions, SIGNAL, audio_dir, audio_file, manu
     intermediary_df = pd.DataFrame({"OFFSET": offset, "DURATION": duration})
     kaleidoscope_df = []
 
+    if offset.shape[0] == 0:
+        raise BaseException("No birds were detected!!")
+
     if offset.iloc[0] != 0:
         kaleidoscope_df.append(pd.DataFrame({"OFFSET": [0], "DURATION": [offset.iloc[0]]}))
     kaleidoscope_df.append(intermediary_df[intermediary_df["DURATION"] >= 2*time_bin_seconds])
+
     if offset.iloc[-1] < predictions.iloc[-1]["time_bins"]:
         kaleidoscope_df.append(pd.DataFrame({"OFFSET": [offset.iloc[-1]], "DURATION": [predictions.iloc[-1]["time_bins"] + 
                                 predictions.iloc[1]["time_bins"]]}))
