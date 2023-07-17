@@ -1060,6 +1060,15 @@ def generate_automated_labels_tweetynet(
     for audio_file in os.listdir(audio_dir):
         # skip directories
         if os.path.isdir(audio_dir + audio_file):
+            new_entry = generate_automated_labels_tweetynet(
+                audio_dir + audio_file,
+                isolation_parameters,
+                manual_id=manual_id,
+                weight_path=weight_path,
+                normalized_sample_rate=normalized_sample_rate,
+                normalize_local_scores=normalize_local_scores
+            )
+            annotations = annotations.append(new_entry)
             continue
 
         # Reading in the audio files using librosa, converting to single channeled data with original sample rate
