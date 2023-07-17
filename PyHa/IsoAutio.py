@@ -1001,6 +1001,66 @@ def generate_automated_labels_microfaune(
     annotations.reset_index(inplace=True, drop=True)
     return annotations
 
+def check_for_short_clips(
+    audio_dir,
+    automated_df,
+    isolation_parameters,
+    manual_id="bird",
+    normalized_sample_rate=44100):
+    """
+    Include clips that were otherwise not include for some error 
+    """
+    #raise NotImplementedError()
+    files = os.listdir(audio_dir)
+    saved_files = automated_df["IN FILE"].unique()
+    missed_files = ~np.isin(files, saved_files)
+
+    dfs = [automated_df]
+
+    for audio_file in missed_files:
+        # skip directories
+        if os.path.isdir(audio_dir + audio_file):
+            continue
+
+        try:
+            SIGNAL, SAMPLE_RATE = librosa.load(audio_dir + audio_file, sr=None, mono=True)
+            SIGNAL = SIGNAL * 32768
+        except KeyboardInterrupt:
+            exit("Keyboard interrupt")
+        except BaseException:
+            checkVerbose("Failed to load" + audio_file, isolation_parameters)
+            continue
+
+        try:
+            if SAMPLE_RATE != normalized_sample_rate:
+                rate_ratio = normalized_sample_rate / SAMPLE_RATE
+                SIGNAL = scipy_signal.resample(
+                    SIGNAL, int(len(SIGNAL) * rate_ratio))
+                SAMPLE_RATE = normalized_sample_rate
+        except KeyboardInterrupt:
+            exit("Keyboard interrupt")
+        except:
+            checkVerbose("Failed to Downsample " + audio_file, isolation_parameters)
+
+        old_duration = len(SIGNAL) / SAMPLE_RATE
+        entry = pd.DataFrame.from_dict({'FOLDER': audio_dir,
+             'IN FILE': audio_file,
+             'CHANNEL': 0,
+             'CLIP LENGTH': old_duration,
+             'SAMPLE RATE': SAMPLE_RATE,
+             'OFFSET': 0,
+             'DURATION': old_duration,
+             'MANUAL ID': manual_id,
+             'NO AUTO DETECTION': True})
+        
+        dfs.append(entry)
+
+    automated_df = pd.concat(dfs)
+
+    #Fix merge issues
+    automated_df['NO AUTO DETECTION'] = (~automated_df['NO AUTO DETECTION'].isnull()) & (automated_df['NO AUTO DETECTION'])
+    return pd.concat(dfs)
+
 def generate_automated_labels_tweetynet(
         audio_dir,
         isolation_parameters,
