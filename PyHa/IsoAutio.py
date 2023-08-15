@@ -1,18 +1,19 @@
-from .birdnet_lite.analyze import analyze
-from .microfaune_package.microfaune.detection import RNNDetector
-from .microfaune_package.microfaune import audio
-from .tweetynet_package.tweetynet.TweetyNetModel import TweetyNetModel
-from .tweetynet_package.tweetynet.Load_data_functions import compute_features, predictions_to_kaleidoscope
 import os
+from sys import exit
+from math import ceil, floor
+from copy import deepcopy
+from tqdm import tqdm
+
 import torch
 import librosa
+import numpy as np
 import pandas as pd
 import scipy.signal as scipy_signal
-import numpy as np
-from math import ceil
-from copy import deepcopy
-from sys import exit
 
+from .birdnet_lite.analyze import analyze
+from .microfaune_package.microfaune.detection import RNNDetector
+from .tweetynet_package.tweetynet.TweetyNetModel import TweetyNetModel
+from .tweetynet_package.tweetynet.Load_data_functions import compute_features, predictions_to_kaleidoscope
 
 def checkVerbose(
     errorMessage, 
@@ -1048,7 +1049,6 @@ def generate_automated_labels_tweetynet(
     assert isinstance(normalized_sample_rate,int)
     assert normalized_sample_rate > 0
     assert isinstance(normalize_local_scores,bool)
-
     
     # init detector
     device = torch.device('cpu')
@@ -1057,7 +1057,7 @@ def generate_automated_labels_tweetynet(
     # init labels dataframe
     annotations = pd.DataFrame()
     # generate local scores for every bird file in chosen directory
-    for audio_file in os.listdir(audio_dir):
+    for audio_file in tqdm(os.listdir(audio_dir)):
         # skip directories
         if os.path.isdir(os.path.join(audio_dir,audio_file)):
             continue
@@ -1103,14 +1103,14 @@ def generate_automated_labels_tweetynet(
            
         try:
             # Running moment to moment algorithm and appending to a master
-            # dataframe. 
+            # dataframe.
             if isolation_parameters["tweety_output"]:
                 new_entry = predictions_to_kaleidoscope(
-                    predictions, 
-                    SIGNAL, 
-                    audio_dir, 
-                    audio_file, 
-                    manual_id, 
+                    predictions,
+                    SIGNAL,
+                    audio_dir,
+                    audio_file,
+                    manual_id,
                     SAMPLE_RATE)
             else:
                 new_entry = isolate(
@@ -1122,11 +1122,11 @@ def generate_automated_labels_tweetynet(
                     isolation_parameters,
                     manual_id=manual_id,
                     normalize_local_scores=normalize_local_scores)
-            # print(new_entry)
+            new_entry = add_confidence_to_annotations(new_entry, local_scores[0])
             if annotations.empty:
                 annotations = new_entry
             else:
-                annotations = annotations.append(new_entry)
+                annotations = pd.concat((annotations, new_entry), axis=0)
         except KeyboardInterrupt:
             exit("Keyboard interrupt")
         except BaseException as e:
@@ -1183,7 +1183,6 @@ def generate_automated_labels(
     assert normalized_sample_rate > 0
     assert isinstance(normalize_local_scores,bool)
 
-    #try:
     if(isolation_parameters["model"] == 'microfaune'):
         annotations = generate_automated_labels_microfaune(
                         audio_dir=audio_dir,
@@ -1211,14 +1210,10 @@ def generate_automated_labels(
                         normalized_sample_rate=normalized_sample_rate,
                         normalize_local_scores=normalize_local_scores)
     else:
-        # print("{model_name} model does not exist"\
-        #     .format(model_name=isolation_parameters["model"]))
         checkVerbose("{model_name} model does not exist"\
         .format(model_name=isolation_parameters["model"]), isolation_parameters)
         annotations = None
-    # except:
-    #     print("Error. Check your isolation_parameters")
-    #     return None
+    
     return annotations
 
 def kaleidoscope_conversion(df):
@@ -1247,3 +1242,65 @@ def kaleidoscope_conversion(df):
 
     kaleidoscope_df = pd.concat(kaleidoscope_df, axis=1, keys=headers)
     return kaleidoscope_df
+
+def add_confidence_to_annotations(clip_df, local_score_array):
+    """
+        Adds confidence of each annotation from a local_score array.
+        Takes the maximum normalized local score value within each
+        annotation as the confidence
+        Args:
+            clip_df: (Dataframe)
+                - Dataframe containing the automated annotations of a single
+                clip 
+            local_score_array: (Numpy Array)
+                - array of local_scores from predict functions
+        Returns:
+            clip_df with an extra column containing the confidence of each annotation
+    """
+    #data prep for processing
+    local_score_array = normalize(local_score_array, 0, 1)
+    clip_df["CONFIDENCE"] = 0
+    confidence_array = []
+
+    for i in range(clip_df.shape[0]):
+        annotation_data = clip_df.iloc[i]
+        # now iterate through the local_score array for each chunk
+        clip_length = annotation_data["CLIP LENGTH"]
+        #seconds_per_index = clip_length/len(local_score_clip)
+        index_per_seconds = len(local_score_array)/clip_length
+
+        #Get the starting and ending index of that chunk as respective to
+        #the local score array
+        start_time =  annotation_data["OFFSET"]
+        end_time = annotation_data["OFFSET"] + annotation_data["DURATION"]
+        start_index = floor(start_time * index_per_seconds)
+        end_index = floor((end_time * index_per_seconds))
+        max_index = floor((clip_length * index_per_seconds))
+
+        #Compute the local maximum in this chunk in the local scores
+        max_score = max(local_score_array[start_index: min(end_index, max_index)])
+        confidence_array.append(max_score)
+    clip_df["CONFIDENCE"] = confidence_array
+    return clip_df
+
+def normalize(arr, t_min, t_max):
+    """
+        normalize local_score for better confidence value
+        Args:
+            arr: (Numpy Array)
+                - Local Score array.
+            t_min: (int)
+                - minimum value to set.
+            t_max: (int)
+                - maximum value to set.
+        Returns:
+            Numpy array of the normalized local score array.
+        """
+    norm_arr = []
+    diff = t_max - t_min
+    arr_min = min(arr)
+    diff_arr = max(arr) - arr_min
+    for i in arr:
+        temp = (((i - arr_min)*diff)/diff_arr) + t_min
+        norm_arr.append(temp)
+    return norm_arr
