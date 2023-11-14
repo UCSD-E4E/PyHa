@@ -309,3 +309,4 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.toptal.com/developers/gitignore/api/jupyternotebooks,python,linux,macos,windows,visualstudiocode
+credentials.json
