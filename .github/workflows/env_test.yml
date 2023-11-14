@@ -19,5 +19,7 @@ jobs:
           python -m pip install --upgrade pip poetry
           poetry install
       - name: Run test
+        env:
+          NAS_CREDS: ${{ secrets.NAS_CREDS }}
         run: |
           poetry run python -m pytest pyha_tests
