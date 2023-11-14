@@ -966,6 +966,7 @@ def generate_automated_labels_microfaune(
         except KeyboardInterrupt:
             exit("Keyboard interrupt")
         except BaseException as e:
+            checkVerbose(e, isolation_parameters)
             checkVerbose("Error in detection, skipping" + audio_file, isolation_parameters)
             continue
         
