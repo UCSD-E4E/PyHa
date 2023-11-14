@@ -42,7 +42,8 @@ keras = "^2.8.0"
 pandas = "^2.0.0"
 matplotlib = "^3.4.1"
 scipy = "^1.6.2"
-torch = "^2.1.0"
+# See https://github.com/pytorch/pytorch/issues/100974
+torch =  ">=2.0.0, !=2.0.1, !=2.1.0"
 tensorflow = {version = "^2.13.0" }
 tensorflow-macos = { version = "^2.13.0", platform = "darwin", markers = "platform_machine=='arm64'" }
 tensorflow-intel = { version = "2.13.0", platform = "win32" }
