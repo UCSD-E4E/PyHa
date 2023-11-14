@@ -20,4 +20,4 @@ jobs:
           poetry install
       - name: Run test
         run: |
-          python -m pytest pyha_tests
+          poetry run pytest pyha_tests
