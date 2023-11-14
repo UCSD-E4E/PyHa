@@ -20,6 +20,9 @@ authors = [
 license = "CC-BY-NC-SA-4.0"
 readme = "README.md"
 repository = 'https://github.com/UCSD-E4E/PyHa'
+packages = [
+    {include = "PyHa"}
+]
 
 [build-system]
 requires = ["poetry-core"]
