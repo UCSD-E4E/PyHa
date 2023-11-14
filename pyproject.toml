@@ -1,0 +1,43 @@
+[tool.poetry]
+name = "PyHa"
+version = "0.0.0"
+description = "PyHa"
+authors = [
+    "UCSD Engineers for Exploration <e4e@ucsd.edu>",
+    "Jacob Ayers <jgayers@ucsd.edu>",
+    "Natalie Franklin",
+    "Sam Prestrelski <sprestrelski@ucsd.edu>",
+    "Sean Perry <shperry@ucsd.edu>",
+    "Mugen Blue",
+    "Nishant Balaji",
+    "Teo Maldonado",
+    "Vanessa Salgado",
+    "Pranjal Chatterjee",
+    "Shreyas Anantha Ramaprasad",
+    "Shravan Konduru",
+    "Benjamin Cates"
+]
+license = "CC-BY-NC-SA-4.0"
+readme = "README.md"
+repository = 'https://github.com/UCSD-E4E/PyHa'
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.group.dev.dependencies]
+pylint = "^3.0.2"
+pytest = "^7.4.3"
+
+[tool.poetry.dependencies]
+python = ">=3.8,<3.10"
+librosa = "^0.10.1"
+jupyter = "^1.0.0"
+scikit-learn = "^1.3.2"
+seaborn = "^0.13.0"
+keras = "^2.8.0"
+tensorflow = "^2.8.0"
+pandas = "^1.2.3"
+matplotlib = "^3.4.1"
+scipy = "^1.6.2"
+torch = "^2.1.0"
