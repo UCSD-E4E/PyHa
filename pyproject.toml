@@ -30,7 +30,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.group.dev.dependencies]
 pylint = "^3.0.2"
-pytest = "6.2.5"
+pytest = "^7.4.3"
 nas_unzip = { git="https://github.com/UCSD-E4E/synology-download.git", rev="dcca086" }
 synology-api = "0.5.1"
 autopep8 = "^2.0.4"
