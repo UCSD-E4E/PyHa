@@ -990,7 +990,8 @@ def generate_automated_labels_microfaune(
             if annotations.empty:
                 annotations = new_entry
             else:
-                annotations = annotations.append(new_entry)
+                # annotations = annotations.append(new_entry) OUTDATED 11/15/23
+                annotations = pd.concat([annotations, new_entry])
         except KeyboardInterrupt:
             exit("Keyboard interrupt")
         except BaseException as e:
@@ -1127,7 +1128,8 @@ def generate_automated_labels_tweetynet(
             if annotations.empty:
                 annotations = new_entry
             else:
-                annotations = annotations.append(new_entry)
+                # annotations = annotations.append(new_entry) OUTDATED 11/15/23
+                annotations = pd.concat([annotations, new_entry])
         except KeyboardInterrupt:
             exit("Keyboard interrupt")
         except BaseException as e:
