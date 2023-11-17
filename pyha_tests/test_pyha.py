@@ -41,16 +41,17 @@ def test_resampy_installed():
 def test_pyha(creds):
     """Tests PyHa
     """
-    with TemporaryDirectory() as path:
+    with TemporaryDirectory() as tmp_dir:
+        path = Path(tmp_dir).resolve()
         if not Path('TEST').is_dir():
             nas_unzip(
                 network_path='smb://e4e-nas.ucsd.edu:6021/temp/github_actions/pyha/pyha_test.zip',
-                output_path=Path(path),
+                output_path=path,
                 username=creds['username'],
                 password=creds['password']
             )
         else:
-            shutil.copytree(Path('TEST'), Path(path, 'pyha_test'))
+            shutil.copytree(Path('TEST'), path, dirs_exist_ok=True)
         isolation_parameters = {
             "model": "tweetynet",
             "tweety_output": True,
@@ -62,7 +63,7 @@ def test_pyha(creds):
             "chunk_size": 5.0,
             "verbose": True
         }
-        df = generate_automated_labels(path, isolation_parameters)
+        df = generate_automated_labels(path.as_posix() + '/', isolation_parameters)
         assert df.empty != True
 
         isolation_parameters = {
@@ -76,7 +77,7 @@ def test_pyha(creds):
             "num_predictions": 1,
             "write_to_csv": False,
         }
-        df = generate_automated_labels(path, isolation_parameters)
+        df = generate_automated_labels(path.as_posix() + '/', isolation_parameters)
         assert df.empty != True
 
         isolation_parameters = {
@@ -89,5 +90,5 @@ def test_pyha(creds):
             "chunk_size":      5.0,
             "verbose":     True
         }
-        df = generate_automated_labels(path, isolation_parameters)
+        df = generate_automated_labels(path.as_posix() + '/', isolation_parameters)
         assert df.empty != True 
