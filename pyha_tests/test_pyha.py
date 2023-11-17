@@ -6,6 +6,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Dict
 
+import importlib
 import pytest
 from nas_unzip.nas import nas_unzip
 
@@ -30,7 +31,13 @@ def create_creds() -> Dict[str, str]:
             'password': value[1]
         }
 
-
+def test_resampy_installed():
+    try:
+        importlib.import_module('resampy')
+        assert True  # resampy is installed
+    except ImportError:
+        assert False, "resampy is not installed"
+        
 def test_pyha(creds):
     """Tests PyHa
     """
@@ -52,7 +59,9 @@ def test_pyha(creds):
             "chunk_size": 5.0,
             "verbose": True
         }
-        generate_automated_labels(path, isolation_parameters)
+        df = generate_automated_labels(path, isolation_parameters)
+        assert df.empty != True
+
         isolation_parameters = {
             "model": "birdnet",
             "output_path": "outputs",
@@ -64,7 +73,9 @@ def test_pyha(creds):
             "num_predictions": 1,
             "write_to_csv": False,
         }
-        generate_automated_labels(path, isolation_parameters)
+        df = generate_automated_labels(path, isolation_parameters)
+        assert df.empty != True
+
         isolation_parameters = {
             "model":          "microfaune",
             "technique":       "steinberg",
@@ -75,4 +86,5 @@ def test_pyha(creds):
             "chunk_size":      5.0,
             "verbose":     True
         }
-        generate_automated_labels(path, isolation_parameters)
+        df = generate_automated_labels(path, isolation_parameters)
+        assert df.empty != True 
