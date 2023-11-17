@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Dict
-
+import shutil
 import importlib
 import pytest
 from nas_unzip.nas import nas_unzip
@@ -42,12 +42,15 @@ def test_pyha(creds):
     """Tests PyHa
     """
     with TemporaryDirectory() as path:
-        nas_unzip(
-            network_path='smb://e4e-nas.ucsd.edu:6021/temp/github_actions/pyha/pyha_test.zip',
-            output_path=Path(path),
-            username=creds['username'],
-            password=creds['password']
-        )
+        if not Path('TEST').is_dir():
+            nas_unzip(
+                network_path='smb://e4e-nas.ucsd.edu:6021/temp/github_actions/pyha/pyha_test.zip',
+                output_path=Path(path),
+                username=creds['username'],
+                password=creds['password']
+            )
+        else:
+            shutil.copytree(Path('TEST'), Path(path, 'pyha_test'))
         isolation_parameters = {
             "model": "tweetynet",
             "tweety_output": True,
