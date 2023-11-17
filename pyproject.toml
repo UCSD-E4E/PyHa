@@ -60,3 +60,4 @@ tensorflow-io-gcs-filesystem = [
     { version = ">= 0.23.1", markers = "platform_machine!='arm64' or platform_system!='Darwin'" },
     { version = "< 0.32.0", markers = "platform_system == 'Windows'" }
 ]
+resampy = "^0.4.2"

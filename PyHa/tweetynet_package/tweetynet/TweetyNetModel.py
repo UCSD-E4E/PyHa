@@ -111,7 +111,7 @@ class TweetyNetModel:
                 bins = st_time + (int(uids[0].split("_")[0])*window_size)
                 d = {"uid": uids[0], "pred": pred, "label": labels, "time_bins": bins}
                 new_preds = pd.DataFrame(d)
-                predictions = predictions.append(new_preds)
+                predictions = pd.concat([predictions, new_preds])
 
         if norm:
             local_score = self.normalize(local_score, 0, 1)
