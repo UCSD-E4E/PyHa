@@ -1073,7 +1073,7 @@ def generate_automated_labels_tweetynet(
         except KeyboardInterrupt:
             exit("Keyboard interrupt")
         except Exception as exp:
-            logger.exception("Failed to load!")
+            logger.exception(f"Failed to load {audio_file}, parameters: {isolation_parameters}")
             checkVerbose("Failed to load " + audio_file, isolation_parameters)
             continue
             
@@ -1086,8 +1086,9 @@ def generate_automated_labels_tweetynet(
                 SAMPLE_RATE = normalized_sample_rate
         except KeyboardInterrupt:
             exit("Keyboard interrupt")
-        except:
+        except Exception as exc:
             checkVerbose("Failed to Downsample " + audio_file, isolation_parameters)
+            logger.exception(f'Failed to downsample {audio_file}, parameters: {isolation_parameters}')
             
         # convert stereo to mono if needed
         # Might want to compare to just taking the first set of data.
@@ -1102,6 +1103,7 @@ def generate_automated_labels_tweetynet(
         except BaseException as e:
             checkVerbose("Error in detection, skipping " + audio_file, isolation_parameters)
             print(e)
+            logger.exception(f'Error in detection, skipping {audio_file}, parameters: {isolation_parameters}')
             continue
            
         try:
