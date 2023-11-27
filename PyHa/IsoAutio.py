@@ -1134,8 +1134,7 @@ def generate_automated_labels_tweetynet(
             exit("Keyboard interrupt")
         except BaseException as e:
             checkVerbose("Error in isolating bird calls from " + audio_file, isolation_parameters)
-            print(e)
-            logger.exception("Error in isolating bird calls from " + audio_file, e)
+            logger.exception(f"Error in isolating bird calls from {audio_file}")
             continue
     # Quick fix to indexing
     annotations.reset_index(inplace=True, drop=True)
