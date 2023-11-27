@@ -12,7 +12,7 @@ import numpy as np
 from math import ceil
 from copy import deepcopy
 from sys import exit
-
+import logging
 
 def checkVerbose(
     errorMessage, 
@@ -966,6 +966,7 @@ def generate_automated_labels_microfaune(
         except KeyboardInterrupt:
             exit("Keyboard interrupt")
         except BaseException as e:
+            logging.exception(f'Error in detection for {audio_file}, parameters {isolation_parameters}')
             checkVerbose("Error in detection, skipping" + audio_file, isolation_parameters)
             continue
         
@@ -989,11 +990,11 @@ def generate_automated_labels_microfaune(
             if annotations.empty:
                 annotations = new_entry
             else:
-                annotations = annotations.append(new_entry)
+                annotations = pd.concat([annotations, new_entry])
         except KeyboardInterrupt:
             exit("Keyboard interrupt")
         except BaseException as e:
-
+            logging.exception(f'Error in isolating bird calls from {audio_file}, parameters: {isolation_parameters}')
             checkVerbose("Error in isolating bird calls from" + audio_file, isolation_parameters)
 
             continue
@@ -1070,7 +1071,8 @@ def generate_automated_labels_tweetynet(
             SIGNAL = SIGNAL * 32768
         except KeyboardInterrupt:
             exit("Keyboard interrupt")
-        except BaseException:
+        except BaseException as exc:
+            logging.exception(f'Failed to load {audio_file} with parameters {isolation_parameters}')
             checkVerbose("Failed to load " + audio_file, isolation_parameters)
             continue
             
@@ -1083,7 +1085,8 @@ def generate_automated_labels_tweetynet(
                 SAMPLE_RATE = normalized_sample_rate
         except KeyboardInterrupt:
             exit("Keyboard interrupt")
-        except:
+        except Exception as exc:
+            logging.exception(f'Failed to downsample {audio_file} with parameters {isolation_parameters}')
             checkVerbose("Failed to Downsample " + audio_file, isolation_parameters)
             
         # convert stereo to mono if needed
@@ -1099,6 +1102,7 @@ def generate_automated_labels_tweetynet(
         except BaseException as e:
             checkVerbose("Error in detection, skipping " + audio_file, isolation_parameters)
             print(e)
+            logging.exception(f'Error in detection, skipping {audio_file} with parameters {isolation_parameters}')
             continue
            
         try:
@@ -1126,12 +1130,13 @@ def generate_automated_labels_tweetynet(
             if annotations.empty:
                 annotations = new_entry
             else:
-                annotations = annotations.append(new_entry)
+                annotations = pd.concat([annotations, new_entry])
         except KeyboardInterrupt:
             exit("Keyboard interrupt")
         except BaseException as e:
             checkVerbose("Error in isolating bird calls from " + audio_file, isolation_parameters)
             print(e)
+            logging.exception(f'Error in isolating bird calls from {audio_file} with parameters {isolation_parameters}')
             continue
     # Quick fix to indexing
     annotations.reset_index(inplace=True, drop=True)

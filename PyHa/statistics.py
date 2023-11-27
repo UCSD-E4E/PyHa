@@ -2,7 +2,7 @@ import pandas as pd
 from scipy import stats
 import numpy as np
 import time
-
+import logging
 # Function that takes in a pandas dataframe of annotations and outputs a
 # dataframe of the mean, median, mode, quartiles, and standard deviation of
 # the annotation durations.
@@ -263,7 +263,7 @@ def automated_labeling_statistics(
                 if statistics_df.empty:
                     statistics_df = clip_stats_df
                 else:
-                    statistics_df = statistics_df.append(clip_stats_df)
+                    statistics_df = pd.concat([statistics_df,clip_stats_df])
             elif stats_type == "IoU":
                 IoU_Matrix = clip_IoU(clip_automated_df, clip_manual_df)
                 clip_stats_df = matrix_IoU_Scores(
@@ -271,17 +271,18 @@ def automated_labeling_statistics(
                 if statistics_df.empty:
                     statistics_df = clip_stats_df
                 else:
-                    statistics_df = statistics_df.append(clip_stats_df)
+                    statistics_df = pd.concat([statistics_df, clip_stats_df])
         except BaseException as e:
             num_errors += 1
             #print("Something went wrong with: " + clip)
             #print(e)
+            logging.exception(f'Failed to generate statistics for {clip}')
             continue
         if num_processed % 50 == 0:
             print("Processed", num_processed, "clips in", int((time.time() - start_time) * 10) / 10.0, 'seconds')
             start_time = time.time()
     if num_errors > 0:
-        checkVerbose("Something went wrong with" + num_errors + "clips out of" + str(len(clips)) + "clips", verbose)
+        checkVerbose(f"Something went wrong with {num_errors} clips out of {len(clips)} clips", verbose)
     statistics_df.reset_index(inplace=True, drop=True)
     return statistics_df
 
@@ -751,7 +752,7 @@ def dataset_Catch(automated_df, manual_df):
         if manual_df_with_Catch.empty:
             manual_df_with_Catch = clip_manual_df
         else:
-            manual_df_with_Catch = manual_df_with_Catch.append(clip_manual_df)
+            manual_df_with_Catch = pd.concat([manual_df_with_Catch,clip_manual_df])
     # Resetting the indices
     manual_df_with_Catch.reset_index(inplace=True, drop=True)
     return manual_df_with_Catch
@@ -825,7 +826,7 @@ def clip_statistics(
             clip_statistics = automated_labeling_statistics(temp_automated_class_df, temp_manual_class_df, stats_type = stats_type, threshold = threshold)
         else:
             temp_df = automated_labeling_statistics(temp_automated_class_df, temp_manual_class_df, stats_type = stats_type, threshold = threshold)
-            clip_statistics = clip_statistics.append(temp_df)
+            clip_statistics = pd.concat([clip_statistics,temp_df])
     clip_statistics.reset_index(inplace=True,drop=True)
     return clip_statistics
 
@@ -860,6 +861,6 @@ def class_statistics(clip_statistics):
             class_statistics = global_statistics(class_df, manual_id = class_)
         else:
             temp_df = global_statistics(class_df, manual_id = class_)
-            class_statistics = class_statistics.append(temp_df)
+            class_statistics = pd.concat([class_statistics,temp_df])
     class_statistics.reset_index(inplace=True,drop=True)
     return class_statistics
