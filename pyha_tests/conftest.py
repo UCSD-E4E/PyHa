@@ -11,7 +11,7 @@ import pytest
 from nas_unzip.nas import nas_unzip
 
 
-@pytest.fixture(name='creds')
+@pytest.fixture(name='creds', scope='session')
 def create_creds() -> Dict[str, str]:
     """Obtains the credentials
 
@@ -30,7 +30,7 @@ def create_creds() -> Dict[str, str]:
         }
 
 
-@pytest.fixture(name='reference_data')
+@pytest.fixture(name='reference_data', scope='session')
 def create_reference_data(creds) -> Path:
     """Creates reference data
 
@@ -52,6 +52,7 @@ def create_reference_data(creds) -> Path:
                 username=creds['username'],
                 password=creds['password']
             )
+            yield path.joinpath('pyha_test')
         else:
             shutil.copytree(Path('TEST'), path, dirs_exist_ok=True)
-        yield path
+            yield path
