@@ -2,6 +2,7 @@ from .microfaune_package.microfaune.detection import RNNDetector
 from .microfaune_package.microfaune import audio
 from .tweetynet_package.tweetynet.TweetyNetModel import TweetyNetModel
 from .tweetynet_package.tweetynet.Load_data_functions import compute_features
+from .utils import check_verbose
 import torch
 import librosa
 import matplotlib.pyplot as plt
@@ -11,30 +12,16 @@ import numpy as np
 import seaborn as sns
 from .IsoAutio import *
 
-def checkVerbose(
-    errorMessage, 
-    verbose):
-    """
-    Adds the ability to toggle on/off all error messages and warnings.
-    
-    Args:
-        errorMessage (string)
-            - Error message to be displayed
-
-        verbose (boolean)
-            - Whether to display error messages
-    """
-    if(verbose):
-        print(errorMessage)
 
 def spectrogram_graph(
-        clip_name,
-        sample_rate,
-        samples,
-        automated_df=None,
-        premade_annotations_df=None,
-        premade_annotations_label="Human Labels",
-        save_fig=False):
+    clip_name,
+    sample_rate,
+    samples,
+    automated_df=None,
+    premade_annotations_df=None,
+    premade_annotations_label="Human Labels",
+    save_fig=False,
+):
     """
     Function that produces graphs with the spectrogram of an audio
     clip. Now integrated with Pandas so you can visualize human and
@@ -67,13 +54,15 @@ def spectrogram_graph(
         None
     """
 
-    assert isinstance(clip_name,str)
-    assert isinstance(sample_rate,int)
-    assert isinstance(samples,np.ndarray)
-    assert automated_df is None or isinstance(automated_df,pd.DataFrame)
-    assert premade_annotations_df is None or isinstance(premade_annotations_df,pd.DataFrame)
-    assert isinstance(premade_annotations_label,str)
-    assert isinstance(save_fig,bool)
+    assert isinstance(clip_name, str)
+    assert isinstance(sample_rate, int)
+    assert isinstance(samples, np.ndarray)
+    assert automated_df is None or isinstance(automated_df, pd.DataFrame)
+    assert premade_annotations_df is None or isinstance(
+        premade_annotations_df, pd.DataFrame
+    )
+    assert isinstance(premade_annotations_label, str)
+    assert isinstance(save_fig, bool)
 
     # Calculating the length of the audio clip
     duration = samples.shape[0] / sample_rate
@@ -88,25 +77,30 @@ def spectrogram_graph(
     # spectrogram plot
     # Will require the input of a pandas dataframe
     Pxx, freqs, bins, im = axs.specgram(
-                                            samples,
-                                            Fs=sample_rate,
-                                            NFFT=4096,
-                                            noverlap=2048,
-                                            window=np.hanning(4096),
-                                            cmap="ocean")
+        samples,
+        Fs=sample_rate,
+        NFFT=4096,
+        noverlap=2048,
+        window=np.hanning(4096),
+        cmap="ocean",
+    )
     axs.set_xlim(0, duration)
     axs.set_ylim(0, 22050)
-    axs.grid(which='major', linestyle='-')
+    axs.grid(which="major", linestyle="-")
 
     # if automated_df is not None:
     if not automated_df.empty:
         ndx = 0
         for row in automated_df.index:
             minval = automated_df["OFFSET"][row]
-            maxval = automated_df["OFFSET"][row] + \
-                automated_df["DURATION"][row]
-            axs.axvspan(xmin=minval, xmax=maxval, facecolor="yellow",
-                           alpha=0.4, label="_" * ndx + "Automated Labels")
+            maxval = automated_df["OFFSET"][row] + automated_df["DURATION"][row]
+            axs.axvspan(
+                xmin=minval,
+                xmax=maxval,
+                facecolor="yellow",
+                alpha=0.4,
+                label="_" * ndx + "Automated Labels",
+            )
             ndx += 1
 
     # Adding in the optional premade annotations from a Pandas DataFrame
@@ -114,16 +108,17 @@ def spectrogram_graph(
         ndx = 0
         for row in premade_annotations_df.index:
             minval = premade_annotations_df["OFFSET"][row]
-            maxval = premade_annotations_df["OFFSET"][row] + \
-                premade_annotations_df["DURATION"][row]
+            maxval = (
+                premade_annotations_df["OFFSET"][row]
+                + premade_annotations_df["DURATION"][row]
+            )
             axs.axvspan(
                 xmin=minval,
                 xmax=maxval,
                 facecolor="red",
                 alpha=0.4,
-                label="_" *
-                ndx +
-                premade_annotations_label)
+                label="_" * ndx + premade_annotations_label,
+            )
             ndx += 1
     axs.legend()
 
@@ -131,17 +126,19 @@ def spectrogram_graph(
     if save_fig:
         plt.savefig(clip_name + "_Local_Score_Graph.png")
 
+
 def local_line_graph(
-        local_scores,
-        clip_name,
-        sample_rate,
-        samples,
-        automated_df=None,
-        premade_annotations_df=None,
-        premade_annotations_label="Human Labels",
-        log_scale=False,
-        save_fig=False,
-        normalize_local_scores=False):
+    local_scores,
+    clip_name,
+    sample_rate,
+    samples,
+    automated_df=None,
+    premade_annotations_df=None,
+    premade_annotations_label="Human Labels",
+    log_scale=False,
+    save_fig=False,
+    normalize_local_scores=False,
+):
     """
     Function that produces graphs with the local score plot and spectrogram of
     an audio clip. Now integrated with Pandas so you can visualize human and
@@ -185,17 +182,19 @@ def local_line_graph(
         None
     """
 
-    assert isinstance(local_scores,list)
-    assert isinstance(clip_name,str)
-    assert isinstance(sample_rate,int)
+    assert isinstance(local_scores, list)
+    assert isinstance(clip_name, str)
+    assert isinstance(sample_rate, int)
     assert sample_rate > 0
-    assert isinstance(samples,np.ndarray)
-    assert automated_df is None or isinstance(automated_df,pd.DataFrame)
-    assert premade_annotations_df is None or isinstance(premade_annotations_df,pd.DataFrame)
-    assert isinstance(premade_annotations_label,str)
-    assert isinstance(log_scale,bool)
-    assert isinstance(save_fig,bool)
-    assert isinstance(normalize_local_scores,bool)
+    assert isinstance(samples, np.ndarray)
+    assert automated_df is None or isinstance(automated_df, pd.DataFrame)
+    assert premade_annotations_df is None or isinstance(
+        premade_annotations_df, pd.DataFrame
+    )
+    assert isinstance(premade_annotations_label, str)
+    assert isinstance(log_scale, bool)
+    assert isinstance(save_fig, bool)
+    assert isinstance(normalize_local_scores, bool)
 
     # Calculating the length of the audio clip
     duration = samples.shape[0] / sample_rate
@@ -221,73 +220,82 @@ def local_line_graph(
     fig.suptitle("Spectrogram and Local Scores for " + clip_name)
     # score line plot - top plot
     axs[0].plot(time_stamps, local_scores)
-    #Look into this and their relation.
+    # Look into this and their relation.
     axs[0].set_xlim(0, duration)
     if log_scale:
-        axs[0].set_yscale('log')
+        axs[0].set_yscale("log")
     else:
         axs[0].set_ylim(0, 1)
-    axs[0].grid(which='major', linestyle='-')
+    axs[0].grid(which="major", linestyle="-")
     # Adding in the optional automated labels from a Pandas DataFrame
     # if automated_df is not None:
     if not automated_df.empty:
         ndx = 0
         for row in automated_df.index:
             minval = automated_df["OFFSET"][row]
-            maxval = automated_df["OFFSET"][row] + \
-                automated_df["DURATION"][row]
-            axs[0].axvspan(xmin=minval, xmax=maxval, facecolor="yellow",
-                           alpha=0.4, label="_" * ndx + "Automated Labels")
+            maxval = automated_df["OFFSET"][row] + automated_df["DURATION"][row]
+            axs[0].axvspan(
+                xmin=minval,
+                xmax=maxval,
+                facecolor="yellow",
+                alpha=0.4,
+                label="_" * ndx + "Automated Labels",
+            )
             ndx += 1
     # Adding in the optional premade annotations from a Pandas DataFrame
     if not premade_annotations_df.empty:
         ndx = 0
         for row in premade_annotations_df.index:
             minval = premade_annotations_df["OFFSET"][row]
-            maxval = premade_annotations_df["OFFSET"][row] + \
-                premade_annotations_df["DURATION"][row]
+            maxval = (
+                premade_annotations_df["OFFSET"][row]
+                + premade_annotations_df["DURATION"][row]
+            )
             axs[0].axvspan(
                 xmin=minval,
                 xmax=maxval,
                 facecolor="red",
                 alpha=0.4,
-                label="_" *
-                ndx +
-                premade_annotations_label)
+                label="_" * ndx + premade_annotations_label,
+            )
             ndx += 1
     axs[0].legend()
 
     # spectrogram - bottom plot
     # Will require the input of a pandas dataframe
     Pxx, freqs, bins, im = axs[1].specgram(
-                                            samples,
-                                            Fs=sample_rate,
-                                            NFFT=4096,
-                                            noverlap=2048,
-                                            window=np.hanning(4096),
-                                            cmap="ocean")
+        samples,
+        Fs=sample_rate,
+        NFFT=4096,
+        noverlap=2048,
+        window=np.hanning(4096),
+        cmap="ocean",
+    )
     axs[1].set_xlim(0, duration)
     axs[1].set_ylim(0, 22050)
-    axs[1].grid(which='major', linestyle='-')
+    axs[1].grid(which="major", linestyle="-")
 
     # save graph
     if save_fig:
         plt.savefig(clip_name + "_Local_Score_Graph.png")
 
+
 # TODO rework function so that instead of generating the automated labels, it
 # takes the automated_df as input same as it does with the manual dataframe.
 
+
 def spectrogram_visualization(
-        clip_path,
-        weight_path=None,
-        premade_annotations_df=None,
-        premade_annotations_label="Human Labels",
-        build_automated_df=None,
-        isolation_parameters=None,
-        log_scale=False,
-        save_fig=False,
-        normalize_local_scores=False,
-        verbose=True):
+    clip_path,
+    weight_path=None,
+    premade_annotations_df=None,
+    premade_annotations_label="Human Labels",
+    build_automated_df=None,
+    isolation_parameters=None,
+    log_scale=False,
+    save_fig=False,
+    normalize_local_scores=False,
+    verbose=True,
+):
     """
     Wrapper function for the local_line_graph and spectrogram_graph functions
     for ease of use. Processes clip for local scores to be used for the
@@ -325,15 +333,17 @@ def spectrogram_visualization(
     Returns:
         None
     """
-    assert isinstance(clip_path,str)
-    assert weight_path is None or isinstance(weight_path,str)
-    assert premade_annotations_df is None or isinstance(premade_annotations_df,pd.DataFrame)
-    assert isinstance(premade_annotations_label,str)
-    assert build_automated_df is None or isinstance(build_automated_df,bool)
-    assert isolation_parameters is None or isinstance(isolation_parameters,dict)
-    assert isinstance(log_scale,bool)
-    assert isinstance(save_fig,bool)
-    assert isinstance(normalize_local_scores,bool)
+    assert isinstance(clip_path, str)
+    assert weight_path is None or isinstance(weight_path, str)
+    assert premade_annotations_df is None or isinstance(
+        premade_annotations_df, pd.DataFrame
+    )
+    assert isinstance(premade_annotations_label, str)
+    assert build_automated_df is None or isinstance(build_automated_df, bool)
+    assert isolation_parameters is None or isinstance(isolation_parameters, dict)
+    assert isinstance(log_scale, bool)
+    assert isinstance(save_fig, bool)
+    assert isinstance(normalize_local_scores, bool)
 
     # Reading in the audio file using librosa, converting to single channeled data with original sample rate
     # Reason for the factor for the signal is explained here: https://stackoverflow.com/questions/53462062/pyaudio-bytes-data-to-librosa-floating-point-time-series
@@ -342,18 +352,17 @@ def spectrogram_visualization(
         SIGNAL, SAMPLE_RATE = librosa.load(clip_path, sr=None, mono=True)
         SIGNAL = SIGNAL * 32768
     except BaseException:
-        checkVerbose("Failure in loading" + clip_path, verbose)
+        check_verbose("Failure in loading" + clip_path, verbose)
         return
     # Downsample the audio if the sample rate > 44.1 kHz
     # Force everything into the human hearing range.
     try:
         if SAMPLE_RATE > 44100:
             rate_ratio = 44100 / SAMPLE_RATE
-            SIGNAL = scipy_signal.resample(
-                SIGNAL, int(len(SIGNAL) * rate_ratio))
+            SIGNAL = scipy_signal.resample(SIGNAL, int(len(SIGNAL) * rate_ratio))
             SAMPLE_RATE = 44100
     except BaseException:
-        checkVerbose("Failure in downsampling" + clip_path, verbose)
+        check_verbose("Failure in downsampling" + clip_path, verbose)
         return
 
     # Converting to Mono if Necessary
@@ -363,8 +372,8 @@ def spectrogram_visualization(
 
     # Generate parameters for specific models
     local_scores = None
-    if(isolation_parameters is not None):
-        if(isolation_parameters["model"] == 'microfaune'):
+    if isolation_parameters is not None:
+        if isolation_parameters["model"] == "microfaune":
             # Initializing the detector to baseline or with retrained weights
             if weight_path is None:
                 # Microfaune RNNDetector class
@@ -374,7 +383,7 @@ def spectrogram_visualization(
                     # Initializing Microfaune hybrid CNN-RNN with new weights
                     detector = RNNDetector(weight_path)
                 except BaseException:
-                    checkVerbose("Error in weight path:" + weight_path, verbose)
+                    check_verbose("Error in weight path:" + weight_path, verbose)
                     return
             try:
                 # Computing Mel Spectrogram of the audio clip
@@ -383,59 +392,58 @@ def spectrogram_visualization(
                 global_score, local_score = detector.predict(microfaune_features)
                 local_scores = local_score[0].tolist()
             except BaseException:
-                checkVerbose(
-                    "Skipping " +
-                    clip_path +
-
-                    " due to error in Microfaune Prediction", verbose)
-        elif (isolation_parameters["model"] == 'tweetynet'):
+                check_verbose(
+                    "Skipping " + clip_path + " due to error in Microfaune Prediction",
+                    verbose,
+                )
+        elif isolation_parameters["model"] == "tweetynet":
             # Initializing the detector to baseline or with retrained weights
-            device = torch.device('cpu')
-            detector = TweetyNetModel(2, (1, 86, 86), 86, device, binary = False)
+            device = torch.device("cpu")
+            detector = TweetyNetModel(2, (1, 86, 86), 86, device, binary=False)
 
             try:
-                #need a function to convert a signal into a spectrogram and then window it
+                # need a function to convert a signal into a spectrogram and then window it
                 tweetynet_features = compute_features([SIGNAL])
-                predictions, local_score = detector.predict(tweetynet_features, model_weights=weight_path)
+                predictions, local_score = detector.predict(
+                    tweetynet_features, model_weights=weight_path
+                )
                 local_scores = local_score[0].tolist()
             except BaseException:
-
-                checkVerbose(
-                    "Skipping " +
-                    clip_path +
-                    " due to error in TweetyNet Prediction", verbose)
+                check_verbose(
+                    "Skipping " + clip_path + " due to error in TweetyNet Prediction",
+                    verbose,
+                )
                 return None
 
     # In the case where the user wants to look at automated bird labels
     if premade_annotations_df is None:
-            premade_annotations_df = pd.DataFrame()
+        premade_annotations_df = pd.DataFrame()
     automated_df = None
     # Generate labels based on the model
-    if (build_automated_df is not None):
-        if (isinstance(build_automated_df, bool) and not build_automated_df):
+    if build_automated_df is not None:
+        if isinstance(build_automated_df, bool) and not build_automated_df:
             automated_df = pd.DataFrame()
             pass
         # Check if Microfaune or TweetyNET was used to generate local scores
-        if (local_scores is not None):
+        if local_scores is not None:
             # TweetyNET techniques and output
-            if (isolation_parameters["model"] == "tweetynet"
-                and isolation_parameters["tweety_output"]):
+            if (
+                isolation_parameters["model"] == "tweetynet"
+                and isolation_parameters["tweety_output"]
+            ):
                 automated_df = predictions_to_kaleidoscope(
-                                predictions, 
-                                SIGNAL, 
-                                "Doesn't", 
-                                "Doesn't", 
-                                "Matter", 
-                                SAMPLE_RATE)
+                    predictions, SIGNAL, "Doesn't", "Doesn't", "Matter", SAMPLE_RATE
+                )
             # Isolation techniques
-            else: 
+            else:
                 automated_df = isolate(
-                        local_score[0],
-                        SIGNAL,
-                        SAMPLE_RATE,
-                        audio_dir = "",
-                        filename = "",
-                        isolation_parameters=isolation_parameters)
+                    local_score[0],
+                    SIGNAL,
+                    SAMPLE_RATE,
+                    audio_dir="",
+                    filename="",
+                    isolation_parameters=isolation_parameters,
+                )
         # Catch, generate the labels for other models
         else:
             automated_df = generate_automated_labels(
@@ -443,27 +451,32 @@ def spectrogram_visualization(
                 isolation_parameters=isolation_parameters,
                 weight_path=weight_path,
                 normalized_sample_rate=SAMPLE_RATE,
-                normalize_local_scores=normalize_local_scores)
+                normalize_local_scores=normalize_local_scores,
+            )
 
-        if (len(automated_df["IN FILE"].unique()) > 1):
-            checkVerbose("\nWarning: This function only generates spectrograms for one clip. " +
-                  "automated_df has annotations for more than one clip.", verbose)
+        if len(automated_df["IN FILE"].unique()) > 1:
+            check_verbose(
+                "\nWarning: This function only generates spectrograms for one clip. "
+                + "automated_df has annotations for more than one clip.",
+                verbose,
+            )
     else:
         automated_df = pd.DataFrame()
 
     # If local scores were generated, plot them AND spectrogram
-    if (local_scores is not None):
+    if local_scores is not None:
         local_line_graph(
-                local_scores,
-                clip_path,
-                SAMPLE_RATE,
-                SIGNAL,
-                automated_df,
-                premade_annotations_df,
-                premade_annotations_label=premade_annotations_label,
-                log_scale=log_scale,
-                save_fig=save_fig,
-                normalize_local_scores=normalize_local_scores)
+            local_scores,
+            clip_path,
+            SAMPLE_RATE,
+            SIGNAL,
+            automated_df,
+            premade_annotations_df,
+            premade_annotations_label=premade_annotations_label,
+            log_scale=log_scale,
+            save_fig=save_fig,
+            normalize_local_scores=normalize_local_scores,
+        )
     else:
         spectrogram_graph(
             clip_path,
@@ -472,7 +485,9 @@ def spectrogram_visualization(
             automated_df=automated_df,
             premade_annotations_df=premade_annotations_df,
             premade_annotations_label=premade_annotations_label,
-            save_fig=save_fig)
+            save_fig=save_fig,
+        )
+
 
 def binary_visualization(automated_df, human_df, save_fig=False):
     """
@@ -496,15 +511,14 @@ def binary_visualization(automated_df, human_df, save_fig=False):
         Dataframe with statistics comparing the automated and human labeling.
     """
 
-    assert isinstance(automated_df,pd.DataFrame)
-    assert isinstance(human_df,pd.DataFrame)
-    assert isinstance(save_fig,bool)
+    assert isinstance(automated_df, pd.DataFrame)
+    assert isinstance(human_df, pd.DataFrame)
+    assert isinstance(save_fig, bool)
     assert "CLIP LENGTH" in automated_df.columns
     assert "SAMPLE RATE" in automated_df.columns
-    assert "OFFSET"      in automated_df.columns
-    assert "DURATION"    in human_df.columns
-    assert "DURATION"    in automated_df.columns
-
+    assert "OFFSET" in automated_df.columns
+    assert "DURATION" in human_df.columns
+    assert "DURATION" in automated_df.columns
 
     duration = automated_df["CLIP LENGTH"].to_list()[0]
     SAMPLE_RATE = automated_df["SAMPLE RATE"].to_list()[0]
@@ -521,20 +535,19 @@ def binary_visualization(automated_df, human_df, save_fig=False):
         minval = int(round(automated_df["OFFSET"][row] * SAMPLE_RATE, 0))
         maxval = int(
             round(
-                (automated_df["OFFSET"][row] +
-                 automated_df["DURATION"][row]) *
-                SAMPLE_RATE,
-                0))
+                (automated_df["OFFSET"][row] + automated_df["DURATION"][row])
+                * SAMPLE_RATE,
+                0,
+            )
+        )
         bot_arr[minval:maxval] = 1
     for row in human_df.index:
-
         minval = int(round(human_df["OFFSET"][row] * SAMPLE_RATE, 0))
         maxval = int(
             round(
-                (human_df["OFFSET"][row] +
-                 human_df["DURATION"][row]) *
-                SAMPLE_RATE,
-                0))
+                (human_df["OFFSET"][row] + human_df["DURATION"][row]) * SAMPLE_RATE, 0
+            )
+        )
         human_arr[minval:maxval] = 1
 
     human_arr_flipped = 1 - human_arr
@@ -583,14 +596,16 @@ def binary_visualization(automated_df, human_df, save_fig=False):
         clip_name = x[0]
         plt.save_fig(clip_name + "_label_plot.png")
 
+
 def annotation_duration_histogram(
     annotation_df,
-    n_bins = 6,
-    min_length = None,
-    max_length = None,
-    save_fig = False,
-    title = "Annotation Length Histogram",
-    filename = "annotation_histogram.png"):
+    n_bins=6,
+    min_length=None,
+    max_length=None,
+    save_fig=False,
+    title="Annotation Length Histogram",
+    filename="annotation_histogram.png",
+):
     """
     Function to build a histogram so a user can visually see the length of
     the annotations they are working with.
@@ -622,15 +637,23 @@ def annotation_duration_histogram(
     Returns:
         Histogram of the length of the annotations.
     """
-    assert isinstance(annotation_df,pd.DataFrame)
+    assert isinstance(annotation_df, pd.DataFrame)
     assert "DURATION" in annotation_df.columns
-    assert isinstance(n_bins,int)
+    assert isinstance(n_bins, int)
     assert n_bins > 0
-    assert min_length is None or isinstance(min_length,float) or isinstance(min_length,int)
-    assert max_length is None or isinstance(max_length,float) or isinstance(max_length,int)
-    assert isinstance(save_fig,bool)
-    assert isinstance(title,str)
-    assert isinstance(filename,str)
+    assert (
+        min_length is None
+        or isinstance(min_length, float)
+        or isinstance(min_length, int)
+    )
+    assert (
+        max_length is None
+        or isinstance(max_length, float)
+        or isinstance(max_length, int)
+    )
+    assert isinstance(save_fig, bool)
+    assert isinstance(title, str)
+    assert isinstance(filename, str)
 
     # Create the initial histogram
     duration = annotation_df["DURATION"].to_list()
@@ -640,7 +663,8 @@ def annotation_duration_histogram(
         bins=n_bins,
         line_kws=dict(edgecolor="k", linewidth=2),
         stat="count",
-        ax=ax)
+        ax=ax,
+    )
 
     # Modify the length of the x-axis as specified
     if max_length is not None and min_length is not None:
@@ -654,7 +678,7 @@ def annotation_duration_histogram(
 
     # Set title and the labels
     sns_hist.set_title(title)
-    sns_hist.set(xlabel="Annotation Length (s)", ylabel = "Count")
+    sns_hist.set(xlabel="Annotation Length (s)", ylabel="Count")
 
     # Save the histogram if specified
     if save_fig:

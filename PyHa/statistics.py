@@ -1,3 +1,4 @@
+from .utils import check_verbose
 import pandas as pd
 from scipy import stats
 import numpy as np
@@ -6,22 +7,6 @@ import time
 # Function that takes in a pandas dataframe of annotations and outputs a
 # dataframe of the mean, median, mode, quartiles, and standard deviation of
 # the annotation durations.
-
-def checkVerbose(
-    errorMessage, 
-    verbose):
-    """
-    Adds the ability to toggle on/off all error messages and warnings.
-
-    Args:
-        errorMessage (string)
-            - Error message to be displayed
-
-        verbose (boolean)
-            - Whether to display error messages
-    """
-    if(verbose):
-        print(errorMessage)
 
 def annotation_duration_statistics(df):
     """
@@ -159,7 +144,7 @@ def clip_general(automated_df, human_df, verbose=True):
         f1 = 2 * (recall * precision) / (recall + precision)
         IoU = true_positive_count / union_count
     except BaseException:
-        checkVerbose('''Error calculating statistics, likely due
+        check_verbose('''Error calculating statistics, likely due
         to zero division, setting values to zero''', verbose)
         f1 = 0
         precision = 0
@@ -281,7 +266,7 @@ def automated_labeling_statistics(
             print("Processed", num_processed, "clips in", int((time.time() - start_time) * 10) / 10.0, 'seconds')
             start_time = time.time()
     if num_errors > 0:
-        checkVerbose("Something went wrong with" + num_errors + "clips out of" + str(len(clips)) + "clips", verbose)
+        check_verbose("Something went wrong with" + num_errors + "clips out of" + str(len(clips)) + "clips", verbose)
     statistics_df.reset_index(inplace=True, drop=True)
     return statistics_df
 
@@ -694,7 +679,7 @@ def global_statistics(statistics_df, manual_id = 'N/A', verbose = True):
         recall = tp_sum / (tp_sum + fn_sum)
         f1 = 2 * (precision * recall) / (precision + recall)
     except ZeroDivisionError:
-        checkVerbose('''Error in calculating Precision, Recall, and F1. Likely due to
+        check_verbose('''Error in calculating Precision, Recall, and F1. Likely due to
         zero division, setting values to zero''', verbose)
         precision = 0
         recall = 0
