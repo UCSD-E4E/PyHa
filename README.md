@@ -17,11 +17,15 @@ PyHa = Python + Piha (referring to a bird species of our interest known as the s
 ## Installation and Setup
 1. Navigate to a desired folder and clone the repository onto your local machine. `git clone https://github.com/UCSD-E4E/PyHa.git`
 - If you wish to reduce the size of the repository on your local machine you can alternatively use `git clone https://github.com/UCSD-E4E/PyHa.git --depth 1` which will only install the most up-to-date version of the repo without its history.
-2. Install [Miniconda](https://docs.conda.io/en/latest/miniconda.html) or [Miniforge](https://github.com/conda-forge/miniforge).
-3. Install the conda environment by running `conda env create --file conda_environments/{filename}`, where `filename` is the name of the yaml containing the environment for your OS.
-4. Run `conda activate species-id` to activate the conda environment used to develop the package.
-5. Here you can download the Xeno-canto Screaming Piha test set used in our demos: https://drive.google.com/drive/u/0/folders/1lIweB8rF9JZhu6imkuTg_No0i04ClDh1
-6. Run `jupyter notebook` while in the proper folder to activate the PyHa_Tutorial.ipynb notebook and make sure PyHa is running properly. Make sure the paths are properly aligned to the TEST folder in the notebook as well as in the ScreamingPiha_Manual_Labels.csv file
+2. Install Python 3.8, Python 3.9, or Python 3.10
+3. Create a `venv` by running `python3.x -m venv .venv` where `python3.x` is the appropriate python.
+4. Activate the `venv` with the following commands:
+  - Windows: `.venv\Scripts\activate`
+  - macOS/Linux: `source .venv/bin/activate`
+5. Install the build tools: `python -m pip install --upgrade pip poetry`
+6. Install the environment: `poetry install`
+7. Here you can download the Xeno-canto Screaming Piha test set used in our demos: https://drive.google.com/drive/u/0/folders/1lIweB8rF9JZhu6imkuTg_No0i04ClDh1
+8. Run `jupyter notebook` while in the proper folder to activate the PyHa_Tutorial.ipynb notebook and make sure PyHa is running properly. Make sure the paths are properly aligned to the TEST folder in the notebook as well as in the ScreamingPiha_Manual_Labels.csv file
 
 ## Functions
 ![design](https://user-images.githubusercontent.com/44332326/126560960-e9816f7e-c31b-40ee-804d-6947053323c2.png)
