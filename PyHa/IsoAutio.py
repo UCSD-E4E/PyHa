@@ -919,6 +919,7 @@ def generate_automated_labels_microfaune(
         # return None
 
     # generate local scores for every bird file in chosen directory
+    # initialize list of entries to add
     entries_to_add = []
     for audio_file in os.listdir(audio_dir):
         # skip directories
@@ -986,6 +987,7 @@ def generate_automated_labels_microfaune(
                 manual_id=manual_id,
                 normalize_local_scores=normalize_local_scores)
             # print(new_entry)
+            # append entry to list
             entries_to_add.append(new_entry)
         except KeyboardInterrupt:
             exit("Keyboard interrupt")
@@ -1122,6 +1124,7 @@ def generate_automated_labels_tweetynet(
                     manual_id=manual_id,
                     normalize_local_scores=normalize_local_scores)
             # print(new_entry)
+            # append entry to list
             entries_to_add.append(new_entry)
         except KeyboardInterrupt:
             exit("Keyboard interrupt")
