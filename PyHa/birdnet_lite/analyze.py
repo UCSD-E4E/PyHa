@@ -15,6 +15,8 @@ import math
 import time
 import pandas as pd
 from sys import exit
+import logging
+from pathlib import Path
 
 def loadModel():
 
@@ -262,14 +264,15 @@ def analyze(audio_path, output_path = None, lat=-1, lon=-1, week=-1, overlap=0.0
                 if audioData == 0:
                     continue
                 detections = analyzeAudioData(audioData, lat, lon, week, sensitivity, overlap, interpreter,  num_predictions)
-                output_metadata['FOLDER']  = os.path.join('.', os.path.relpath(os.path.split(datafile)[0], os.getcwd())) + os.path.sep
+                output_metadata['FOLDER']  = Path(datafile).resolve().as_posix()
                 output_metadata['IN FILE'] = os.path.split(datafile)[1]
                 output_metadata['CLIP LENGTH'] = clip_length
                 df = writeResultsToDf(df, detections, min_conf, output_metadata)
             except KeyboardInterrupt:
                 exit("Keyboard interrupt")
-            except:
+            except Exception as exc:
                 print("Error in processing file: {}".format(datafile)) 
+                logging.exception(f"Error in processing file: {datafile}")
         if output_path is None:
             output_file = os.path.join(audio_path, 'result.csv')
             output_file = os.path.abspath(output_file)
