@@ -1,8 +1,11 @@
+from audioop import mul
 from .birdnet_lite.analyze import analyze
 from .microfaune_package.microfaune.detection import RNNDetector
 from .microfaune_package.microfaune import audio
 from .tweetynet_package.tweetynet.TweetyNetModel import TweetyNetModel
 from .tweetynet_package.tweetynet.Load_data_functions import compute_features, predictions_to_kaleidoscope
+from .FG_BG_sep.utils import FG_BG_local_score_arr
+
 import os
 import torch
 import librosa
@@ -28,7 +31,7 @@ def checkVerbose(
             - Python Dictionary that controls the various label creation
               techniques.
     """
-    assert isinstance(errorMessage,str)
+    #assert isinstance(errorMessage,str)
     assert isinstance(isolation_parameters,dict)
     assert 'verbose' in isolation_parameters.keys()
     
@@ -172,7 +175,6 @@ def isolate(
     assert "technique" in dict.fromkeys(isolation_parameters)
     potential_isolation_techniques = {"simple","steinberg","stack","chunk"}
     assert isolation_parameters["technique"] in potential_isolation_techniques
-
     # normalize the local scores so that the max value is 1.
     #if normalize_local_scores:
     #    local_scores_max = max(local_scores)
@@ -249,7 +251,7 @@ def threshold(local_scores, isolation_parameters):
 
     assert isinstance(local_scores,np.ndarray)
     assert isinstance(isolation_parameters,dict)
-    potential_threshold_types = {"median","mean","standard deviation","threshold_const"}
+    potential_threshold_types = {"median","mean","standard deviation","pure"}
     assert isolation_parameters["threshold_type"] in potential_threshold_types
 
 
@@ -350,7 +352,9 @@ def steinberg_isolate(
     thresh = threshold(local_scores, isolation_parameters)
     # how many samples one local score represents
     samples_per_score = len(SIGNAL) // len(local_scores)
-    
+    threshold_min = 0
+    if "threshold_min" in isolation_parameters.keys():
+        threshold_min = isolation_parameters["threshold_min"]
     # Calculating local scores that are at or above threshold
     thresh_scores = local_scores >= max(thresh, isolation_parameters["threshold_min"])
     
@@ -506,7 +510,7 @@ def simple_isolate(
     time_per_score = samples_per_score / SAMPLE_RATE
 
     # Calculating local scores that are at or above threshold
-    thresh_scores = local_scores >= max(thresh, isolation_parameters["threshold_min"])
+    thresh_scores = local_scores >= max(thresh, threshold_min)
     
     # Set up to find the starts and ends of clips
     thresh_scores = np.append(thresh_scores, [0])
@@ -777,7 +781,7 @@ def chunk_isolate(
     chunked_scores = np.array(list(map(np.amax, np.split(local_scores, chunk_starts))))
     
     # Finds which chunks are above threshold, and creates indices based on that
-    thresh_scores = chunked_scores >= max(thresh, isolation_parameters["threshold_min"])
+    thresh_scores = chunked_scores >= max(thresh, threshold_min)
     chunk_indices = np.where(thresh_scores == 1)[0]
     
     # Assigns offset values based on float values of the starts
@@ -1143,6 +1147,117 @@ def generate_automated_labels_tweetynet(
     return annotations
 
 
+
+def generate_automated_labels_FG_BG_separation(
+        audio_dir,
+        isolation_parameters,
+        manual_id="foreground",
+        normalized_sample_rate=44100):
+    """
+    Function that reverse-engineers the approach to foreground-background separation deployed by BirdNET:
+    https://www.sciencedirect.com/science/article/pii/S1574954121000273
+    The technique is more specifically described in this paper:
+    https://www.semanticscholar.org/paper/Audio-Based-Bird-Species-Identification-using-Deep-Sprengel-Jaggi/42ffd303b6a8373300a965da4327439575d23131
+    The algorith goes:
+    1. Compute the STFT with a hanning window of length 512, with 75% overlap
+    2. Take the absolute value of the STFT
+    3. Normalize [0,1] by dividing by the maximum value
+    4. Compute the median for every row and column of the Normalized STFT
+    5. Construct Binary Mask
+        For every pixel in the Normalized STFT
+            i. if (pixel > 3*row_median) and (pixel > 3*column_median) : set to 1
+            else :                                                    set to 0
+    6. Apply Binary Morphology Opening Operation with 4x4 square kernel of 1's
+        i.  Apply erosion (nested 2D AND operation) with kernel
+        ii. Apply dilation (nested 2D OR operation) with kernel
+    7. Convert "Opened" binary mask to Time Indicator Vector (binary local-score array)
+        i.  Compute the sum of each column (creating a vector of said sums)
+        ii. if val in vector >= 1 : set to 1
+    8. Apply dilation two times on Time Indicator Vector with 4x1 kernel
+        i. Note that this is similar to a convolution operation where the kernel is flipped,
+           so, a 1x4 kernel will end up actually being applied to the indicator vector
+    9. In the paper, they would then apply what we call the "simple" isolation with a threshold of 0.99.
+
+    audio_dir (string)
+            - Path to directory with audio files.
+
+        isolation_parameters (dict)
+            - Python Dictionary that controls the various label creation
+              techniques. 
+
+        manual_id (string)
+            - controls the name of the class written to the pandas dataframe.
+            - default: "foreground"
+
+        normalized_sample_rate (int)
+            - Sampling rate that the audio files should all be normalized to.
+
+    Returns:
+        Dataframe of automated labels for the audio clips in audio_dir.
+    """
+
+    logger = logging.getLogger("Foreground-Background Separation Autogenerated Labels")
+    assert isinstance(audio_dir, str)
+    assert isinstance(isolation_parameters, dict)
+    assert isinstance(manual_id, str)
+    assert isinstance(normalized_sample_rate, int)
+    assert normalized_sample_rate > 0
+
+    # initialize annotations dataframe
+    annotations = pd.DataFrame()
+
+    # looping through the folder
+    for audio_file in os.listdir(audio_dir):
+        # skip directories
+        if os.path.isdir(audio_dir + audio_file):
+            continue
+        # loading in the audio clip
+        try:
+            SIGNAL, SAMPLE_RATE = librosa.load(os.path.join(audio_dir, audio_file), sr=normalized_sample_rate, mono=True)
+        except KeyboardInterrupt:
+            exit("Keyboard Interrupt")
+        except BaseException:
+            checkVerbose("Failed to load " + audio_file, isolation_parameters)
+            continue
+        
+        # generating local score array from clip
+        try: 
+            time_ratio, local_score_arr = FG_BG_local_score_arr(SIGNAL, 
+                                                                isolation_parameters,
+                                                                SAMPLE_RATE)
+        except KeyboardInterrupt:
+            exit("Keyboard Interrupt")
+        except BaseException:
+            checkVerbose("Failed to collect local score array of " + audio_file, isolation_parameters)
+            continue
+
+        # passing through isolation technique
+        try:
+            new_entry = isolate(
+                local_score_arr,
+                SIGNAL,
+                SAMPLE_RATE,
+                audio_dir,
+                audio_file,
+                isolation_parameters,
+                manual_id=manual_id,
+            )
+            if annotations.empty:
+                annotations = new_entry
+            else:
+                annotations = pd.concat([annotations, new_entry])
+        except KeyboardInterrupt:
+            exit("Keyboard Interrupt")
+        except BaseException as e:
+            checkVerbose(e, isolation_parameters)
+            checkVerbose("Error in isolating bird calls from " + audio_file, isolation_parameters)
+            continue
+
+    annotations.reset_index(inplace=True, drop=True)
+    return annotations
+
+
+
 def generate_automated_labels(
         audio_dir,
         isolation_parameters,
@@ -1204,7 +1319,8 @@ def generate_automated_labels(
         keys_to_delete = ['model', 'technique', 'threshold_type',
             'threshold_const', 'chunk_size']
         for key in keys_to_delete:
-            birdnet_parameters.pop(key, None)
+            if key in birdnet_parameters.keys():
+                birdnet_parameters.pop(key, None)
         annotations = generate_automated_labels_birdnet(
                         audio_dir, birdnet_parameters)
     elif(isolation_parameters['model'] == 'tweetynet'):
@@ -1215,6 +1331,13 @@ def generate_automated_labels(
                         weight_path=weight_path,
                         normalized_sample_rate=normalized_sample_rate,
                         normalize_local_scores=normalize_local_scores)
+    elif(isolation_parameters["model"]=='fg_bg_dsp_sep'):
+        annotations = generate_automated_labels_FG_BG_separation(
+           audio_dir=audio_dir,
+           isolation_parameters=isolation_parameters,
+           manual_id=manual_id,
+           normalized_sample_rate=normalized_sample_rate
+        )
     else:
         # print("{model_name} model does not exist"\
         #     .format(model_name=isolation_parameters["model"]))
