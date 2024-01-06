@@ -3,6 +3,7 @@ from .microfaune_package.microfaune import audio
 from .tweetynet_package.tweetynet.TweetyNetModel import TweetyNetModel
 from .tweetynet_package.tweetynet.Load_data_functions import compute_features
 from .FG_BG_sep.utils import FG_BG_local_score_arr
+from .template_matching.utils import filter, butter_bandpass, generate_specgram, template_matching_local_score_arr
 import torch
 import librosa
 import matplotlib.pyplot as plt
@@ -409,6 +410,34 @@ def spectrogram_visualization(
                 return None
         elif (isolation_parameters["model"] == "fg_bg_dsp_sep"):
             time_ratio, local_scores = FG_BG_local_score_arr(SIGNAL, isolation_parameters, normalized_sample_rate=SAMPLE_RATE)
+        elif (isolation_parameters["model"]=="template_matching"):
+            bandpass = False
+            b = None
+            a = None
+            if "cutoff_freq_low" in isolation_parameters.keys() and "cutoff_freq_high" in isolation_parameters.keys():
+                bandpass = True
+                assert isinstance(isolation_parameters["cutoff_freq_low"], int)
+                assert isinstance(isolation_parameters["cutoff_freq_high"], int)
+                assert isolation_parameters["cutoff_freq_low"] > 0 and isolation_parameters["cutoff_freq_high"] > 0
+                assert isolation_parameters["cutoff_freq_high"] > isolation_parameters["cutoff_freq_low"]
+                assert isolation_parameters["cutoff_freq_high"] <= int(0.5*SAMPLE_RATE)
+            
+            TEMPLATE, _ = librosa.load(isolation_parameters["template_path"], sr=SAMPLE_RATE, mono=True)
+            if bandpass:
+                b, a = butter_bandpass(isolation_parameters["cutoff_freq_low"], isolation_parameters["cutoff_freq_high"], SAMPLE_RATE)
+                TEMPLATE = filter(TEMPLATE, b, a)
+            
+            TEMPLATE_spec = generate_specgram(TEMPLATE, SAMPLE_RATE)
+            TEMPLATE_mean = np.mean(TEMPLATE_spec)
+            TEMPLATE_spec -= TEMPLATE_mean
+            TEMPLATE_std_dev = np.std(TEMPLATE_spec)
+            n = TEMPLATE_spec.shape[0] * TEMPLATE_spec.shape[1]
+
+            SIGNAL, SAMPLE_RATE = librosa.load(clip_path, sr=SAMPLE_RATE, mono=True)
+            if bandpass:
+                SIGNAL = filter(SIGNAL, b, a)
+            local_scores = template_matching_local_score_arr(SIGNAL, SAMPLE_RATE, TEMPLATE_spec, n, TEMPLATE_std_dev)
+
     # In the case where the user wants to look at automated bird labels
     if premade_annotations_df is None:
             premade_annotations_df = pd.DataFrame()
