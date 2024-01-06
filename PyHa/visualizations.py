@@ -2,6 +2,7 @@ from .microfaune_package.microfaune.detection import RNNDetector
 from .microfaune_package.microfaune import audio
 from .tweetynet_package.tweetynet.TweetyNetModel import TweetyNetModel
 from .tweetynet_package.tweetynet.Load_data_functions import compute_features
+from .FG_BG_sep.utils import FG_BG_local_score_arr
 import torch
 import librosa
 import matplotlib.pyplot as plt
@@ -185,7 +186,7 @@ def local_line_graph(
         None
     """
 
-    assert isinstance(local_scores,list)
+    assert isinstance(local_scores,list) or isinstance(local_scores, np.ndarray)
     assert isinstance(clip_name,str)
     assert isinstance(sample_rate,int)
     assert sample_rate > 0
@@ -226,7 +227,7 @@ def local_line_graph(
     if log_scale:
         axs[0].set_yscale('log')
     else:
-        axs[0].set_ylim(0, 1)
+        axs[0].set_ylim(0, 1.05)
     axs[0].grid(which='major', linestyle='-')
     # Adding in the optional automated labels from a Pandas DataFrame
     # if automated_df is not None:
@@ -382,6 +383,7 @@ def spectrogram_visualization(
                 # Running the Mel Spectrogram through the RNN
                 global_score, local_score = detector.predict(microfaune_features)
                 local_scores = local_score[0].tolist()
+
             except BaseException:
                 checkVerbose(
                     "Skipping " +
@@ -405,7 +407,8 @@ def spectrogram_visualization(
                     clip_path +
                     " due to error in TweetyNet Prediction", verbose)
                 return None
-
+        elif (isolation_parameters["model"] == "fg_bg_dsp_sep"):
+            time_ratio, local_scores = FG_BG_local_score_arr(SIGNAL, isolation_parameters, normalized_sample_rate=SAMPLE_RATE)
     # In the case where the user wants to look at automated bird labels
     if premade_annotations_df is None:
             premade_annotations_df = pd.DataFrame()
@@ -429,8 +432,10 @@ def spectrogram_visualization(
                                 SAMPLE_RATE)
             # Isolation techniques
             else: 
+                if isinstance(local_scores,list):
+                    local_scores = np.array(local_scores)
                 automated_df = isolate(
-                        local_score[0],
+                        local_scores,
                         SIGNAL,
                         SAMPLE_RATE,
                         audio_dir = "",
