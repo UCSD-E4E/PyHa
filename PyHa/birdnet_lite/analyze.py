@@ -12,11 +12,11 @@ import operator
 import librosa
 import numpy as np
 import math
-import time
 import pandas as pd
 from sys import exit
 import logging
 from pathlib import Path
+from tqdm import tqdm
 
 def loadModel():
 
@@ -148,7 +148,6 @@ def predict(sample, interpreter, sensitivity, num_predictions):
 def analyzeAudioData(chunks, lat, lon, week, sensitivity, overlap, interpreter, num_predictions):
 
     detections = {}
-    start = time.time()
     print('ANALYZING AUDIO...', end=' ', flush=True)
 
     # Convert and prepare metadata
@@ -157,7 +156,9 @@ def analyzeAudioData(chunks, lat, lon, week, sensitivity, overlap, interpreter, 
 
     # Parse every chunk
     pred_start = 0.0
-    for c in chunks:
+
+    # @todo maybe include a way to silence this?
+    for c in tqdm(chunks, desc="Analyzing chunks..."):
 
         # Prepare as input signal
         sig = np.expand_dims(c, 0)
@@ -169,8 +170,6 @@ def analyzeAudioData(chunks, lat, lon, week, sensitivity, overlap, interpreter, 
         pred_end = pred_start + 3.0
         detections[str(pred_start) + ';' + str(pred_end)] = p
         pred_start = pred_end - overlap
-
-    print('DONE! Time', int((time.time() - start) * 10) / 10.0, 'SECONDS')
 
     return detections
 
