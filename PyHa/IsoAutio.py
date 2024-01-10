@@ -625,7 +625,7 @@ def stack_isolate(
     time_per_score = samples_per_score / SAMPLE_RATE
 
     # Calculating local scores that are at or above threshold
-    thresh_scores = local_scores >= max(thresh, isolation_parameters["threshold_min"])
+    thresh_scores = local_scores >= max(thresh, threshold_min)
     
     # Set up to find the starts and ends of clips
     thresh_scores = np.append(thresh_scores, [0])
@@ -1343,13 +1343,13 @@ def generate_automated_labels_template_matching(
             continue
         
         # generating local score array from clip
-        #try: 
-        local_score_arr = template_matching_local_score_arr(SIGNAL, SAMPLE_RATE, TEMPLATE_spec, n, TEMPLATE_std_dev)
-        #except KeyboardInterrupt:
-        #    exit("Keyboard Interrupt")
-        #except BaseException:
-        #    checkVerbose("Failed to collect local score array of " + audio_file, isolation_parameters)
-        #    continue
+        try: 
+            local_score_arr = template_matching_local_score_arr(SIGNAL, SAMPLE_RATE, TEMPLATE_spec, n, TEMPLATE_std_dev)
+        except KeyboardInterrupt:
+            exit("Keyboard Interrupt")
+        except BaseException:
+            checkVerbose("Failed to collect local score array of " + audio_file, isolation_parameters)
+            continue
 
         # passing through isolation technique
         try:
