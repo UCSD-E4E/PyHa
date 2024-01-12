@@ -1315,8 +1315,9 @@ def generate_automated_labels_template_matching(
         
         TEMPLATE_spec = generate_specgram(TEMPLATE, SAMPLE_RATE)
         TEMPLATE_mean = np.mean(TEMPLATE_spec)
-        TEMPLATE_spec -= TEMPLATE_mean
+        
         TEMPLATE_std_dev = np.std(TEMPLATE_spec)
+        TEMPLATE_spec -= TEMPLATE_mean
         n = TEMPLATE_spec.shape[0] * TEMPLATE_spec.shape[1]
 
 
