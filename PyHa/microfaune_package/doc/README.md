@@ -7,8 +7,8 @@ Once build, the documentation is available by opening the file `build/html/index
 
 ## Build documentation
 
-To generate the documentation, the packages *sphinx* and *sphinx-rtd-theme* need to be 
-installed. 
+To generate the documentation, the packages *sphinx* and *sphinx-rtd-theme* need to be
+installed.
 
 All the commands must be launched in console from the folder `doc/`.
 

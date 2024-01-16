@@ -1,5 +1,5 @@
-'''Tests PyHa environment
-'''
+"""Tests PyHa environment
+"""
 from pathlib import Path
 import importlib
 
@@ -13,19 +13,20 @@ def test_reference_data(reference_data: Path):
         reference_data (Path): Path to reference data
     """
     for i in range(11):
-        assert reference_data.joinpath(f'ScreamingPiha{i + 1}.wav').exists()
+        assert reference_data.joinpath(f"ScreamingPiha{i + 1}.wav").exists()
+
 
 def test_resampy_installed():
     try:
-        importlib.import_module('resampy')
+        importlib.import_module("resampy")
         assert True  # resampy is installed
     except ImportError:
         assert False, "resampy is not installed"
-        
+
+
 def test_pyha(reference_data: Path):
-    """Tests PyHa
-    """
-    
+    """Tests PyHa"""
+
     isolation_parameters = {
         "model": "tweetynet",
         "tweety_output": True,
@@ -35,9 +36,11 @@ def test_pyha(reference_data: Path):
         "threshold_min": 0.0,
         "window_size": 2.0,
         "chunk_size": 5.0,
-        "verbose": True
+        "verbose": True,
     }
-    df = generate_automated_labels(reference_data.as_posix() + '/', isolation_parameters)
+    df = generate_automated_labels(
+        reference_data.as_posix() + "/", isolation_parameters
+    )
     assert df.empty != True
 
     isolation_parameters = {
@@ -51,18 +54,22 @@ def test_pyha(reference_data: Path):
         "num_predictions": 1,
         "write_to_csv": False,
     }
-    df = generate_automated_labels(reference_data.as_posix() + '/', isolation_parameters)
+    df = generate_automated_labels(
+        reference_data.as_posix() + "/", isolation_parameters
+    )
     assert df.empty != True
 
     isolation_parameters = {
-        "model":          "microfaune",
-        "technique":       "steinberg",
-        "threshold_type":  "median",
+        "model": "microfaune",
+        "technique": "steinberg",
+        "threshold_type": "median",
         "threshold_const": 2.0,
-        "threshold_min":   0.0,
-        "window_size":     2.0,
-        "chunk_size":      5.0,
-        "verbose":     True
+        "threshold_min": 0.0,
+        "window_size": 2.0,
+        "chunk_size": 5.0,
+        "verbose": True,
     }
-    df = generate_automated_labels(reference_data.as_posix() + '/', isolation_parameters)
-    assert df.empty != True 
+    df = generate_automated_labels(
+        reference_data.as_posix() + "/", isolation_parameters
+    )
+    assert df.empty != True

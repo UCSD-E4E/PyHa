@@ -2,21 +2,23 @@
 import os
 import numpy as np
 import tensorflow as tf
-#from tensorflow.keras import tf.keras.layers
-#from tensorflow.math import reduce_max
+
+# from tensorflow.keras import tf.keras.layers
+# from tensorflow.math import reduce_max
 
 from .audio import load_wav, create_spec
 
-#RNN_WEIGHTS_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__),"data/model_weights-20190919_220113.h5"))
+# RNN_WEIGHTS_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__),"data/model_weights-20190919_220113.h5"))
 RNN_WEIGHTS_FILE = os.path.abspath(
-os.path.join(os.path.dirname(__file__),
-             "data/model_weights-20200528_093824.h5"))
-#load chosen weight from data
+    os.path.join(os.path.dirname(__file__),
+                 "data/model_weights-20200528_093824.h5")
+)
+# load chosen weight from data
+
 
 class RNNDetector:
-    """Class wrapping a rnn model
+    """Class wrapping a rnn model"""
 
-    """
     def __init__(self, weights_file=RNN_WEIGHTS_FILE):
         """Initialization function"""
         self.weights_file = weights_file
@@ -35,44 +37,56 @@ class RNNDetector:
         n_filter = 64
 
         spec = tf.keras.layers.Input(shape=[None, 40, 1], dtype=np.float32)
-        x = tf.keras.layers.Conv2D(n_filter, (3, 3), padding="same",
-                          activation=None)(spec)
+        x = tf.keras.layers.Conv2D(n_filter, (3, 3), padding="same", activation=None)(
+            spec
+        )
         x = tf.keras.layers.BatchNormalization(momentum=0.95)(x)
         x = tf.keras.layers.ReLU()(x)
-        x = tf.keras.layers.Conv2D(n_filter, (3, 3), padding="same",
-                          activation=None)(x)
-        x = tf.keras.layers.BatchNormalization(momentum=0.95)(x)
-        x = tf.keras.layers.ReLU()(x)
-        x = tf.keras.layers.MaxPool2D((1, 2))(x)
-
-        x = tf.keras.layers.Conv2D(n_filter, (3, 3), padding="same",
-                          activation=None)(x)
-        x = tf.keras.layers.BatchNormalization(momentum=0.95)(x)
-        x = tf.keras.layers.ReLU()(x)
-        x = tf.keras.layers.Conv2D(n_filter, (3, 3), padding="same",
-                          activation=None)(x)
+        x = tf.keras.layers.Conv2D(
+            n_filter, (3, 3), padding="same", activation=None)(x)
         x = tf.keras.layers.BatchNormalization(momentum=0.95)(x)
         x = tf.keras.layers.ReLU()(x)
         x = tf.keras.layers.MaxPool2D((1, 2))(x)
 
-        x = tf.keras.layers.Conv2D(n_filter, (3, 3), padding="same",
-                          activation=None)(x)
+        x = tf.keras.layers.Conv2D(
+            n_filter, (3, 3), padding="same", activation=None)(x)
         x = tf.keras.layers.BatchNormalization(momentum=0.95)(x)
         x = tf.keras.layers.ReLU()(x)
-        x = tf.keras.layers.Conv2D(n_filter, (3, 3), padding="same",
-                          activation=None)(x)
+        x = tf.keras.layers.Conv2D(
+            n_filter, (3, 3), padding="same", activation=None)(x)
+        x = tf.keras.layers.BatchNormalization(momentum=0.95)(x)
+        x = tf.keras.layers.ReLU()(x)
+        x = tf.keras.layers.MaxPool2D((1, 2))(x)
+
+        x = tf.keras.layers.Conv2D(
+            n_filter, (3, 3), padding="same", activation=None)(x)
+        x = tf.keras.layers.BatchNormalization(momentum=0.95)(x)
+        x = tf.keras.layers.ReLU()(x)
+        x = tf.keras.layers.Conv2D(
+            n_filter, (3, 3), padding="same", activation=None)(x)
         x = tf.keras.layers.BatchNormalization(momentum=0.95)(x)
         x = tf.keras.layers.ReLU()(x)
         x = tf.keras.layers.MaxPool2D((1, 2))(x)
 
         x = tf.math.reduce_max(x, axis=-2)
 
-        x = tf.keras.layers.Bidirectional(tf.keras.layers.GRU(64, reset_after=False, return_sequences=True))(x) #reset_after flag
-        x = tf.keras.layers.Bidirectional(tf.keras.layers.GRU(64, reset_after=False, return_sequences=True))(x) #reset_after
+        x = tf.keras.layers.Bidirectional(
+            tf.keras.layers.GRU(64, reset_after=False, return_sequences=True)
+        )(
+            x
+        )  # reset_after flag
+        x = tf.keras.layers.Bidirectional(
+            tf.keras.layers.GRU(64, reset_after=False, return_sequences=True)
+        )(
+            x
+        )  # reset_after
 
-        x = tf.keras.layers.TimeDistributed(tf.keras.layers.Dense(64, activation="sigmoid"))(x)
+        x = tf.keras.layers.TimeDistributed(
+            tf.keras.layers.Dense(64, activation="sigmoid")
+        )(x)
         local_pred = tf.keras.layers.TimeDistributed(
-            tf.keras.layers.Dense(1, activation="sigmoid"))(x)
+            tf.keras.layers.Dense(1, activation="sigmoid")
+        )(x)
         pred = tf.math.reduce_max(local_pred, axis=-2)
         return tf.keras.Model(inputs=spec, outputs=[pred, local_pred])
 
@@ -91,10 +105,10 @@ class RNNDetector:
         """
         X = []
         for data in audio_signals:
-
-            x = create_spec(data, fs=44100, n_mels=40, n_fft=2048,
-                            hop_len=1024).transpose()
-            X.append(x[..., np.newaxis].astype(np.float32)/255)
+            x = create_spec(
+                data, fs=44100, n_mels=40, n_fft=2048, hop_len=1024
+            ).transpose()
+            X.append(x[..., np.newaxis].astype(np.float32) / 255)
         return X
 
     def predict_on_wav(self, wav_file):

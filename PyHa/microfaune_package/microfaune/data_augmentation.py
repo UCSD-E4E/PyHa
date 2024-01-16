@@ -10,13 +10,15 @@ import numpy as np
 from keras.preprocessing.image import ImageDataGenerator
 from microfaune import plot
 
+
 class DataAugmentation:
-    """Class to generate image data for rnn modeling
-    """
+    """Class to generate image data for rnn modeling"""
+
     datagenerator_list = None
 
-    def __init__(self, width_shift_range=None, horizontal_flip=True, \
-                 brightness_range=None):
+    def __init__(
+        self, width_shift_range=None, horizontal_flip=True, brightness_range=None
+    ):
         """Initialization data generators
 
         Parameters
@@ -40,13 +42,20 @@ class DataAugmentation:
         if brightness_range is None:
             brightness_range = [0.4, 0.9]
 
-        datagen_width_shift = ImageDataGenerator(width_shift_range=width_shift_range)
-        datagen_horizontal_flip = ImageDataGenerator(horizontal_flip=horizontal_flip)
-        datagen_brightness = ImageDataGenerator(brightness_range=brightness_range)
-        self.datagenerator_list = [datagen_width_shift, datagen_horizontal_flip, datagen_brightness]
+        datagen_width_shift = ImageDataGenerator(
+            width_shift_range=width_shift_range)
+        datagen_horizontal_flip = ImageDataGenerator(
+            horizontal_flip=horizontal_flip)
+        datagen_brightness = ImageDataGenerator(
+            brightness_range=brightness_range)
+        self.datagenerator_list = [
+            datagen_width_shift,
+            datagen_horizontal_flip,
+            datagen_brightness,
+        ]
 
     def generate_augmentation(self, spec, y_val, my_range=5, to_display=False):
-        """ data augmentation of one Spectrogram
+        """data augmentation of one Spectrogram
         Parameters
         ----------
         spec spectrogram
@@ -73,7 +82,7 @@ class DataAugmentation:
             for _ in range(my_range):
                 batch = cursor.next()
                 # convert to unsigned integers for viewing
-                image = batch[0].astype('uint8')
+                image = batch[0].astype("uint8")
                 image = image[:, :, 0]
                 list_s.append(image)
                 list_y.append(y_val)
@@ -82,7 +91,7 @@ class DataAugmentation:
         return list_s, list_y
 
     def generate_augmentation_list(self, list_s, list_y, my_range=5, to_display=False):
-        """ data augmentation of a  list of Spectrograms
+        """data augmentation of a  list of Spectrograms
         Parameters
         ----------
         list_s  vector of spectograms
@@ -98,7 +107,8 @@ class DataAugmentation:
         list_s_augmented = []
         list_y_augmented = []
         for spec, y_val in zip(list_s, list_y):
-            lstx, lsty = self.generate_augmentation(spec, y_val, my_range, to_display)
+            lstx, lsty = self.generate_augmentation(
+                spec, y_val, my_range, to_display)
             list_s_augmented += lstx
             list_y_augmented += lsty
         return list_s_augmented, list_y_augmented

@@ -65,7 +65,4 @@ file: detect_acc.py
 
 usage: ```python detect_acc.py [folder path to audio files]```
 
-function: output prediction accuracy on labeled data. Must have labels.csv in folder path. 
-
-
-
+function: output prediction accuracy on labeled data. Must have labels.csv in folder path.

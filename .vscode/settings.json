@@ -1,7 +1,6 @@
 {
-    "python.testing.pytestArgs": [
-        "pyha_tests"
-    ],
-    "python.testing.unittestEnabled": false,
-    "python.testing.pytestEnabled": true
+  "python.testing.pytestArgs": ["pyha_tests"],
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true,
+  "editor.tabSize": 4
 }
