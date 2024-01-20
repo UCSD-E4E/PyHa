@@ -125,6 +125,36 @@ def build_isolation_parameters_microfaune(
 
     return isolation_parameters
 
+def write_confidence(local_score_arr, automated_labels_df):
+    """
+    Function that adds a new column to a clip dataframe that has had automated labels generated.
+    Goes through all of the annotations and adding to said row a confidence metric based on the
+    maximum value of said annotation.
+
+    Args:
+        local_score_arr (np.ndarray or list of floats)
+            - Array of small predictions of bird presence
+        automated_labels_df (pd.DataFrame)
+            - labels derived from the local_score_arr from the def isolate() method for the "IN FILE"
+            column clip
+    returns:
+        Pandas DataFrame with an additional column of the confidence scores from the local score array
+    """
+    assert isinstance(local_score_arr, np.ndarray) or isinstance(local_score_arr, list)
+    assert isinstance(automated_labels_df, pd.DataFrame)
+    assert len(automated_labels_df) > 0
+
+    time_ratio = len(local_score_arr)/automated_labels_df["CLIP LENGTH"][0]
+    confidences = []
+    for row in automated_labels_df.index:
+        start_ndx = int(automated_labels_df["OFFSET"][row] * time_ratio)
+        end_ndx = start_ndx + int(automated_labels_df["DURATION"][row] * time_ratio)
+        cur_confidence = np.max(local_score_arr[start_ndx:end_ndx])
+        confidences.append(cur_confidence)
+
+    automated_labels_df["CONFIDENCE"] = confidences
+    return automated_labels_df
+
 
 def isolate(
         local_scores,
@@ -225,6 +255,10 @@ def isolate(
             filename,
             isolation_parameters,
             manual_id=manual_id)
+        
+    if "write_confidence" in isolation_parameters.keys():
+        if isolation_parameters["write_confidence"]:
+            isolation_df = write_confidence(local_scores, isolation_df)
 
     return isolation_df
 
