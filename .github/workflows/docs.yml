@@ -7,7 +7,6 @@ on:
   push:
     branches:
       - main
-      - np-generate-docs
 
 # security: restrict permissions for CI jobs.
 permissions:
@@ -42,6 +41,7 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
     permissions:
       pages: write
       id-token: write
