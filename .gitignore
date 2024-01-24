@@ -13,6 +13,8 @@ outputs/*
 /mixed_bird/*
 TEST/*
 
+docs/
+
 *.csv
 *.flac
 *.ipynb
