@@ -29,7 +29,7 @@ jobs:
           poetry install
 
       - name: Build Documentation
-        run: poetry run python -m pdoc ./PyHa -o docs/
+        run: poetry run python -m pdoc ./PyHa --docformat google -o docs/
         env:
           PDOC_ALLOW_EXEC: 1
 
