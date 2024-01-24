@@ -61,3 +61,4 @@ tensorflow-io-gcs-filesystem = [
     { version = "< 0.32.0", markers = "platform_system == 'Windows'" }
 ]
 resampy = "^0.4.2"
+pdoc = "^14.4.0"
