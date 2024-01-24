@@ -7,6 +7,7 @@ on:
   push:
     branches:
       - main
+      - np-generate-docs
 
 # security: restrict permissions for CI jobs.
 permissions:
