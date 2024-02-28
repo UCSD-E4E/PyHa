@@ -34,6 +34,7 @@ pytest = "^7.4.3"
 nas_unzip = { git="https://github.com/UCSD-E4E/synology-download.git", rev="dcca086" }
 synology-api = "0.5.1"
 autopep8 = "^2.0.4"
+pdoc = "^14.4.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8,<3.11"
