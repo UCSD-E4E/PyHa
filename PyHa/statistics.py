@@ -1,7 +1,7 @@
-import pandas as pd
 from scipy import stats
+from tqdm import tqdm
+import pandas as pd
 import numpy as np
-import time
 
 # Function that takes in a pandas dataframe of annotations and outputs a
 # dataframe of the mean, median, mode, quartiles, and standard deviation of
@@ -249,9 +249,8 @@ def automated_labeling_statistics(
     num_errors = 0
     num_processed = 0
 
-    start_time = time.time()
     # Looping through each audio clip
-    for clip in clips:
+    for clip in tqdm(clips, desc="Processing clips...", disable=not verbose):
         num_processed += 1
         clip_automated_df = automated_df[automated_df["IN FILE"] == clip]
         # In case the extension for manual_df is different from the clip extension, just check the name before the extension
@@ -274,12 +273,8 @@ def automated_labeling_statistics(
                     statistics_df = pd.concat([statistics_df, clip_stats_df])
         except BaseException as e:
             num_errors += 1
-            #print("Something went wrong with: " + clip)
             print(e)
             continue
-        if num_processed % 50 == 0:
-            print("Processed", num_processed, "clips in", int((time.time() - start_time) * 10) / 10.0, 'seconds')
-            start_time = time.time()
     if num_errors > 0:
         checkVerbose(f"Something went wrong with {num_errors} clips out of {len(clips)} clips", verbose)
     statistics_df.reset_index(inplace=True, drop=True)
