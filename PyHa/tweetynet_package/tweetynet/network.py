@@ -9,8 +9,7 @@ from torch.nn import functional as F
 
 
 class Conv2dTF(nn.Conv2d):
-
-    PADDING_METHODS = ('valid', 'same')
+    PADDING_METHODS = ("valid", "same")
 
     """Conv2d with padding behavior from Tensorflow
 
@@ -21,12 +20,15 @@ class Conv2dTF(nn.Conv2d):
 
     used to maintain behavior of original implementation of TweetyNet that used Tensorflow 1.0 low-level API
     """
+
     def __init__(self, *args, **kwargs):
         super(Conv2dTF, self).__init__(*args, **kwargs)
         padding = kwargs.get("padding", "same")
         if not isinstance(padding, str):
-            raise TypeError(f"value for 'padding' argument should be a string, one of: {self.PADDING_METHODS}")
-        #padding = padding.upper()
+            raise TypeError(
+                f"value for 'padding' argument should be a string, one of: {self.PADDING_METHODS}"
+            )
+        # padding = padding.upper()
         if padding not in self.PADDING_METHODS:
             raise ValueError(
                 f"value for 'padding' argument must be one of '{self.PADDING_METHODS}' but was: {padding}"
@@ -39,7 +41,8 @@ class Conv2dTF(nn.Conv2d):
         effective_filter_size = (filter_size - 1) * self.dilation[dim] + 1
         out_size = (input_size + self.stride[dim] - 1) // self.stride[dim]
         total_padding = max(
-            0, (out_size - 1) * self.stride[dim] + effective_filter_size - input_size
+            0, (out_size - 1) * self.stride[dim] +
+            effective_filter_size - input_size
         )
         additional_padding = int(total_padding % 2 != 0)
 
@@ -71,6 +74,7 @@ class Conv2dTF(nn.Conv2d):
                 dilation=self.dilation,
                 groups=self.groups,
             )
+
 
 """
 The TweetyNet Model Architecture in Pytorch
@@ -116,45 +120,47 @@ bidirectional : bool
     If True, make LSTM bidirectional. Default is True.
 """
 
+
 class TweetyNet(nn.Module):
-    def __init__(self,
-                 num_classes,
-                 input_shape=(1, 513, 88),
-                 padding='same',
-                 conv1_filters=32,
-                 conv1_kernel_size=(5, 5),
-                 conv2_filters=64,
-                 conv2_kernel_size=(5, 5),
-                 pool1_size=(8, 1),
-                 pool1_stride=(8, 1),
-                 pool2_size=(8, 1),
-                 pool2_stride=(8, 1),
-                 hidden_size=None,
-                 rnn_dropout=0.,
-                 num_layers=1,
-                 bidirectional=True,
-                 ):
+    def __init__(
+        self,
+        num_classes,
+        input_shape=(1, 513, 88),
+        padding="same",
+        conv1_filters=32,
+        conv1_kernel_size=(5, 5),
+        conv2_filters=64,
+        conv2_kernel_size=(5, 5),
+        pool1_size=(8, 1),
+        pool1_stride=(8, 1),
+        pool2_size=(8, 1),
+        pool2_stride=(8, 1),
+        hidden_size=None,
+        rnn_dropout=0.0,
+        num_layers=1,
+        bidirectional=True,
+    ):
         super().__init__()
         self.num_classes = num_classes
         self.input_shape = input_shape
 
         self.cnn = nn.Sequential(
-            Conv2dTF(in_channels=self.input_shape[0],
-                     out_channels=conv1_filters,
-                     kernel_size=conv1_kernel_size,
-                     padding=padding
-                     ),
+            Conv2dTF(
+                in_channels=self.input_shape[0],
+                out_channels=conv1_filters,
+                kernel_size=conv1_kernel_size,
+                padding=padding,
+            ),
             nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=pool1_size,
-                         stride=pool1_stride),
-            Conv2dTF(in_channels=conv1_filters,
-                     out_channels=conv2_filters,
-                     kernel_size=conv2_kernel_size,
-                     padding=padding,
-                     ),
+            nn.MaxPool2d(kernel_size=pool1_size, stride=pool1_stride),
+            Conv2dTF(
+                in_channels=conv1_filters,
+                out_channels=conv2_filters,
+                kernel_size=conv2_kernel_size,
+                padding=padding,
+            ),
             nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=pool2_size,
-                         stride=pool2_stride),
+            nn.MaxPool2d(kernel_size=pool2_size, stride=pool2_stride),
         )
 
         # determine number of features in output after stacking channels
@@ -165,27 +171,30 @@ class TweetyNet(nn.Module):
         tmp_out = self.cnn(tmp_tensor)
         channels_out, freqbins_out = tmp_out.shape[1], tmp_out.shape[2]
         self.rnn_input_size = channels_out * freqbins_out
-        #print(f"Here are output dimensions of cnn: {tmp_out.shape}")
-        #print(f"The RNN Input Size{self.rnn_input_size}")
+        # print(f"Here are output dimensions of cnn: {tmp_out.shape}")
+        # print(f"The RNN Input Size{self.rnn_input_size}")
         if hidden_size is None:
             self.hidden_size = self.rnn_input_size
         else:
             self.hidden_size = hidden_size
-        #print(f"The RNN hidden layers {self.hidden_size}")
-        #print(f"number of layers {num_layers}")
-        #print(f"RNN dropout: {rnn_dropout}")
-        #print(f"bidirectional: {bidirectional}")
-        self.rnn = nn.LSTM(input_size=self.rnn_input_size,
-                           hidden_size=self.hidden_size,
-                           num_layers=num_layers,
-                           dropout=rnn_dropout,
-                           bidirectional=bidirectional)
+        # print(f"The RNN hidden layers {self.hidden_size}")
+        # print(f"number of layers {num_layers}")
+        # print(f"RNN dropout: {rnn_dropout}")
+        # print(f"bidirectional: {bidirectional}")
+        self.rnn = nn.LSTM(
+            input_size=self.rnn_input_size,
+            hidden_size=self.hidden_size,
+            num_layers=num_layers,
+            dropout=rnn_dropout,
+            bidirectional=bidirectional,
+        )
 
         # for self.fc, in_features = hidden_size * 2 because LSTM is bidirectional
         # so we get hidden forward + hidden backward as output
-        self.fc = nn.Linear(in_features=self.hidden_size * 2, out_features=num_classes)
-        #print(self.fc)
-        #print(self.hidden_size * 2)
+        self.fc = nn.Linear(in_features=self.hidden_size *
+                            2, out_features=num_classes)
+        # print(self.fc)
+        # print(self.hidden_size * 2)
 
     def forward(self, x, input_lengths, target_lengths):
         features = self.cnn(x)

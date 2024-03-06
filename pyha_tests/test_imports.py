@@ -1,5 +1,5 @@
-'''Tests PyHa environment
-'''
+"""Tests PyHa environment
+"""
 import json
 import os
 from pathlib import Path
@@ -18,27 +18,23 @@ def create_creds() -> Dict[str, str]:
     Returns:
         Dict[str, str]: Username and password dictionary
     """
-    if Path('credentials.json').is_file():
-        with open('credentials.json', 'r', encoding='ascii') as handle:
+    if Path("credentials.json").is_file():
+        with open("credentials.json", "r", encoding="ascii") as handle:
             return json.load(handle)
     else:
-        value = os.environ['NAS_CREDS'].splitlines()
+        value = os.environ["NAS_CREDS"].splitlines()
         assert len(value) == 2
-        return {
-            'username': value[0],
-            'password': value[1]
-        }
+        return {"username": value[0], "password": value[1]}
 
 
 def run_pyha(creds):
-    """Tests PyHa
-    """
+    """Tests PyHa"""
     with TemporaryDirectory() as path:
         nas_unzip(
-            network_path='smb://e4e-nas.ucsd.edu:6021/temp/github_actions/pyha/pyha_test.zip',
+            network_path="smb://e4e-nas.ucsd.edu:6021/temp/github_actions/pyha/pyha_test.zip",
             output_path=Path(path),
-            username=creds['username'],
-            password=creds['password']
+            username=creds["username"],
+            password=creds["password"],
         )
         isolation_parameters = {
             "model": "tweetynet",
@@ -49,7 +45,7 @@ def run_pyha(creds):
             "threshold_min": 0.0,
             "window_size": 2.0,
             "chunk_size": 5.0,
-            "verbose": True
+            "verbose": True,
         }
         # generate_automated_labels(path, isolation_parameters)
         # isolation_parameters = {
@@ -76,9 +72,11 @@ def run_pyha(creds):
         # }
         # generate_automated_labels(path, isolation_parameters)
 
+
 def main():
     creds = create_creds()
     run_pyha(creds)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

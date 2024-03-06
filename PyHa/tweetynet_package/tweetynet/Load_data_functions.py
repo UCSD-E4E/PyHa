@@ -11,11 +11,18 @@ from .CustomAudioDataset import CustomAudioDataset
 
 """Make function headers for each function."""
 
-def get_frames(x, hop_length): # Calculates the frame number given the start point and hop length of a spectrogram.
-    return ((x) / hop_length) + 1 
 
-def frames2seconds(x, sr): #Calculates the time in seconds from the frame number of a spectrogram.
-    return x/sr
+def get_frames(
+    x, hop_length
+):  # Calculates the frame number given the start point and hop length of a spectrogram.
+    return ((x) / hop_length) + 1
+
+
+def frames2seconds(
+    x, sr
+):  # Calculates the time in seconds from the frame number of a spectrogram.
+    return x / sr
+
 
 def window_spectrograms(spc, Y, uid, time_bin, windowsize):
     """
@@ -40,13 +47,16 @@ def window_spectrograms(spc, Y, uid, time_bin, windowsize):
     Returns: (Tuple)
         Contains the uids, spectrograms, labels, and time bins of the windowed spectrogram.
     """
-    computed = windowsize//time_bin #verify, big assumption. are time bins consistent?
-    time_axis = int(computed*(spc.shape[1]//computed))
-    freq_axis = int(spc.shape[1]//computed) # 31, 2, 19
-    spc_split = np.split(spc[:,:time_axis],freq_axis,axis = 1)
-    Y_split = np.split(Y[:time_axis],freq_axis)
+    computed = (
+        windowsize // time_bin
+    )  # verify, big assumption. are time bins consistent?
+    time_axis = int(computed * (spc.shape[1] // computed))
+    freq_axis = int(spc.shape[1] // computed)  # 31, 2, 19
+    spc_split = np.split(spc[:, :time_axis], freq_axis, axis=1)
+    Y_split = np.split(Y[:time_axis], freq_axis)
     uid_split = [str(i) + "_" + uid for i in range(freq_axis)]
     return spc_split, Y_split, uid_split
+
 
 def window_data(spcs, ys, uids, time_bins, windowsize):
     """
@@ -72,13 +82,16 @@ def window_data(spcs, ys, uids, time_bins, windowsize):
         Contains the uids, spectrograms, labels, and time bins of the windowed spectrograms.
     """
     windowed_dataset = {"uids": [], "X": [], "Y": []}
-    #print("Windowing Spectrogram")
+    # print("Windowing Spectrogram")
     for i in range(len(uids)):
-        spc_split, Y_split, uid_split = window_spectrograms(spcs[i],ys[i], uids[i], time_bins[i], windowsize)
+        spc_split, Y_split, uid_split = window_spectrograms(
+            spcs[i], ys[i], uids[i], time_bins[i], windowsize
+        )
         windowed_dataset["X"].extend(spc_split)
         windowed_dataset["Y"].extend(Y_split)
         windowed_dataset["uids"].extend(uid_split)
     return windowed_dataset
+
 
 def create_signal2spec(signal, SR, n_mels, frame_size, hop_length):
     """
@@ -92,13 +105,13 @@ def create_signal2spec(signal, SR, n_mels, frame_size, hop_length):
             - Sampling rate of the audio clip, usually 44100.
 
         n_mels: (int)
-            - (Mel Spectrogram Parameter) 
+            - (Mel Spectrogram Parameter)
 
         frame_size: (int)
-            - (Mel Spectrogram Parameter) 
+            - (Mel Spectrogram Parameter)
 
         hop_length: (int)
-            - (Mel Spectrogram Parameter) 
+            - (Mel Spectrogram Parameter)
 
         windowsize: (int)
             - Number of seconds in a window of the clip.
@@ -107,18 +120,21 @@ def create_signal2spec(signal, SR, n_mels, frame_size, hop_length):
         Contains the uids, spectrograms, labels, and time bins.
     """
     features = {"uids": [], "X": [], "Y": [], "time_bins": []}
-    spc = create_spec(signal, fs=SR, n_mels=n_mels, n_fft=frame_size, hop_len=hop_length)
-    time_bins = (len(signal)/SR)/spc.shape[1]
-    Y = np.array([0]*spc.shape[1])
+    spc = create_spec(
+        signal, fs=SR, n_mels=n_mels, n_fft=frame_size, hop_len=hop_length
+    )
+    time_bins = (len(signal) / SR) / spc.shape[1]
+    Y = np.array([0] * spc.shape[1])
     features["uids"].append("f")
     features["X"].append(spc)
     features["Y"].append(Y)
     features["time_bins"].append(time_bins)
     return features
 
+
 def load_signal2spec(signal, SR, n_mels, frame_size, hop_length):
     """
-    Load signal to spectrogram 
+    Load signal to spectrogram
 
     Args:
         SIGNAL: (list of ints)
@@ -128,13 +144,13 @@ def load_signal2spec(signal, SR, n_mels, frame_size, hop_length):
             - Sampling rate of the audio clip, usually 44100.
 
         n_mels: (int)
-            - (Mel Spectrogram Parameter) 
+            - (Mel Spectrogram Parameter)
 
         frame_size: (int)
-            - (Mel Spectrogram Parameter) 
+            - (Mel Spectrogram Parameter)
 
         hop_length: (int)
-            - (Mel Spectrogram Parameter) 
+            - (Mel Spectrogram Parameter)
 
         windowsize: (int)
             - Number of seconds in a window of the clip.
@@ -143,11 +159,12 @@ def load_signal2spec(signal, SR, n_mels, frame_size, hop_length):
         Containing the spectrogram(X), labels(Y), unique file identifier(uids), Number of time bins(time_bins).
     """
     dataset = create_signal2spec(signal, SR, n_mels, frame_size, hop_length)
-    X = dataset['X']
-    Y = dataset['Y']
-    uids = dataset['uids']
-    time_bins = dataset['time_bins']
+    X = dataset["X"]
+    Y = dataset["Y"]
+    uids = dataset["uids"]
+    time_bins = dataset["time_bins"]
     return X, Y, uids, time_bins
+
 
 def compute_features(signal, SR=44100):
     """
@@ -163,13 +180,15 @@ def compute_features(signal, SR=44100):
     Returns:
         CustomAudioDataset containing, the spectrograms(X), labels(Y), and UIDS(UIDS) of a wav file.
     """
-    n_mels=86
-    frame_size=2048
-    hop_length=1024
-    windowsize=2
-    x, y, uids, time_bins = load_signal2spec(signal[0], SR, n_mels, frame_size, hop_length)
+    n_mels = 86
+    frame_size = 2048
+    hop_length = 1024
+    windowsize = 2
+    x, y, uids, time_bins = load_signal2spec(
+        signal[0], SR, n_mels, frame_size, hop_length
+    )
     dataset = window_data(x, y, uids, time_bins, windowsize)
-    X = np.array(dataset['X']).astype(np.float32)/255
+    X = np.array(dataset["X"]).astype(np.float32) / 255
     X = X.reshape(X.shape[0], 1, X.shape[1], X.shape[2])
     Y = np.array(dataset["Y"]).astype(np.longlong)
     UIDS = np.array(dataset["uids"])
@@ -179,7 +198,10 @@ def compute_features(signal, SR=44100):
 
 # I imagine that this is broken. because the csv is correct
 
-def predictions_to_kaleidoscope(predictions, SIGNAL, audio_dir, audio_file, manual_id, sample_rate):
+
+def predictions_to_kaleidoscope(
+    predictions, SIGNAL, audio_dir, audio_file, manual_id, sample_rate
+):
     """
     TweetyNet predictions to kaleidoscope
 
@@ -208,7 +230,7 @@ def predictions_to_kaleidoscope(predictions, SIGNAL, audio_dir, audio_file, manu
     time_bin_seconds = predictions.iloc[1]["time_bins"]
     zero_sorted_filtered_df = predictions[predictions["pred"] == 0]
     offset = zero_sorted_filtered_df["time_bins"]
-    duration = zero_sorted_filtered_df["time_bins"].diff().shift(-1)    
+    duration = zero_sorted_filtered_df["time_bins"].diff().shift(-1)
     intermediary_df = pd.DataFrame({"OFFSET": offset, "DURATION": duration})
     kaleidoscope_df = []
 
@@ -216,21 +238,33 @@ def predictions_to_kaleidoscope(predictions, SIGNAL, audio_dir, audio_file, manu
         raise BaseException("No birds were detected!!")
 
     if offset.iloc[0] != 0:
-        kaleidoscope_df.append(pd.DataFrame({"OFFSET": [0], "DURATION": [offset.iloc[0]]}))
-    kaleidoscope_df.append(intermediary_df[intermediary_df["DURATION"] >= 2*time_bin_seconds])
+        kaleidoscope_df.append(
+            pd.DataFrame({"OFFSET": [0], "DURATION": [offset.iloc[0]]})
+        )
+    kaleidoscope_df.append(
+        intermediary_df[intermediary_df["DURATION"] >= 2 * time_bin_seconds]
+    )
 
     if offset.iloc[-1] < predictions.iloc[-1]["time_bins"]:
-        kaleidoscope_df.append(pd.DataFrame({"OFFSET": [offset.iloc[-1]], "DURATION": [predictions.iloc[-1]["time_bins"] + 
-                                predictions.iloc[1]["time_bins"]]}))
+        kaleidoscope_df.append(
+            pd.DataFrame(
+                {
+                    "OFFSET": [offset.iloc[-1]],
+                    "DURATION": [
+                        predictions.iloc[-1]["time_bins"]
+                        + predictions.iloc[1]["time_bins"]
+                    ],
+                }
+            )
+        )
 
     kaleidoscope_df = pd.concat(kaleidoscope_df)
     kaleidoscope_df = kaleidoscope_df.reset_index(drop=True)
     kaleidoscope_df["FOLDER"] = audio_dir
     kaleidoscope_df["IN FILE"] = audio_file
     kaleidoscope_df["CHANNEL"] = 0
-    kaleidoscope_df["CLIP LENGTH"] = len(SIGNAL)/sample_rate
+    kaleidoscope_df["CLIP LENGTH"] = len(SIGNAL) / sample_rate
     kaleidoscope_df["SAMPLE RATE"] = sample_rate
     kaleidoscope_df["MANUAL ID"] = manual_id
 
     return kaleidoscope_df
-    

@@ -25,7 +25,7 @@ Then, we can install Tensorflow with:
 sudo pip3 install tensorflow
 ```
 
-TFLite on x86 platform currently only supports CPUs. 
+TFLite on x86 platform currently only supports CPUs.
 
 Note: Make sure to set `CUDA_VISIBLE_DEVICES=""` in your environment variables. Or set `os.environ['CUDA_VISIBLE_DEVICES'] = ''` at the top of your Python script.
 
@@ -92,4 +92,3 @@ We are always open for a collaboration with you.
 # Funding
 
 This project is supported by Jake Holshuh (Cornell class of ’69). The Arthur Vining Davis Foundations also kindly support our efforts.
-

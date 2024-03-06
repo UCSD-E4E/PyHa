@@ -2,7 +2,10 @@ from .birdnet_lite.analyze import analyze
 from .microfaune_package.microfaune.detection import RNNDetector
 from .microfaune_package.microfaune import audio
 from .tweetynet_package.tweetynet.TweetyNetModel import TweetyNetModel
-from .tweetynet_package.tweetynet.Load_data_functions import compute_features, predictions_to_kaleidoscope
+from .tweetynet_package.tweetynet.Load_data_functions import (
+    compute_features,
+    predictions_to_kaleidoscope,
+)
 import os
 import torch
 import librosa
@@ -14,9 +17,8 @@ from copy import deepcopy
 from sys import exit
 import logging
 
-def checkVerbose(
-    errorMessage, 
-    isolation_parameters):
+
+def checkVerbose(errorMessage, isolation_parameters):
     """
     Adds the ability to toggle on/off all error messages and warnings.
 
@@ -28,25 +30,25 @@ def checkVerbose(
             - Python Dictionary that controls the various label creation
               techniques.
     """
-    assert isinstance(errorMessage,str)
-    assert isinstance(isolation_parameters,dict)
-    assert 'verbose' in isolation_parameters.keys()
-    
-    if(isolation_parameters['verbose']):
+    assert isinstance(errorMessage, str)
+    assert isinstance(isolation_parameters, dict)
+    assert "verbose" in isolation_parameters.keys()
+
+    if isolation_parameters["verbose"]:
         print(errorMessage)
 
-        
 
 def build_isolation_parameters_microfaune(
-        technique,
-        threshold_type,
-        threshold_const,
-        threshold_min=0.0,
-        window_size=1.0,
-        chunk_size=2.0,
-        verbose=True):
+    technique,
+    threshold_type,
+    threshold_const,
+    threshold_min=0.0,
+    window_size=1.0,
+    chunk_size=2.0,
+    verbose=True,
+):
     """
-    Wrapper function for all audio isolation techniques (Steinberg, Simple, 
+    Wrapper function for all audio isolation techniques (Steinberg, Simple,
     Stack, Chunk). Will call the respective function of each technique
     based on isolation_parameters "technique" key.
 
@@ -85,21 +87,21 @@ def build_isolation_parameters_microfaune(
               automated labels from audio.
     """
     technique_options = ["steinberg", "simple", "stack", "chunk"]
-    assert isinstance(technique,str)
+    assert isinstance(technique, str)
     assert technique in technique_options
     threshold_options = ["mean", "median", "standard deviation", "pure"]
-    assert isinstance(threshold_type,str)
+    assert isinstance(threshold_type, str)
     assert threshold in threshold_options
-    assert isinstance(threshold_const,float) or isinstance(threshold_const,int)
+    assert isinstance(threshold_const, float) or isinstance(
+        threshold_const, int)
     if threshold_type == "pure":
         assert threshold_const > 0 and threshold_const < 1
-    assert isinstance(threshold_min,float)
+    assert isinstance(threshold_min, float)
     assert threshold_min > 0 and threshold_min < 1
-    assert isinstance(window_size,int) or isinstance(window_size,float)
+    assert isinstance(window_size, int) or isinstance(window_size, float)
     assert window_size > 0
-    assert isinstance(chunk_size,int) or isinstance(chunk_size,float)
+    assert isinstance(chunk_size, int) or isinstance(chunk_size, float)
     assert chunk_size > 0
-    
 
     isolation_parameters = {
         "technique": technique,
@@ -107,31 +109,38 @@ def build_isolation_parameters_microfaune(
         "threshold_const": threshold_const,
         "threshold_min": threshold_min,
         "chunk_size": chunk_size,
-        "verbose": verbose
+        "verbose": verbose,
     }
 
     if window_size != 1.0 and technique != "steinberg":
-        checkVerbose('''Warning: window_size is dedicated to the steinberg isolation
-        technique. Won't affect current technique.''', isolation_parameters)
+        checkVerbose(
+            """Warning: window_size is dedicated to the steinberg isolation
+        technique. Won't affect current technique.""",
+            isolation_parameters,
+        )
     if chunk_size != 2.0 and technique != "chunk":
-        checkVerbose('''Warning: chunk_size is dedicated to the chunk technique.
-        Won't affect current technique.''', isolation_parameters)
+        checkVerbose(
+            """Warning: chunk_size is dedicated to the chunk technique.
+        Won't affect current technique.""",
+            isolation_parameters,
+        )
 
     return isolation_parameters
 
 
 def isolate(
-        local_scores,
-        SIGNAL,
-        SAMPLE_RATE,
-        audio_dir,
-        filename,
-        isolation_parameters,
-        manual_id="bird",
-        normalize_local_scores=False):
+    local_scores,
+    SIGNAL,
+    SAMPLE_RATE,
+    audio_dir,
+    filename,
+    isolation_parameters,
+    manual_id="bird",
+    normalize_local_scores=False,
+):
     """
-    Wrapper function for all of Microfaune's audio isolation techniques 
-    (Steinberg, Simple, Stack, Chunk). Will call the respective function of each technique based on 
+    Wrapper function for all of Microfaune's audio isolation techniques
+    (Steinberg, Simple, Stack, Chunk). Will call the respective function of each technique based on
     isolation_parameters "technique" key.
 
     Args:
@@ -160,21 +169,21 @@ def isolate(
         isolation technique.
     """
 
-    assert isinstance(local_scores,np.ndarray)
-    assert isinstance(SIGNAL,np.ndarray)
-    assert isinstance(SAMPLE_RATE,int)
+    assert isinstance(local_scores, np.ndarray)
+    assert isinstance(SIGNAL, np.ndarray)
+    assert isinstance(SAMPLE_RATE, int)
     assert SAMPLE_RATE > 0
-    assert isinstance(audio_dir,str)
-    assert isinstance(filename,str)
-    assert isinstance(isolation_parameters,dict)
-    assert isinstance(manual_id,str)
-    assert isinstance(normalize_local_scores,bool)
+    assert isinstance(audio_dir, str)
+    assert isinstance(filename, str)
+    assert isinstance(isolation_parameters, dict)
+    assert isinstance(manual_id, str)
+    assert isinstance(normalize_local_scores, bool)
     assert "technique" in dict.fromkeys(isolation_parameters)
-    potential_isolation_techniques = {"simple","steinberg","stack","chunk"}
+    potential_isolation_techniques = {"simple", "steinberg", "stack", "chunk"}
     assert isolation_parameters["technique"] in potential_isolation_techniques
 
     # normalize the local scores so that the max value is 1.
-    #if normalize_local_scores:
+    # if normalize_local_scores:
     #    local_scores_max = max(local_scores)
     #    for ndx in range(len(local_scores)):
     #        local_scores[ndx] = local_scores[ndx] / local_scores_max
@@ -192,7 +201,8 @@ def isolate(
             audio_dir,
             filename,
             isolation_parameters,
-            manual_id=manual_id)
+            manual_id=manual_id,
+        )
     elif isolation_parameters["technique"] == "steinberg":
         isolation_df = steinberg_isolate(
             local_scores,
@@ -201,7 +211,8 @@ def isolate(
             audio_dir,
             filename,
             isolation_parameters,
-            manual_id=manual_id)
+            manual_id=manual_id,
+        )
     elif isolation_parameters["technique"] == "stack":
         isolation_df = stack_isolate(
             local_scores,
@@ -210,7 +221,8 @@ def isolate(
             audio_dir,
             filename,
             isolation_parameters,
-            manual_id=manual_id)
+            manual_id=manual_id,
+        )
     elif isolation_parameters["technique"] == "chunk":
         isolation_df = chunk_isolate(
             local_scores,
@@ -219,7 +231,8 @@ def isolate(
             audio_dir,
             filename,
             isolation_parameters,
-            manual_id=manual_id)
+            manual_id=manual_id,
+        )
 
     return isolation_df
 
@@ -247,22 +260,29 @@ def threshold(local_scores, isolation_parameters):
               an audio clip will be viewed as a positive ID.
     """
 
-    assert isinstance(local_scores,np.ndarray)
-    assert isinstance(isolation_parameters,dict)
-    potential_threshold_types = {"median","mean","standard deviation","threshold_const"}
+    assert isinstance(local_scores, np.ndarray)
+    assert isinstance(isolation_parameters, dict)
+    potential_threshold_types = {
+        "median",
+        "mean",
+        "standard deviation",
+        "threshold_const",
+    }
     assert isolation_parameters["threshold_type"] in potential_threshold_types
 
-
     if isolation_parameters["threshold_type"] == "median":
-        thresh = np.median(local_scores) \
-            * isolation_parameters["threshold_const"]
-    elif (isolation_parameters["threshold_type"] == "mean" or
-            isolation_parameters["threshold_type"] == "average"):
-        thresh = np.mean(local_scores) \
-            * isolation_parameters["threshold_const"]
+        thresh = np.median(local_scores) * \
+            isolation_parameters["threshold_const"]
+    elif (
+        isolation_parameters["threshold_type"] == "mean"
+        or isolation_parameters["threshold_type"] == "average"
+    ):
+        thresh = np.mean(local_scores) * \
+            isolation_parameters["threshold_const"]
     elif isolation_parameters["threshold_type"] == "standard deviation":
-        thresh = np.mean(local_scores) + \
-            (np.std(local_scores) * isolation_parameters["threshold_const"])
+        thresh = np.mean(local_scores) + (
+            np.std(local_scores) * isolation_parameters["threshold_const"]
+        )
     elif isolation_parameters["threshold_type"] == "pure":
         thresh = isolation_parameters["threshold_const"]
         if thresh < 0:
@@ -275,15 +295,16 @@ def threshold(local_scores, isolation_parameters):
 
 
 def steinberg_isolate(
-        local_scores,
-        SIGNAL,
-        SAMPLE_RATE,
-        audio_dir,
-        filename,
-        isolation_parameters,
-        manual_id="bird"):
+    local_scores,
+    SIGNAL,
+    SAMPLE_RATE,
+    audio_dir,
+    filename,
+    isolation_parameters,
+    manual_id="bird",
+):
     """
-    Technique developed by Gabriel Steinberg that attempts to take the local 
+    Technique developed by Gabriel Steinberg that attempts to take the local
     score array output of a neural network and lump local scores together in
     a way to produce automated labels based on a class across an audio clip.
 
@@ -325,38 +346,44 @@ def steinberg_isolate(
         Pandas Dataframe of automated labels for the audio clip.
     """
 
-    assert isinstance(local_scores,np.ndarray)
-    assert isinstance(SIGNAL,np.ndarray)
-    assert isinstance(SAMPLE_RATE,int)
+    assert isinstance(local_scores, np.ndarray)
+    assert isinstance(SIGNAL, np.ndarray)
+    assert isinstance(SAMPLE_RATE, int)
     assert SAMPLE_RATE > 0
-    assert isinstance(audio_dir,str)
-    assert isinstance(filename,str)
-    assert isinstance(isolation_parameters,dict)
+    assert isinstance(audio_dir, str)
+    assert isinstance(filename, str)
+    assert isinstance(isolation_parameters, dict)
     assert "window_size" in dict.fromkeys(isolation_parameters)
 
     # calculate original duration
     old_duration = len(SIGNAL) / SAMPLE_RATE
     # create entry for audio clip
-    entry = {'FOLDER': audio_dir,
-             'IN FILE': filename,
-             'CHANNEL': 0,
-             'CLIP LENGTH': old_duration,
-             'SAMPLE RATE': SAMPLE_RATE,
-             'OFFSET': [],
-             'MANUAL ID': []}
+    entry = {
+        "FOLDER": audio_dir,
+        "IN FILE": filename,
+        "CHANNEL": 0,
+        "CLIP LENGTH": old_duration,
+        "SAMPLE RATE": SAMPLE_RATE,
+        "OFFSET": [],
+        "MANUAL ID": [],
+    }
 
     # calculating threshold that will define how labels are created in current
     # audio clip
     thresh = threshold(local_scores, isolation_parameters)
     # how many samples one local score represents
     samples_per_score = len(SIGNAL) // len(local_scores)
-    
+
     # Calculating local scores that are at or above threshold
-    thresh_scores = local_scores >= max(thresh, isolation_parameters["threshold_min"])
-    
+    thresh_scores = local_scores >= max(
+        thresh, isolation_parameters["threshold_min"])
+
     # if statement to check if window size is smaller than time between two local scores
     # (as a safeguard against problems that can occur)
-    if (int(isolation_parameters["window_size"] / 2 * SAMPLE_RATE) * 2 >= samples_per_score):
+    if (
+        int(isolation_parameters["window_size"] / 2 * SAMPLE_RATE) * 2
+        >= samples_per_score
+    ):
         # Set up to find the starts and ends of clips (not considering window)
         thresh_scores = np.append(thresh_scores, [0])
         rolled_scores = np.roll(thresh_scores, 1)
@@ -369,68 +396,82 @@ def steinberg_isolate(
         # rolled_scores are [0 1 1 1 1 0 0 0 1 1]. Subtracting
         # yields [1 0 0 0 -1 0 0 1 0 -1]. The 1s are the starts of the clips,
         # and the -1s are 1 past the ends of the clips
-        
+
         # Adds the "window" to each annotation
-        starts = np.where(diff_scores == 1)[0] * samples_per_score - int(isolation_parameters["window_size"] / 2 * SAMPLE_RATE)
+        starts = np.where(diff_scores == 1)[0] * samples_per_score - int(
+            isolation_parameters["window_size"] / 2 * SAMPLE_RATE
+        )
         ends = np.where(diff_scores == -1)[0] - 1
-        ends = ends * samples_per_score + int(isolation_parameters["window_size"] / 2 * SAMPLE_RATE)
-        
+        ends = ends * samples_per_score + int(
+            isolation_parameters["window_size"] / 2 * SAMPLE_RATE
+        )
+
         # Does not continue if no annotations exist
-        if (len(starts) == 0):
-            return pd.DataFrame.from_dict({'FOLDER': [],       \
-                                           'IN FILE': [],      \
-                                           'CHANNEL': [],      \
-                                           'CLIP LENGTH': [],  \
-                                           'SAMPLE RATE': [],  \
-                                           'OFFSET': [],       \
-                                           'MANUAL ID': []})
-        
+        if len(starts) == 0:
+            return pd.DataFrame.from_dict(
+                {
+                    "FOLDER": [],
+                    "IN FILE": [],
+                    "CHANNEL": [],
+                    "CLIP LENGTH": [],
+                    "SAMPLE RATE": [],
+                    "OFFSET": [],
+                    "MANUAL ID": [],
+                }
+            )
+
         # Checks annotations for any overlap, and removes if so
         i = 0
         while True:
-            if (i == len(ends) - 1):
+            if i == len(ends) - 1:
                 break
-            if (starts[i + 1] < ends[i]):
+            if starts[i + 1] < ends[i]:
                 ends = np.delete(ends, i)
                 starts = np.delete(starts, i + 1)
             else:
                 i += 1
-        
+
         # Correcting bounds
         starts[0] = max(0, starts[0])
         ends[-1] = min(len(SIGNAL), ends[-1])
-        
+
         # Calculates offsets and durations from starts and ends
-        entry['OFFSET'] = starts * 1.0 / SAMPLE_RATE
-        entry['DURATION'] = ends - starts
-        entry['DURATION'] = entry['DURATION'] * 1.0 / SAMPLE_RATE
-        
+        entry["OFFSET"] = starts * 1.0 / SAMPLE_RATE
+        entry["DURATION"] = ends - starts
+        entry["DURATION"] = entry["DURATION"] * 1.0 / SAMPLE_RATE
+
         # Assigns manual ids to all annotations
-        entry['MANUAL ID'] = np.full(entry['OFFSET'].shape, manual_id)
+        entry["MANUAL ID"] = np.full(entry["OFFSET"].shape, manual_id)
     else:
         # Simply assigns each 1 in thresh scores to be its own window if windows are too small
-        entry['OFFSET'] = np.where(thresh_scores == 1)[0] * samples_per_score / SAMPLE_RATE - isolation_parameters["window_size"] / 2
-        entry['DURATION'] = np.full(entry['OFFSET'].shape, isolation_parameters["window_size"] * 1.0)
-        if (entry['OFFSET'] < 0):
-            entry['OFFSET'][0] = 0
-            entry['DURATION'][0] = isolation_parameters["window_size"] * 0.5
-        entry['MANUAL ID'] = np.full(entry['OFFSET'].shape, manual_id)
-    
+        entry["OFFSET"] = (
+            np.where(thresh_scores == 1)[0] * samples_per_score / SAMPLE_RATE
+            - isolation_parameters["window_size"] / 2
+        )
+        entry["DURATION"] = np.full(
+            entry["OFFSET"].shape, isolation_parameters["window_size"] * 1.0
+        )
+        if entry["OFFSET"] < 0:
+            entry["OFFSET"][0] = 0
+            entry["DURATION"][0] = isolation_parameters["window_size"] * 0.5
+        entry["MANUAL ID"] = np.full(entry["OFFSET"].shape, manual_id)
+
     # returning pandas dataframe from dictionary constructed with all of the
     # annotations
     return pd.DataFrame.from_dict(entry)
 
 
 def simple_isolate(
-        local_scores,
-        SIGNAL,
-        SAMPLE_RATE,
-        audio_dir,
-        filename,
-        isolation_parameters,
-        manual_id="bird"):
+    local_scores,
+    SIGNAL,
+    SAMPLE_RATE,
+    audio_dir,
+    filename,
+    isolation_parameters,
+    manual_id="bird",
+):
     """
-    Technique suggested by Irina Tolkova, implemented by Jacob Ayers. 
+    Technique suggested by Irina Tolkova, implemented by Jacob Ayers.
     Attempts to produce automated annotations of an audio clip based
     on local score array outputs from a neural network.
 
@@ -472,14 +513,14 @@ def simple_isolate(
         Pandas Dataframe of automated labels for the audio clip.
     """
 
-    assert isinstance(local_scores,np.ndarray)
-    assert isinstance(SIGNAL,np.ndarray)
-    assert isinstance(SAMPLE_RATE,int)
+    assert isinstance(local_scores, np.ndarray)
+    assert isinstance(SIGNAL, np.ndarray)
+    assert isinstance(SAMPLE_RATE, int)
     assert SAMPLE_RATE > 0
-    assert isinstance(audio_dir,str)
-    assert isinstance(filename,str)
-    assert isinstance(isolation_parameters,dict)
-    assert isinstance(manual_id,str)
+    assert isinstance(audio_dir, str)
+    assert isinstance(filename, str)
+    assert isinstance(isolation_parameters, dict)
+    assert isinstance(manual_id, str)
 
     # Calculating threshold that defines the creation of the automated labels
     # for an audio clip
@@ -490,14 +531,16 @@ def simple_isolate(
     # calculate original duration
     old_duration = len(SIGNAL) / SAMPLE_RATE
 
-    entry = {'FOLDER': audio_dir,
-             'IN FILE': filename,
-             'CHANNEL': 0,
-             'CLIP LENGTH': old_duration,
-             'SAMPLE RATE': SAMPLE_RATE,
-             'OFFSET': [],
-             'DURATION': [],
-             'MANUAL ID': []}
+    entry = {
+        "FOLDER": audio_dir,
+        "IN FILE": filename,
+        "CHANNEL": 0,
+        "CLIP LENGTH": old_duration,
+        "SAMPLE RATE": SAMPLE_RATE,
+        "OFFSET": [],
+        "DURATION": [],
+        "MANUAL ID": [],
+    }
 
     # how many samples one score represents
     # Scores meaning local scores
@@ -506,35 +549,40 @@ def simple_isolate(
     time_per_score = samples_per_score / SAMPLE_RATE
 
     # Calculating local scores that are at or above threshold
-    thresh_scores = local_scores >= max(thresh, isolation_parameters["threshold_min"])
-    
+    thresh_scores = local_scores >= max(
+        thresh, isolation_parameters["threshold_min"])
+
     # Set up to find the starts and ends of clips
     thresh_scores = np.append(thresh_scores, [0])
     rolled_scores = np.roll(thresh_scores, 1)
     rolled_scores[0] = 0
-    
+
     # Logic for finding starts and ends given in steinberg isolate
     diff_scores = thresh_scores - rolled_scores
-    
+
     # Calculates offsets and durations from difference
-    entry['OFFSET'] = np.where(diff_scores == 1)[0] * time_per_score * 1.0
-    entry['DURATION'] = np.where(diff_scores == -1)[0] * time_per_score - entry['OFFSET']
-    
+    entry["OFFSET"] = np.where(diff_scores == 1)[0] * time_per_score * 1.0
+    entry["DURATION"] = (
+        np.where(diff_scores == -1)[0] * time_per_score - entry["OFFSET"]
+    )
+
     # Assigns manual ids to all annotations
-    entry['MANUAL ID'] = np.full(entry['OFFSET'].shape, manual_id)
-    
+    entry["MANUAL ID"] = np.full(entry["OFFSET"].shape, manual_id)
+
     # returning pandas dataframe from dictionary constructed with all of the
     # annotations
     return pd.DataFrame.from_dict(entry)
 
+
 def stack_isolate(
-        local_scores,
-        SIGNAL,
-        SAMPLE_RATE,
-        audio_dir,
-        filename,
-        isolation_parameters,
-        manual_id="bird"):
+    local_scores,
+    SIGNAL,
+    SAMPLE_RATE,
+    audio_dir,
+    filename,
+    isolation_parameters,
+    manual_id="bird",
+):
     """
     Technique created by Jacob Ayers. Attempts to produce automated
     annotations of an audio clip base on local score array outputs
@@ -581,14 +629,14 @@ def stack_isolate(
         Pandas Dataframe of automated labels for the audio clip.
     """
 
-    assert isinstance(local_scores,np.ndarray)
-    assert isinstance(SIGNAL,np.ndarray)
-    assert isinstance(SAMPLE_RATE,int)
+    assert isinstance(local_scores, np.ndarray)
+    assert isinstance(SIGNAL, np.ndarray)
+    assert isinstance(SAMPLE_RATE, int)
     assert SAMPLE_RATE > 0
-    assert isinstance(audio_dir,str)
-    assert isinstance(filename,str)
-    assert isinstance(isolation_parameters,dict)
-    assert isinstance(manual_id,str)
+    assert isinstance(audio_dir, str)
+    assert isinstance(filename, str)
+    assert isinstance(isolation_parameters, dict)
+    assert isinstance(manual_id, str)
 
     # configuring the threshold based on isolation parameters
     thresh = threshold(local_scores, isolation_parameters)
@@ -600,14 +648,16 @@ def stack_isolate(
 
     # initializing a dictionary that will be used to construct the output
     # pandas dataframe.
-    entry = {'FOLDER': audio_dir,
-             'IN FILE': filename,
-             'CHANNEL': 0,
-             'CLIP LENGTH': old_duration,
-             'SAMPLE RATE': SAMPLE_RATE,
-             'OFFSET': [],
-             'DURATION': [],
-             'MANUAL ID': []}
+    entry = {
+        "FOLDER": audio_dir,
+        "IN FILE": filename,
+        "CHANNEL": 0,
+        "CLIP LENGTH": old_duration,
+        "SAMPLE RATE": SAMPLE_RATE,
+        "OFFSET": [],
+        "DURATION": [],
+        "MANUAL ID": [],
+    }
 
     # how many samples one score represents
     # Scores meaning local scores
@@ -618,8 +668,9 @@ def stack_isolate(
     time_per_score = samples_per_score / SAMPLE_RATE
 
     # Calculating local scores that are at or above threshold
-    thresh_scores = local_scores >= max(thresh, isolation_parameters["threshold_min"])
-    
+    thresh_scores = local_scores >= max(
+        thresh, isolation_parameters["threshold_min"])
+
     # Set up to find the starts and ends of clips
     thresh_scores = np.append(thresh_scores, [0])
     rolled_scores = np.roll(thresh_scores, 1)
@@ -630,9 +681,9 @@ def stack_isolate(
 
     starts = np.where(diff_scores == 1)[0]
     ends = np.where(diff_scores == -1)[0]
-    
+
     # Stack algorithm: considers a stack counter, and
-    # updates stack counter between annotations (+1 for every 
+    # updates stack counter between annotations (+1 for every
     # entry above the threshold, -1 for below); Combines annotations
     # in this way, along with any adjacent annotations (where stack
     # counter is 0 for one value between annotations).
@@ -640,7 +691,7 @@ def stack_isolate(
     while i < len(ends):
         stack_counter = ends[i] - starts[i]
         new_end = ends[i] + stack_counter
-        while (i < len(ends) - 1 and starts[i + 1] <= new_end):
+        while i < len(ends) - 1 and starts[i + 1] <= new_end:
             stack_counter -= starts[i + 1] - ends[i]
             stack_counter += ends[i + 1] - starts[i + 1]
             ends = np.delete(ends, i)
@@ -648,27 +699,28 @@ def stack_isolate(
             new_end = ends[i] + stack_counter
         ends[i] = new_end
         i += 1
-    
+
     # Addressing situation where end goes above max length of local scores
     ends[-1] = min(len(local_scores) - 1, ends[-1])
 
     # Deletes annotation if it starts on the
     # last local score
-    if (starts[-1] == len(local_scores) - 1):
+    if starts[-1] == len(local_scores) - 1:
         starts = np.delete(starts, len(starts) - 1)
         ends = np.delete(ends, len(ends) - 1)
-    
+
     # Calculates offsets and durations from starts/ends
-    entry['OFFSET'] = starts * time_per_score
-    entry['DURATION'] = ends - starts
-    entry['DURATION'] = entry['DURATION'] * time_per_score
-    
+    entry["OFFSET"] = starts * time_per_score
+    entry["DURATION"] = ends - starts
+    entry["DURATION"] = entry["DURATION"] * time_per_score
+
     # Assigns manual ids to all annotations
-    entry['MANUAL ID'] = np.full(entry['OFFSET'].shape, manual_id)
-    
+    entry["MANUAL ID"] = np.full(entry["OFFSET"].shape, manual_id)
+
     # returning pandas dataframe from dictionary constructed with all of the
     # annotations
     return pd.DataFrame.from_dict(entry)
+
 
 # TODO
 # Make it so that a user has the option of an overlap between the chunks.
@@ -678,15 +730,16 @@ def stack_isolate(
 
 
 def chunk_isolate(
-        local_scores,
-        SIGNAL,
-        SAMPLE_RATE,
-        audio_dir,
-        filename,
-        isolation_parameters,
-        manual_id="bird"):
+    local_scores,
+    SIGNAL,
+    SAMPLE_RATE,
+    audio_dir,
+    filename,
+    isolation_parameters,
+    manual_id="bird",
+):
     """
-    Technique created by Jacob Ayers. Attempts to produce automated 
+    Technique created by Jacob Ayers. Attempts to produce automated
     annotations of an audio clip based on local score array outputs
     from a neural network.
 
@@ -726,14 +779,14 @@ def chunk_isolate(
         Pandas Dataframe of automated labels for the audio clip.
     """
 
-    assert isinstance(local_scores,np.ndarray)
-    assert isinstance(SIGNAL,np.ndarray)
-    assert isinstance(SAMPLE_RATE,int)
+    assert isinstance(local_scores, np.ndarray)
+    assert isinstance(SIGNAL, np.ndarray)
+    assert isinstance(SAMPLE_RATE, int)
     assert SAMPLE_RATE > 0
-    assert isinstance(audio_dir,str)
-    assert isinstance(filename,str)
-    assert isinstance(isolation_parameters,dict)
-    assert isinstance(manual_id,str)
+    assert isinstance(audio_dir, str)
+    assert isinstance(filename, str)
+    assert isinstance(isolation_parameters, dict)
+    assert isinstance(manual_id, str)
 
     # configuring the threshold based on isolation parameters
     thresh = threshold(local_scores, isolation_parameters)
@@ -744,14 +797,16 @@ def chunk_isolate(
     old_duration = len(SIGNAL) / SAMPLE_RATE
 
     # initializing the dictionary for the output pandas dataframe
-    entry = {'FOLDER': audio_dir,
-             'IN FILE': filename,
-             'CHANNEL': 0,
-             'CLIP LENGTH': old_duration,
-             'SAMPLE RATE': SAMPLE_RATE,
-             'OFFSET': [],
-             'DURATION': [],
-             'MANUAL ID': manual_id}
+    entry = {
+        "FOLDER": audio_dir,
+        "IN FILE": filename,
+        "CHANNEL": 0,
+        "CLIP LENGTH": old_duration,
+        "SAMPLE RATE": SAMPLE_RATE,
+        "OFFSET": [],
+        "DURATION": [],
+        "MANUAL ID": manual_id,
+    }
 
     # calculating the number of chunks that define an audio clip
     chunk_count = ceil(
@@ -761,36 +816,49 @@ def chunk_isolate(
     # calculating the chunk size with respect to the local score array
     local_scores_per_chunk = scores_per_second * \
         isolation_parameters["chunk_size"]
-    
+
     # Creates indices for starts of chunks using np.linspace
     # which creates even splits across a range, and then is
     # treated as int (rounds down)
-    chunk_starts_float = np.linspace(start = 0, stop = chunk_count * local_scores_per_chunk, num = chunk_count, endpoint = False)
+    chunk_starts_float = np.linspace(
+        start=0,
+        stop=chunk_count * local_scores_per_chunk,
+        num=chunk_count,
+        endpoint=False,
+    )
     chunk_starts = chunk_starts_float.copy().astype(int)
-    
+
     # Deletes the first element of the array (0) to
     # avoid empty array
     chunk_starts = np.delete(chunk_starts, 0)
-    
+
     # Creates chunked scores based on starts
     # Finds max value of each chunked array
-    chunked_scores = np.array(list(map(np.amax, np.split(local_scores, chunk_starts))))
-    
+    chunked_scores = np.array(
+        list(map(np.amax, np.split(local_scores, chunk_starts))))
+
     # Finds which chunks are above threshold, and creates indices based on that
-    thresh_scores = chunked_scores >= max(thresh, isolation_parameters["threshold_min"])
+    thresh_scores = chunked_scores >= max(
+        thresh, isolation_parameters["threshold_min"])
     chunk_indices = np.where(thresh_scores == 1)[0]
-    
+
     # Assigns offset values based on float values of the starts
-    entry['OFFSET'] = chunk_starts_float[chunk_indices] / scores_per_second
-    
+    entry["OFFSET"] = chunk_starts_float[chunk_indices] / scores_per_second
+
     # Creates durations based on float values of chunk starts
-    all_chunk_durs = np.roll(chunk_starts_float, -1) / scores_per_second - chunk_starts_float / scores_per_second
-    all_chunk_durs[-1] = len(local_scores) / scores_per_second - chunk_starts_float[-1] / scores_per_second
-    entry['DURATION'] = all_chunk_durs[chunk_indices]
+    all_chunk_durs = (
+        np.roll(chunk_starts_float, -1) / scores_per_second
+        - chunk_starts_float / scores_per_second
+    )
+    all_chunk_durs[-1] = (
+        len(local_scores) / scores_per_second
+        - chunk_starts_float[-1] / scores_per_second
+    )
+    entry["DURATION"] = all_chunk_durs[chunk_indices]
 
     # Assigns manual ids to all annotations
-    entry['MANUAL ID'] = np.full(entry['OFFSET'].shape, manual_id)
-    
+    entry["MANUAL ID"] = np.full(entry["OFFSET"].shape, manual_id)
+
     # returning pandas dataframe from dictionary constructed with all of the
     # annotations
     return pd.DataFrame.from_dict(entry)
@@ -810,7 +878,7 @@ def generate_automated_labels_birdnet(audio_dir, isolation_parameters):
             - Python Dictionary that controls the various label creation
               techniques. The keys it accepts are :
               - output_path (string)
-                - Path to output folder. By default results are written into 
+                - Path to output folder. By default results are written into
                   the input folder
                 - default: None
 
@@ -824,7 +892,7 @@ def generate_automated_labels_birdnet(audio_dir, isolation_parameters):
 
               - week (int)
                 - Week of the year when the recording was made
-                - Values in [1, 48] (4 weeks per month) 
+                - Values in [1, 48] (4 weeks per month)
                 - default: -1 (ignore)
 
               - overlap (float)
@@ -834,7 +902,7 @@ def generate_automated_labels_birdnet(audio_dir, isolation_parameters):
 
               - sensitivity (float)
                 - Detection sensitivity. Higher values result in higher sensitivity
-                - Values in [0.5, 1.5] 
+                - Values in [0.5, 1.5]
                 - default: 1.0
 
               - min_conf (float)
@@ -865,14 +933,16 @@ def generate_automated_labels_birdnet(audio_dir, isolation_parameters):
     annotations = analyze(audio_path=audio_dir, **isolation_parameters)
     return annotations
 
+
 def generate_automated_labels_microfaune(
-        audio_dir,
-        isolation_parameters,
-        ml_model = "microfaune",
-        manual_id="bird",
-        weight_path=None,
-        normalized_sample_rate=44100,
-        normalize_local_scores=False):
+    audio_dir,
+    isolation_parameters,
+    ml_model="microfaune",
+    manual_id="bird",
+    weight_path=None,
+    normalized_sample_rate=44100,
+    normalize_local_scores=False,
+):
     """
     Function that applies isolation technique on the local scores generated
     by the Microfaune mode across a folder of audio clips. It is determined
@@ -900,15 +970,13 @@ def generate_automated_labels_microfaune(
         Dataframe of automated labels for the audio clips in audio_dir.
     """
 
-
-    assert isinstance(audio_dir,str)
-    assert isinstance(isolation_parameters,dict)
-    assert isinstance(manual_id,str)
-    assert weight_path is None or isinstance(weight_path,str)
-    assert isinstance(normalize_local_scores,bool)
-    assert isinstance(normalized_sample_rate,int)
+    assert isinstance(audio_dir, str)
+    assert isinstance(isolation_parameters, dict)
+    assert isinstance(manual_id, str)
+    assert weight_path is None or isinstance(weight_path, str)
+    assert isinstance(normalize_local_scores, bool)
+    assert isinstance(normalized_sample_rate, int)
     assert normalized_sample_rate > 0
-    
 
     if weight_path is None:
         detector = RNNDetector()
@@ -930,7 +998,9 @@ def generate_automated_labels_microfaune(
         # Reason for the factor for the signal is explained here: https://stackoverflow.com/questions/53462062/pyaudio-bytes-data-to-librosa-floating-point-time-series
         # Librosa scales down to [-1, 1], but the models require the range [-32768, 32767]
         try:
-            SIGNAL, SAMPLE_RATE = librosa.load(audio_dir + audio_file, sr=None, mono=True)
+            SIGNAL, SAMPLE_RATE = librosa.load(
+                audio_dir + audio_file, sr=None, mono=True
+            )
             SIGNAL = SIGNAL * 32768
         except KeyboardInterrupt:
             exit("Keyboard interrupt")
@@ -950,10 +1020,11 @@ def generate_automated_labels_microfaune(
         except KeyboardInterrupt:
             exit("Keyboard interrupt")
         except:
-            checkVerbose("Failed to Downsample" + audio_file, isolation_parameters)
+            checkVerbose("Failed to Downsample" +
+                         audio_file, isolation_parameters)
             # resample produces unreadable float32 array so convert back
             # SIGNAL = np.asarray(SIGNAL, dtype=np.int16)
-            
+
         # print(SIGNAL.shape)
         # convert stereo to mono if needed
         # Might want to compare to just taking the first set of data.
@@ -967,10 +1038,11 @@ def generate_automated_labels_microfaune(
             exit("Keyboard interrupt")
         except BaseException as e:
             checkVerbose(e, isolation_parameters)
-            checkVerbose("Error in detection, skipping" + audio_file, isolation_parameters)
+            checkVerbose(
+                "Error in detection, skipping" + audio_file, isolation_parameters
+            )
             continue
-        
-            
+
         # get duration of clip
         duration = len(SIGNAL) / SAMPLE_RATE
 
@@ -985,7 +1057,8 @@ def generate_automated_labels_microfaune(
                 audio_file,
                 isolation_parameters,
                 manual_id=manual_id,
-                normalize_local_scores=normalize_local_scores)
+                normalize_local_scores=normalize_local_scores,
+            )
             # print(new_entry)
             if annotations.empty:
                 annotations = new_entry
@@ -995,20 +1068,24 @@ def generate_automated_labels_microfaune(
             exit("Keyboard interrupt")
         except BaseException as e:
             checkVerbose(e, isolation_parameters)
-            checkVerbose("Error in isolating bird calls from" + audio_file, isolation_parameters)
+            checkVerbose(
+                "Error in isolating bird calls from" + audio_file, isolation_parameters
+            )
 
             continue
     # Quick fix to indexing
     annotations.reset_index(inplace=True, drop=True)
     return annotations
 
+
 def generate_automated_labels_tweetynet(
-        audio_dir,
-        isolation_parameters,
-        manual_id="bird",
-        weight_path=None,
-        normalized_sample_rate=44100,
-        normalize_local_scores=False):
+    audio_dir,
+    isolation_parameters,
+    manual_id="bird",
+    weight_path=None,
+    normalized_sample_rate=44100,
+    normalize_local_scores=False,
+):
     """
     Function that applies isolation technique determined by
     isolation_parameters dictionary across a folder of audio clips.
@@ -1021,7 +1098,7 @@ def generate_automated_labels_tweetynet(
             - Python Dictionary that controls the various label creation
               techniques. The only unique key to TweetyNET is tweety_output:
               - tweety_output (bool)
-                - Set whether or not to use TweetyNET's original output. 
+                - Set whether or not to use TweetyNET's original output.
                 - If set to `False`, TweetyNET will use the specified `technique` parameter.
                 - default: True
 
@@ -1043,17 +1120,16 @@ def generate_automated_labels_tweetynet(
     """
     logger = logging.getLogger("TweetyNet Autogenerated Labels")
 
-    assert isinstance(audio_dir,str)
-    assert isinstance(isolation_parameters,dict)
-    assert isinstance(manual_id,str)
-    assert isinstance(weight_path,str) or weight_path is None
-    assert isinstance(normalized_sample_rate,int)
+    assert isinstance(audio_dir, str)
+    assert isinstance(isolation_parameters, dict)
+    assert isinstance(manual_id, str)
+    assert isinstance(weight_path, str) or weight_path is None
+    assert isinstance(normalized_sample_rate, int)
     assert normalized_sample_rate > 0
-    assert isinstance(normalize_local_scores,bool)
+    assert isinstance(normalize_local_scores, bool)
 
-    
     # init detector
-    device = torch.device('cpu')
+    device = torch.device("cpu")
     detector = TweetyNetModel(2, (1, 86, 86), 86, device)
 
     # init labels dataframe
@@ -1068,15 +1144,19 @@ def generate_automated_labels_tweetynet(
         # Reason for the factor for the signal is explained here: https://stackoverflow.com/questions/53462062/pyaudio-bytes-data-to-librosa-floating-point-time-series
         # Librosa scales down to [-1, 1], but the models require the range [-32768, 32767], so the multiplication is required
         try:
-            SIGNAL, SAMPLE_RATE = librosa.load(audio_dir + audio_file, sr=None, mono=True)
+            SIGNAL, SAMPLE_RATE = librosa.load(
+                audio_dir + audio_file, sr=None, mono=True
+            )
             SIGNAL = SIGNAL * 32768
         except KeyboardInterrupt:
             exit("Keyboard interrupt")
         except Exception as exp:
-            logger.exception(f"Failed to load {audio_file}, parameters: {isolation_parameters}")
+            logger.exception(
+                f"Failed to load {audio_file}, parameters: {isolation_parameters}"
+            )
             checkVerbose("Failed to load " + audio_file, isolation_parameters)
             continue
-            
+
         # Resample the audio if it isn't the normalized sample rate
         try:
             if SAMPLE_RATE != normalized_sample_rate:
@@ -1087,9 +1167,12 @@ def generate_automated_labels_tweetynet(
         except KeyboardInterrupt:
             exit("Keyboard interrupt")
         except Exception as exc:
-            checkVerbose("Failed to Downsample " + audio_file, isolation_parameters)
-            logger.exception(f'Failed to downsample {audio_file}, parameters: {isolation_parameters}')
-            
+            checkVerbose("Failed to Downsample " +
+                         audio_file, isolation_parameters)
+            logger.exception(
+                f"Failed to downsample {audio_file}, parameters: {isolation_parameters}"
+            )
+
         # convert stereo to mono if needed
         # Might want to compare to just taking the first set of data.
         if len(SIGNAL.shape) == 2:
@@ -1097,26 +1180,30 @@ def generate_automated_labels_tweetynet(
         # detection
         try:
             tweetynet_features = compute_features([SIGNAL])
-            predictions, local_scores = detector.predict(tweetynet_features, model_weights=weight_path, norm=normalize_local_scores)
+            predictions, local_scores = detector.predict(
+                tweetynet_features,
+                model_weights=weight_path,
+                norm=normalize_local_scores,
+            )
         except KeyboardInterrupt:
             exit("Keyboard interrupt")
         except BaseException as e:
-            checkVerbose("Error in detection, skipping " + audio_file, isolation_parameters)
+            checkVerbose(
+                "Error in detection, skipping " + audio_file, isolation_parameters
+            )
             print(e)
-            logger.exception(f'Error in detection, skipping {audio_file}, parameters: {isolation_parameters}')
+            logger.exception(
+                f"Error in detection, skipping {audio_file}, parameters: {isolation_parameters}"
+            )
             continue
-           
+
         try:
             # Running moment to moment algorithm and appending to a master
-            # dataframe. 
+            # dataframe.
             if isolation_parameters["tweety_output"]:
                 new_entry = predictions_to_kaleidoscope(
-                    predictions, 
-                    SIGNAL, 
-                    audio_dir, 
-                    audio_file, 
-                    manual_id, 
-                    SAMPLE_RATE)
+                    predictions, SIGNAL, audio_dir, audio_file, manual_id, SAMPLE_RATE
+                )
             else:
                 new_entry = isolate(
                     local_scores[0],
@@ -1126,7 +1213,8 @@ def generate_automated_labels_tweetynet(
                     audio_file,
                     isolation_parameters,
                     manual_id=manual_id,
-                    normalize_local_scores=normalize_local_scores)
+                    normalize_local_scores=normalize_local_scores,
+                )
             # print(new_entry)
             if annotations.empty:
                 annotations = new_entry
@@ -1135,8 +1223,11 @@ def generate_automated_labels_tweetynet(
         except KeyboardInterrupt:
             exit("Keyboard interrupt")
         except BaseException as e:
-            checkVerbose("Error in isolating bird calls from " + audio_file, isolation_parameters)
-            logger.exception(f"Error in isolating bird calls from {audio_file}")
+            checkVerbose(
+                "Error in isolating bird calls from " + audio_file, isolation_parameters
+            )
+            logger.exception(
+                f"Error in isolating bird calls from {audio_file}")
             continue
     # Quick fix to indexing
     annotations.reset_index(inplace=True, drop=True)
@@ -1144,12 +1235,13 @@ def generate_automated_labels_tweetynet(
 
 
 def generate_automated_labels(
-        audio_dir,
-        isolation_parameters,
-        manual_id="bird",
-        weight_path=None,
-        normalized_sample_rate=44100,
-        normalize_local_scores=False):
+    audio_dir,
+    isolation_parameters,
+    manual_id="bird",
+    weight_path=None,
+    normalized_sample_rate=44100,
+    normalize_local_scores=False,
+):
     """
     Function that generates the bird labels across a folder of audio clips
     given the isolation_parameters
@@ -1172,7 +1264,7 @@ def generate_automated_labels(
         normalized_sample_rate (int)
             - Sampling rate that the audio files should all be normalized to.
               Used only for the Microfaune model.
-        
+
         normalize_local_scores (bool)
             - Set whether or not to normalize the local scores.
 
@@ -1180,51 +1272,63 @@ def generate_automated_labels(
         Dataframe of automated labels for the audio clips in audio_dir.
     """
 
-    assert isinstance(audio_dir,str)
-    assert isinstance(isolation_parameters,dict)
-    assert isinstance(manual_id,str)
-    assert weight_path is None or isinstance(weight_path,str)
-    assert isinstance(normalized_sample_rate,int)
+    assert isinstance(audio_dir, str)
+    assert isinstance(isolation_parameters, dict)
+    assert isinstance(manual_id, str)
+    assert weight_path is None or isinstance(weight_path, str)
+    assert isinstance(normalized_sample_rate, int)
     assert normalized_sample_rate > 0
-    assert isinstance(normalize_local_scores,bool)
+    assert isinstance(normalize_local_scores, bool)
 
-    #try:
-    if(isolation_parameters["model"] == 'microfaune'):
+    # try:
+    if isolation_parameters["model"] == "microfaune":
         annotations = generate_automated_labels_microfaune(
-                        audio_dir=audio_dir,
-                        isolation_parameters=isolation_parameters,
-                        manual_id=manual_id,
-                        weight_path=weight_path,
-                        normalized_sample_rate=normalized_sample_rate,
-                        normalize_local_scores=normalize_local_scores)
-    elif(isolation_parameters["model"] == 'birdnet'):
+            audio_dir=audio_dir,
+            isolation_parameters=isolation_parameters,
+            manual_id=manual_id,
+            weight_path=weight_path,
+            normalized_sample_rate=normalized_sample_rate,
+            normalize_local_scores=normalize_local_scores,
+        )
+    elif isolation_parameters["model"] == "birdnet":
         # We need to delete the some keys from the isolation_parameters
         # because we are unpacking the other arguments
         birdnet_parameters = deepcopy(isolation_parameters)
-        keys_to_delete = ['model', 'technique', 'threshold_type',
-            'threshold_const', 'chunk_size']
+        keys_to_delete = [
+            "model",
+            "technique",
+            "threshold_type",
+            "threshold_const",
+            "chunk_size",
+        ]
         for key in keys_to_delete:
             birdnet_parameters.pop(key, None)
         annotations = generate_automated_labels_birdnet(
-                        audio_dir, birdnet_parameters)
-    elif(isolation_parameters['model'] == 'tweetynet'):
+            audio_dir, birdnet_parameters)
+    elif isolation_parameters["model"] == "tweetynet":
         annotations = generate_automated_labels_tweetynet(
-                        audio_dir=audio_dir,
-                        isolation_parameters=isolation_parameters,
-                        manual_id=manual_id,
-                        weight_path=weight_path,
-                        normalized_sample_rate=normalized_sample_rate,
-                        normalize_local_scores=normalize_local_scores)
+            audio_dir=audio_dir,
+            isolation_parameters=isolation_parameters,
+            manual_id=manual_id,
+            weight_path=weight_path,
+            normalized_sample_rate=normalized_sample_rate,
+            normalize_local_scores=normalize_local_scores,
+        )
     else:
         # print("{model_name} model does not exist"\
         #     .format(model_name=isolation_parameters["model"]))
-        checkVerbose("{model_name} model does not exist"\
-        .format(model_name=isolation_parameters["model"]), isolation_parameters)
+        checkVerbose(
+            "{model_name} model does not exist".format(
+                model_name=isolation_parameters["model"]
+            ),
+            isolation_parameters,
+        )
         annotations = None
     # except:
     #     print("Error. Check your isolation_parameters")
     #     return None
     return annotations
+
 
 def kaleidoscope_conversion(df):
     """
@@ -1240,13 +1344,19 @@ def kaleidoscope_conversion(df):
         Pandas Dataframe compatible with Kaleidoscope.
     """
 
-    assert isinstance(df,pd.DataFrame)
-    assert "FOLDER" in df.columns and "IN FILE" in df.columns 
+    assert isinstance(df, pd.DataFrame)
+    assert "FOLDER" in df.columns and "IN FILE" in df.columns
     assert "OFFSET" in df.columns and "DURATION" in df.columns
     assert "CHANNEL" in df.columns and "MANUAL ID" in df.columns
 
-    kaleidoscope_df = [df["FOLDER"].str.rstrip("/\\"), df["IN FILE"], df["CHANNEL"],
-                       df["OFFSET"], df["DURATION"], df["MANUAL ID"]]
+    kaleidoscope_df = [
+        df["FOLDER"].str.rstrip("/\\"),
+        df["IN FILE"],
+        df["CHANNEL"],
+        df["OFFSET"],
+        df["DURATION"],
+        df["MANUAL ID"],
+    ]
     headers = ["FOLDER", "IN FILE", "CHANNEL",
                "OFFSET", "DURATION", "MANUAL ID"]
 
