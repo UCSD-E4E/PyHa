@@ -9,6 +9,8 @@ jobs:
         - name: Checkout Repository
           uses: actions/checkout@v2
         - name: Run gh CLI Command
+          env:
+            GH_TOKEN: ${{ github.token }}
           run: |
             gh repo list
         - name: Run gh CLI Command
