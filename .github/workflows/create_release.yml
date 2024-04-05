@@ -24,4 +24,4 @@ jobs:
           env:
             GH_TOKEN: ${{ github.token }}
           run: |
-            gh release create test test.txt 
+            gh release create test-actual-files ./dist/*
