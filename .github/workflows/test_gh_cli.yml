@@ -3,5 +3,13 @@ name: Environment Test
 on: push
 
 jobs:
+  runs-on: ubuntu-latest
   steps:
-    - run: gh issue create --body "Hello world!"
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+      - name: Run gh CLI Command
+        run: |
+          gh repo list
+      - name: Run gh CLI Command
+        run: |
+          gh issue create --body "Hello world!"
