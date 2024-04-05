@@ -29,8 +29,8 @@ jobs:
           NAS_CREDS: ${{ secrets.NAS_CREDS }}
         run: |
           poetry run python -m pytest pyha_tests
-      - name: Run build wheel
-        # env:
-        #   NAS_CREDS: ${{ secrets.NAS_CREDS }}
-        run: |
-          poetry build
+      # - name: Run build wheel
+      #   # env:
+      #   #   NAS_CREDS: ${{ secrets.NAS_CREDS }}
+      #   run: |
+      #     poetry build
