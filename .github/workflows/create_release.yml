@@ -8,6 +8,14 @@ jobs:
     steps:
         - name: Checkout Repository
           uses: actions/checkout@v2
+         - uses: actions/setup-python@v4
+          with:
+            python-version: ${{ matrix.python-version }}
+        - name: Create wheel
+          run: |
+            python -m pip install --upgrade pip poetry
+            poetry install
+            poetry build
         - name: understand env
           run: |
             ls
