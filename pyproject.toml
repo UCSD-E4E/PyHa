@@ -61,3 +61,7 @@ tensorflow-io-gcs-filesystem = [
     { version = "< 0.32.0", markers = "platform_system == 'Windows'" }
 ]
 resampy = "^0.4.2"
+
+
+[tool.semantic_release]
+version_variable = "pyproject.toml:version"
