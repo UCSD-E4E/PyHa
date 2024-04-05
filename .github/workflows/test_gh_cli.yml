@@ -4,6 +4,4 @@ on: push
 
 jobs:
   steps:
-      - run: gh issue create --body "$BODY"
-        env:
-          BODY: Hello world!
+    - run: gh issue create --body "Hello world!"
