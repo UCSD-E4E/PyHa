@@ -8,13 +8,11 @@ jobs:
     steps:
         - name: Checkout Repository
           uses: actions/checkout@v2
+        - name: understand env
+          run: |
+            ls
         - name: Run gh CLI Command
           env:
             GH_TOKEN: ${{ github.token }}
           run: |
-            gh repo list
-        - name: Run gh CLI Command
-          env:
-            GH_TOKEN: ${{ github.token }}
-          run: |
-            gh issue create --body "Hello world!" --title "Testing GH cli in actions"
+            gh release create test test.txt 
