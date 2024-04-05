@@ -3,7 +3,6 @@ name: Environment Test
 on: push
 
 jobs:
-  build:
   steps:
       - run: gh issue create --body "$BODY"
         env:
