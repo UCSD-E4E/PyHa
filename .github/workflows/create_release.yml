@@ -8,6 +8,8 @@ jobs:
     steps:
         - name: Checkout Repository
           uses: actions/checkout@v2
+          with:
+            fetch-depth: 0
         - uses: actions/setup-python@v4
           with:
             python-version: ${{ matrix.python-version }}
@@ -20,6 +22,10 @@ jobs:
         - name: understand env
           run: |
             ls dist
+        - name: Python Semantic Release
+          uses: python-semantic-release/python-semantic-release@master
+          with:
+            github_token: ${{ secrets.GITHUB_TOKEN }}
         - name: Run gh CLI Command
           env:
             GH_TOKEN: ${{ github.token }}

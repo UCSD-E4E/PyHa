@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "PyHa"
-version = "0.0.0"
+version = "1.0.0"
 description = "PyHa"
 authors = [
     "UCSD Engineers for Exploration <e4e@ucsd.edu>",
@@ -36,7 +36,7 @@ synology-api = "0.5.1"
 autopep8 = "^2.0.4"
 
 [tool.poetry.dependencies]
-python = ">=3.8,<3.11"
+python = ">=3.9,<3.11"
 librosa = "^0.10.1"
 jupyter = "^1.0.0"
 scikit-learn = "^1.3.2"
