@@ -65,3 +65,4 @@ resampy = "^0.4.2"
 
 [tool.semantic_release]
 version_variable = "pyproject.toml:version"
+branch = "test-python-package-prep"

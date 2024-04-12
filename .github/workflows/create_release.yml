@@ -26,7 +26,9 @@ jobs:
           uses: python-semantic-release/python-semantic-release@master
           with:
             github_token: ${{ secrets.GITHUB_TOKEN }}
+
         - name: Run gh CLI Command
+          if: steps.release.outputs.released == 'true'
           env:
             GH_TOKEN: ${{ github.token }}
           run: |
