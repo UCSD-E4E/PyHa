@@ -65,4 +65,15 @@ resampy = "^0.4.2"
 
 [tool.semantic_release]
 version_variable = "pyproject.toml:version"
-branches = ["main", "test-python-package-prep"]
+tag_format = "v{version}"
+commit_parser = "angular"
+commit_message = "test new message"
+
+
+[tool.semantic_release.branches.main]
+match = "(main|master)"
+prerelease = false
+
+[tool.semantic_release.branches.notmain]
+match = "^(?!main|master)"
+prerelease = true
