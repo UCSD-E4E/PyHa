@@ -2,6 +2,17 @@
 
 
 
+## v0.1.0-rc.2 (2024-04-13)
+
+### Fix
+
+* fix: add wheel to build ([`2d828e0`](https://github.com/UCSD-E4E/PyHa/commit/2d828e0b13c21dbe1afc282e7d769e2249c440ea))
+
+### Unknown
+
+* Merge branch &#39;test-python-package-prep&#39; of https://github.com/UCSD-E4E/PyHa into test-python-package-prep ([`c532a1b`](https://github.com/UCSD-E4E/PyHa/commit/c532a1bf124fbb2183c4c75c1858527534512121))
+
+
 ## v0.1.0-rc.1 (2024-04-13)
 
 ### Ci
