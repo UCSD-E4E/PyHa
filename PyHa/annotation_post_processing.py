@@ -15,17 +15,23 @@ def annotation_chunker(kaleidoscope_df, chunk_length):
         kaleidoscope_df (Dataframe)
             - Dataframe of annotations in kaleidoscope format
 
-        chunk_length (int)
+        chunk_length (int, float)
             - duration to set all annotation chunks
     Returns:
         Dataframe of labels with chunk_length duration 
         (elements in "OFFSET" are divisible by chunk_length).
     """
-
+    assert isinstance(kaleidoscope_df, pd.DataFrame)
+    assert isinstance(chunk_length, int) or isinstance(chunk_length, float)
+    assert chunk_length > 0
     #Init list of clips to cycle through and output dataframe
     clips = kaleidoscope_df["IN FILE"].unique()
     df_columns = {'IN FILE' :'str', 'CLIP LENGTH' : 'float64', 'CHANNEL' : 'int64', 'OFFSET' : 'float64',
                 'DURATION' : 'float64', 'SAMPLE RATE' : 'int64','MANUAL ID' : 'str'}
+    set_confidence = False
+    if "CONFIDENCE" in kaleidoscope_df.keys():
+        df_columns["CONFIDENCE"] = 'float64'
+        set_confidence = True
     output_df = pd.DataFrame({c: pd.Series(dtype=t) for c, t in df_columns.items()})
     
     # going through each clip
@@ -57,14 +63,18 @@ def annotation_chunker(kaleidoscope_df, chunk_length):
                         1000,
                         0))
                 # Placing the label relative to the clip
-                human_arr[minval:maxval] = 1
+                if set_confidence:
+                    human_arr[minval:maxval] = species_df["CONFIDENCE"][annotation]
+                else:
+                    human_arr[minval:maxval] = 1
             # performing the chunk isolation technique on the human array
 
             for index in range(potential_annotation_count):
                 chunk_start = index * (chunk_length*1000)
                 chunk_end = min((index+1)*chunk_length*1000,arr_len)
                 chunk = human_arr[int(chunk_start):int(chunk_end)]
-                if max(chunk) >= 0.5:
+                chunk_max = max(chunk)
+                if chunk_max > 1e-4:
                     row = pd.DataFrame(index = [0])
                     annotation_start = chunk_start / 1000
                     #updating the dictionary
@@ -75,5 +85,7 @@ def annotation_chunker(kaleidoscope_df, chunk_length):
                     row["SAMPLE RATE"] = sr
                     row["MANUAL ID"] = bird
                     row["CHANNEL"] = 0
+                    if set_confidence:
+                        row["CONFIDENCE"] = chunk_max
                     output_df = pd.concat([output_df,row], ignore_index=True)
     return output_df
