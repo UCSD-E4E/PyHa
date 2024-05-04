@@ -108,6 +108,8 @@ isolation_parameters = {
 
 The `tweety_output` parameter sets whether to use TweetyNET's original output or isolation techniques. If set to `False`, TweetyNET will use the specified `technique` parameter.
 
+<br>
+
 The Foreground-Background Separation technique `isolation_parameters` is as follows:
 
 ```python
@@ -123,8 +125,10 @@ isolation_parameters = {
 }
 ```
 
-The `kernel_size` parameter is an integer _n_ that specifies the size of the kernel used in the morphological opening process. For the opening of the binary mask, this will be an _n_ by _n_ kernel. For the processing of the indicator vector, this will be a 1 by _n_ kernel.
+The `kernel_size` parameter is an integer _n_ that specifies the size of the kernel used in the morphological opening process. For the opening of the binary mask, this will be an _n_ by _n_ kernel. For the processing of the indicator vector, this will be a 1 by _n_ kernel. <br>
 The `power_threshold` parameter is a float that determines by how many times the power of a pixel must be larger than its row and column medians. For example, if this value is set to 3.0, each pixel will have to have a power of at least 3 times its row and column medians to be included in the binary mask.
+
+<br>
 
 The Template Matching `isolation_parameters` is as follows:
 
@@ -143,10 +147,12 @@ isolation_parameters = {
 }
 ```
 
-The `template_path` parameter should be set to the path to the template to use, stored as a .wav file.
-The `window_size` parameter should be a float corresponding to the length (in seconds) of the template. This is so the Steinberg isolation can correctly convert the local score array into labels.
-`cutoff_freq_low` and `cutoff_freq_high` should be integer values. If both are defined, both signal and template will be put through a butterworth bandpass filter set to those cutoff frequencies. This is recommended to ensure that the signal and template are the same shape on the frequency axis.
+The `template_path` parameter should be set to the path to the template to use, stored as a .wav file. <br>
+The `window_size` parameter should be a float corresponding to the length (in seconds) of the template. This is so the Steinberg isolation can correctly convert the local score array into labels. <br>
+`cutoff_freq_low` and `cutoff_freq_high` should be integer values. If both are defined, both signal and template will be put through a butterworth bandpass filter set to those cutoff frequencies. This is recommended to ensure that the signal and template are the same shape on the frequency axis. <br>
 `write_confidence` determines whether or not the confidence of each label is written to the array, determined by the max score in the local score array for each label.
+
+<br>
 
 <!-- annotation_post_processing.py file -->
 
@@ -383,14 +389,12 @@ _Found in [`IsoAutio.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAut
 
 This function is called by `generate_automated_labels` if `isolation_parameters["model"]` is set to `fg_bg_dsp_sep`. It applies the isolation technique determined by the `isolation_parameters` dictionary across a whole folder of audio clips.
 
-| Parameter                | Type    | Description                                                                                 |
-| ------------------------ | ------- | ------------------------------------------------------------------------------------------- |
-| `audio_dir`              | string  | Directory with wav audio files                                                              |
-| `isolation_parameters`   | dict    | Python Dictionary that controls the various label creation techniques.                      |
-| `manual_id`              | string  | controls the name of the class written to the pandas dataframe                              |
-| `weight_path`            | string  | File path of weights to be used by the RNNDetector for determining presence of bird sounds. |
-| `normalized_sample_rate` | int     | Sampling rate that the audio files should all be normalized to.                             |
-| `normalize_local_scores` | boolean | Set whether or not to normalize the local scores.                                           |
+| Parameter                | Type   | Description                                                            |
+| ------------------------ | ------ | ---------------------------------------------------------------------- |
+| `audio_dir`              | string | Directory with wav audio files                                         |
+| `isolation_parameters`   | dict   | Python Dictionary that controls the various label creation techniques. |
+| `manual_id`              | string | controls the name of the class written to the pandas dataframe         |
+| `normalized_sample_rate` | int    | Sampling rate that the audio files should all be normalized to.        |
 
 This function returns a dataframe of automated labels for the audio clips in audio_dir.
 
@@ -402,14 +406,12 @@ _Found in [`IsoAutio.py`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/IsoAut
 
 This function is called by `generate_automated_labels` if `isolation_parameters["model"]` is set to `template_matching`. It applies the isolation technique determined by the `isolation_parameters` dictionary across a whole folder of audio clips.
 
-| Parameter                | Type    | Description                                                                                 |
-| ------------------------ | ------- | ------------------------------------------------------------------------------------------- |
-| `audio_dir`              | string  | Directory with wav audio files                                                              |
-| `isolation_parameters`   | dict    | Python Dictionary that controls the various label creation techniques.                      |
-| `manual_id`              | string  | controls the name of the class written to the pandas dataframe                              |
-| `weight_path`            | string  | File path of weights to be used by the RNNDetector for determining presence of bird sounds. |
-| `normalized_sample_rate` | int     | Sampling rate that the audio files should all be normalized to.                             |
-| `normalize_local_scores` | boolean | Set whether or not to normalize the local scores.                                           |
+| Parameter                | Type   | Description                                                            |
+| ------------------------ | ------ | ---------------------------------------------------------------------- |
+| `audio_dir`              | string | Directory with wav audio files                                         |
+| `isolation_parameters`   | dict   | Python Dictionary that controls the various label creation techniques. |
+| `manual_id`              | string | controls the name of the class written to the pandas dataframe         |
+| `normalized_sample_rate` | int    | Sampling rate that the audio files should all be normalized to.        |
 
 This function returns a dataframe of automated labels for the audio clips in audio_dir.
 
@@ -431,12 +433,213 @@ Usage: `kaleidoscope_conversion(df)`
 
 </details>
 
-<!-- template matching directory -->
+<!-- FG_BG_sep/utils.py file -->
 <details>
-    <summary>template_matching directory</summary>
-    <details>
-        <summary>utils.py file</summary>
-    </details>
+<summary>FG_BG_sep/utils.py file</summary>
+
+### [`perform_stft`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/FG_BG_sep/utils.py)
+
+_Found in ['FG_BG_sep/utils.py'](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/FG_BG_sep/utils.py)_
+
+This function reverse-engineers the birdnet FG-BG separation technique. It generates a spectrogram, normalized between 0 and 1, from a given signal.
+
+| Parameter     | Type          | Description                                                    |
+| ------------- | ------------- | -------------------------------------------------------------- |
+| `SIGNAL`      | list, ndarray | Audio signal that the stft is being performed on.              |
+| `SAMPLE_RATE` | int           | Nyquist sample rate to load the clip in as. Defaults to 44100. |
+
+This function returns two things, stored in a tuple:
+
+- a floating point value representing the ratio between the length of the signal and the length of the x-axis of the spectrogram
+- a 2D Numpy array representing the normalized magnitude stft of the signal
+
+Usage: `perform_stft(SIGNAL)` or `perform_stft(SIGNAL, SAMPLE_RATE = SAMPLE_RATE)`
+
+### [`calculate_medians`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/FG_BG_sep/utils.py)
+
+_Found in ['FG_BG_sep/utils.py'](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/FG_BG_sep/utils.py)_
+
+This function calculates the temporal (column) and frequency (row) medians of a 2D stft spectrogram. These values are used for binary thresholding in FG-BG separation.
+
+| Parameter | Type    | Description                                                |
+| --------- | ------- | ---------------------------------------------------------- |
+| `stft`    | ndarray | 2D numpy array containing the spectrogram to be processed. |
+
+This function returns two vectors, one containing the time medians and the other containing the frequency medians.
+
+Usage: `calculate_medians(stft)`
+
+### [`binary_thresholding`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/FG_BG_sep/utils.py)
+
+_Found in ['FG_BG_sep/utils.py'](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/FG_BG_sep/utils.py)_
+
+This function performs the primary foreground-background separation step used in BirdNET.
+
+| Parameter              | Type    | Description                                                                                                              |
+| ---------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `stft`                 | ndarray | 2D numpy array containing the spectrogram to be processed.                                                               |
+| `time_medians`         | ndarray | Vector of the median powers with respect to time (column medians) in the spectrogram.                                    |
+| `freq_medians`         | ndarray | Vector of the median powers with respect to frequency (row medians) in the spectrogram.                                  |
+| `multiplier_threshold` | float   | Constant that the time and frequency medians are multiplied by in order to determine the power threshold. Defaults to 3. |
+
+This function returns a binary 2D numpy array that is the same shape as `stft`. It contains 1's for the foreground, and 2's for the background.
+
+Usage: `binary_thresholding(stft, time_medians, freq_medians)` or `binary_thresholding(stft, time_medians, freq_medians, multiplier_threshold = multiplier_threshold)`
+
+### [`binary_morph_opening`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/FG_BG_sep/utils.py)
+
+_Found in ['FG_BG_sep/utils.py'](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/FG_BG_sep/utils.py)_
+
+This function performs a binary morphological opening operation on the given signal spectrogram, consisting of morphological "and" (erosion) and "or" (dilation) operations in succession.
+
+| Parameter      | Type    | Description                                                                                                                      |
+| -------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `binary_stft`  | ndarray | 2D numpy array containing the binary spectrogram of the foreground (represented as 1's) and the background (represented as 0's). |
+| `kernel_shape` | int     | Dimension of the square binary morph kernel. Defaults to 4. (kernel_size, kernel_size)                                           |
+
+This function returns the result of the opening process.
+
+Usage: `binary_morph_opening(binary_stft)` or `binary_morph_opening(binary_stft, kernel_size=kernel_size)`
+
+### [`temporal_thresholding`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/FG_BG_sep/utils.py)
+
+_Found in ['FG_BG_sep/utils.py'](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/FG_BG_sep/utils.py)_
+
+This function converts a 2D binary stft into a temporal indicator vector, for the purpose of generating a local score array.
+This array has the same number of values as the number of columns in the time axis of the spectrogram.
+Each value represents whether (1) or not (0) the corresponding column has at least one foreground pixel.
+
+| Parameter            | Type    | Description                                                    |
+| -------------------- | ------- | -------------------------------------------------------------- |
+| `opened_binary_stft` | ndarray | 2D numpy array containing a binary foreground-background stft. |
+
+This function returns a binary temporal indicator vector that signifies temporal components with high power.
+
+Usage: `temporal_thresholding(opened_binary_stft)`
+
+### [`indicator_vector_processing`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/FG_BG_sep/utils.py)
+
+_Found in ['FG_BG_sep/utils.py'](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/FG_BG_sep/utils.py)_
+
+This function performs an additional morphological "or" (dilation) on a temporal indicator vector for the purpose of expanding on smaller high-power sections.
+
+| Parameter          | Type    | Description                                                                                 |
+| ------------------ | ------- | ------------------------------------------------------------------------------------------- |
+| `indicator_vector` | ndarray | Binary temporal indicator vector to be dilated.                                             |
+| `kernel_size`      | int     | Determines the length of the kernel that performs dilation. Defaults to 4. (1, kernel_size) |
+
+This function returns the indicator vector after having undergone dilation.
+
+Usage: `indicator_vector_processing(indicator_vector)` or `indicator_vector_processing(indicator_vector, kernel_size=kernel_size)`
+
+### [`FG_BG_local_score_arr`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/FG_BG_sep/utils.py)
+
+_Found in ['FG_BG_sep/utils.py'](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/FG_BG_sep/utils.py)_
+
+This function builds a local score array for an audio clip by reverse-engineering BirdNET's signal-to-noise-ratio technique.
+
+| Parameter     | Type          | Description                                           |
+| ------------- | ------------- | ----------------------------------------------------- |
+| `SIGNAL`      | list, ndarray | Signal to be processed.                               |
+| `SAMPLE_RATE` | int           | Nyquist sampling rate at which to process the signal. |
+
+This function returns:
+
+- The ratio between the length of the audio clip and the stft time axis
+- The local score array derived from median thresholding, stored in a numpy array
+
+Usage: `FG_BG_local_score_arr(SIGNAL, isolation_parameters, normalized_sample_rate)`
+
+</details>
+
+<!-- template_matching/utils.py file -->
+<details>
+ <summary>template_matching/utils.py file</summary>
+
+### [`generate_specgram`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/template_matching/utils.py)
+
+_Found in ['template_matching/utils.py'](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/template_matching/utils.py)_
+
+This function generates a stft spectrogram, normalized between 0 and 1, for use in template matching.
+
+| Parameter     | Type    | Description                                                                 |
+| ------------- | ------- | --------------------------------------------------------------------------- |
+| `SIGNAL`      | ndarray | Audio signal of which the stft is performed and the spectrogram is created. |
+| `SAMPLE_RATE` | int     | Rate at which the audio signal was sampled.                                 |
+
+This function returns a 2D numpy array representing the stft of the given signal. It uses a window length of 1024 and a 50% overlap.
+
+Usage: `generate_specgram(SIGNAL, SAMPLE_RATE)`
+
+### [`butter_bandpass`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/template_matching/utils.py)
+
+_Found in ['template_matching/utils.py'](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/template_matching/utils.py)_
+
+This function designs a Butterworth filter for a signal based on cutoffs and sample rate..
+
+| Parameter | Type  | Description                         |
+| --------- | ----- | ----------------------------------- |
+| `lowcut`  | int   | The lower frequency cutoff.         |
+| `highcut` | int   | The higher frequency cutoff.        |
+| `fs`      | float | Sample rate of the signal.          |
+| `order`   | int   | Order of the filter. Defaults to 5. |
+
+This function returns two numpy arrays that represent the numerator and denominator polynomials for the IIR filter.
+
+Usage: `butter_bandpass(lowcut, highcut, fs)` or `butter_bandpass(lowcut, highcut, fs, order=order)`
+
+### [`filter`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/template_matching/utils.py)
+
+_Found in ['template_matching/utils.py'](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/template_matching/utils.py)_
+
+This is a wrapper function for the `scipy.stats.lfilter()` function. It applies a digital filter to a given signal using given coefficient vectors.
+
+| Parameter | Type    | Description                            |
+| --------- | ------- | -------------------------------------- |
+| `data`    | ndarray | Signal to which the filter is applied. |
+| `b`       | ndarray | the numerator coefficient vector.      |
+| `a`       | ndarray | The denominator coefficient vector.    |
+
+This function returns the output of the digital filter.
+
+Usage: `filter(data, b, a)`
+
+### [`butter_bandpass_filter`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/template_matching/utils.py)
+
+_Found in ['template_matching/utils.py'](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/template_matching/utils.py)_
+
+This function designs then applies a Butterworth filter to a given signal.
+
+| Parameter | Type    | Description                                       |
+| --------- | ------- | ------------------------------------------------- |
+| `data`    | ndarray | Signal to which the filter is applied.            |
+| `lowcut`  | int     | The lower frequency cutoff.                       |
+| `highcut` | int     | The higher frequency cutoff.                      |
+| `fs`      | int     | Sample rate for the signal.                       |
+| `order`   | int     | Order of the filter to be applied. Defaults to 5. |
+
+This function returns the output of putting the given signal through the filter.
+
+Usage: `butter_bandpass_filter(data, lowcut, highcut, fs)` or `butter_bandpass_filter(data, lowcut, highcut, fs, order=order)`
+
+### [`template_matching_local_score_arr`](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/template_matching/utils.py)
+
+_Found in ['template_matching/utils.py'](https://github.com/UCSD-E4E/PyHa/blob/main/PyHa/template_matching/utils.py)_
+
+This function uses template matching to generate a local score array for a given signal. This array is used in the isolation techniques to generate labels.
+
+| Parameter          | Type    | Description                                                  |
+| ------------------ | ------- | ------------------------------------------------------------ |
+| `SIGNAL`           | ndarray | 1D numpy array representing the signal.                      |
+| `SAMPLE_RATE`      | int     | Sample rate of the signal in Hz.                             |
+| `template_spec`    | ndarray | 2D numpy array representing the spectrogram of the template. |
+| `n`                | int     | Size of the template spectrogram.                            |
+| `template_std_dev` | float   | Standard deviation of all pixels in the template.            |
+
+This function returns a local score array of cross-correlation scores generated from template matching.
+
+Usage: `template_matching_local_score_arr(SIGNAL, SAMPLE_RATE, template_spec, n, template_std_dev)`
+
 </details>
 
 <!-- statistics.py file -->
