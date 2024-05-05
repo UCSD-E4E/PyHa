@@ -1,6 +1,11 @@
 name: Environment Test
 
-on: [push, workflow_dispatch]
+on: 
+  push:
+    paths:
+      - poetry.lock
+      - pyproject.toml
+  workflow_dispatch:
 
 jobs:
   build:
