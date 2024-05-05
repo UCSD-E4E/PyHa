@@ -1,8 +1,14 @@
+from audioop import mul
+from unicodedata import normalize
+from unittest.mock import Base
 from .birdnet_lite.analyze import analyze
 from .microfaune_package.microfaune.detection import RNNDetector
 from .microfaune_package.microfaune import audio
 from .tweetynet_package.tweetynet.TweetyNetModel import TweetyNetModel
 from .tweetynet_package.tweetynet.Load_data_functions import compute_features, predictions_to_kaleidoscope
+from .FG_BG_sep.utils import FG_BG_local_score_arr
+from .template_matching.utils import filter, butter_bandpass, generate_specgram, template_matching_local_score_arr
+
 import os
 import torch
 import librosa
@@ -28,7 +34,7 @@ def checkVerbose(
             - Python Dictionary that controls the various label creation
               techniques.
     """
-    assert isinstance(errorMessage,str)
+    #assert isinstance(errorMessage,str)
     assert isinstance(isolation_parameters,dict)
     assert 'verbose' in isolation_parameters.keys()
     
@@ -119,6 +125,36 @@ def build_isolation_parameters_microfaune(
 
     return isolation_parameters
 
+def write_confidence(local_score_arr, automated_labels_df):
+    """
+    Function that adds a new column to a clip dataframe that has had automated labels generated.
+    Goes through all of the annotations and adding to said row a confidence metric based on the
+    maximum value of said annotation.
+
+    Args:
+        local_score_arr (np.ndarray or list of floats)
+            - Array of small predictions of bird presence
+        automated_labels_df (pd.DataFrame)
+            - labels derived from the local_score_arr from the def isolate() method for the "IN FILE"
+            column clip
+    returns:
+        Pandas DataFrame with an additional column of the confidence scores from the local score array
+    """
+    assert isinstance(local_score_arr, np.ndarray) or isinstance(local_score_arr, list)
+    assert isinstance(automated_labels_df, pd.DataFrame)
+    assert len(automated_labels_df) > 0
+
+    time_ratio = len(local_score_arr)/automated_labels_df["CLIP LENGTH"][0]
+    confidences = []
+    for row in automated_labels_df.index:
+        start_ndx = int(automated_labels_df["OFFSET"][row] * time_ratio)
+        end_ndx = start_ndx + int(automated_labels_df["DURATION"][row] * time_ratio)
+        cur_confidence = np.max(local_score_arr[start_ndx:end_ndx])
+        confidences.append(cur_confidence)
+
+    automated_labels_df["CONFIDENCE"] = confidences
+    return automated_labels_df
+
 
 def isolate(
         local_scores,
@@ -172,7 +208,6 @@ def isolate(
     assert "technique" in dict.fromkeys(isolation_parameters)
     potential_isolation_techniques = {"simple","steinberg","stack","chunk"}
     assert isolation_parameters["technique"] in potential_isolation_techniques
-
     # normalize the local scores so that the max value is 1.
     #if normalize_local_scores:
     #    local_scores_max = max(local_scores)
@@ -220,6 +255,10 @@ def isolate(
             filename,
             isolation_parameters,
             manual_id=manual_id)
+        
+    if "write_confidence" in isolation_parameters.keys():
+        if isolation_parameters["write_confidence"]:
+            isolation_df = write_confidence(local_scores, isolation_df)
 
     return isolation_df
 
@@ -249,7 +288,7 @@ def threshold(local_scores, isolation_parameters):
 
     assert isinstance(local_scores,np.ndarray)
     assert isinstance(isolation_parameters,dict)
-    potential_threshold_types = {"median","mean","standard deviation","threshold_const"}
+    potential_threshold_types = {"median","mean","standard deviation","pure"}
     assert isolation_parameters["threshold_type"] in potential_threshold_types
 
 
@@ -350,9 +389,11 @@ def steinberg_isolate(
     thresh = threshold(local_scores, isolation_parameters)
     # how many samples one local score represents
     samples_per_score = len(SIGNAL) // len(local_scores)
-    
+    threshold_min = 0
+    if "threshold_min" in isolation_parameters.keys():
+        threshold_min = isolation_parameters["threshold_min"]
     # Calculating local scores that are at or above threshold
-    thresh_scores = local_scores >= max(thresh, isolation_parameters["threshold_min"])
+    thresh_scores = local_scores >= max(thresh, threshold_min)
     
     # if statement to check if window size is smaller than time between two local scores
     # (as a safeguard against problems that can occur)
@@ -506,7 +547,7 @@ def simple_isolate(
     time_per_score = samples_per_score / SAMPLE_RATE
 
     # Calculating local scores that are at or above threshold
-    thresh_scores = local_scores >= max(thresh, isolation_parameters["threshold_min"])
+    thresh_scores = local_scores >= max(thresh, threshold_min)
     
     # Set up to find the starts and ends of clips
     thresh_scores = np.append(thresh_scores, [0])
@@ -618,7 +659,7 @@ def stack_isolate(
     time_per_score = samples_per_score / SAMPLE_RATE
 
     # Calculating local scores that are at or above threshold
-    thresh_scores = local_scores >= max(thresh, isolation_parameters["threshold_min"])
+    thresh_scores = local_scores >= max(thresh, threshold_min)
     
     # Set up to find the starts and ends of clips
     thresh_scores = np.append(thresh_scores, [0])
@@ -777,7 +818,7 @@ def chunk_isolate(
     chunked_scores = np.array(list(map(np.amax, np.split(local_scores, chunk_starts))))
     
     # Finds which chunks are above threshold, and creates indices based on that
-    thresh_scores = chunked_scores >= max(thresh, isolation_parameters["threshold_min"])
+    thresh_scores = chunked_scores >= max(thresh, threshold_min)
     chunk_indices = np.where(thresh_scores == 1)[0]
     
     # Assigns offset values based on float values of the starts
@@ -1143,6 +1184,234 @@ def generate_automated_labels_tweetynet(
     return annotations
 
 
+
+def generate_automated_labels_FG_BG_separation(
+        audio_dir,
+        isolation_parameters,
+        manual_id="foreground",
+        normalized_sample_rate=44100):
+    """
+    Function that reverse-engineers the approach to foreground-background separation deployed by BirdNET:
+    https://www.sciencedirect.com/science/article/pii/S1574954121000273
+    The technique is more specifically described in this paper:
+    https://www.semanticscholar.org/paper/Audio-Based-Bird-Species-Identification-using-Deep-Sprengel-Jaggi/42ffd303b6a8373300a965da4327439575d23131
+    The algorith goes:
+    1. Compute the STFT with a hanning window of length 512, with 75% overlap
+    2. Take the absolute value of the STFT
+    3. Normalize [0,1] by dividing by the maximum value
+    4. Compute the median for every row and column of the Normalized STFT
+    5. Construct Binary Mask
+        For every pixel in the Normalized STFT
+            i. if (pixel > 3*row_median) and (pixel > 3*column_median) : set to 1
+            else :                                                    set to 0
+    6. Apply Binary Morphology Opening Operation with 4x4 square kernel of 1's
+        i.  Apply erosion (nested 2D AND operation) with kernel
+        ii. Apply dilation (nested 2D OR operation) with kernel
+    7. Convert "Opened" binary mask to Time Indicator Vector (binary local-score array)
+        i.  Compute the sum of each column (creating a vector of said sums)
+        ii. if val in vector >= 1 : set to 1
+    8. Apply dilation two times on Time Indicator Vector with 4x1 kernel
+        i. Note that this is similar to a convolution operation where the kernel is flipped,
+           so, a 1x4 kernel will end up actually being applied to the indicator vector
+    9. In the paper, they would then apply what we call the "simple" isolation with a threshold of 0.99.
+
+    audio_dir (string)
+            - Path to directory with audio files.
+
+        isolation_parameters (dict)
+            - Python Dictionary that controls the various label creation
+              techniques. 
+
+        manual_id (string)
+            - controls the name of the class written to the pandas dataframe.
+            - default: "foreground"
+
+        normalized_sample_rate (int)
+            - Sampling rate that the audio files should all be normalized to.
+
+    Returns:
+        Dataframe of automated labels for the audio clips in audio_dir.
+    """
+
+    logger = logging.getLogger("Foreground-Background Separation Autogenerated Labels")
+    assert isinstance(audio_dir, str)
+    assert isinstance(isolation_parameters, dict)
+    assert isinstance(manual_id, str)
+    assert isinstance(normalized_sample_rate, int)
+    assert normalized_sample_rate > 0
+
+    # initialize annotations dataframe
+    annotations = pd.DataFrame()
+
+    # looping through the folder
+    for audio_file in os.listdir(audio_dir):
+        # skip directories
+        if os.path.isdir(audio_dir + audio_file):
+            continue
+        # loading in the audio clip
+        try:
+            SIGNAL, SAMPLE_RATE = librosa.load(os.path.join(audio_dir, audio_file), sr=normalized_sample_rate, mono=True)
+        except KeyboardInterrupt:
+            exit("Keyboard Interrupt")
+        except BaseException:
+            checkVerbose("Failed to load " + audio_file, isolation_parameters)
+            continue
+        
+        # generating local score array from clip
+        try: 
+            time_ratio, local_score_arr = FG_BG_local_score_arr(SIGNAL, 
+                                                                isolation_parameters,
+                                                                SAMPLE_RATE)
+        except KeyboardInterrupt:
+            exit("Keyboard Interrupt")
+        except BaseException:
+            checkVerbose("Failed to collect local score array of " + audio_file, isolation_parameters)
+            continue
+
+        # passing through isolation technique
+        try:
+            new_entry = isolate(
+                local_score_arr,
+                SIGNAL,
+                SAMPLE_RATE,
+                audio_dir,
+                audio_file,
+                isolation_parameters,
+                manual_id=manual_id,
+            )
+            if annotations.empty:
+                annotations = new_entry
+            else:
+                annotations = pd.concat([annotations, new_entry])
+        except KeyboardInterrupt:
+            exit("Keyboard Interrupt")
+        except BaseException as e:
+            checkVerbose(e, isolation_parameters)
+            checkVerbose("Error in isolating bird calls from " + audio_file, isolation_parameters)
+            continue
+
+    annotations.reset_index(inplace=True, drop=True)
+    return annotations
+
+def generate_automated_labels_template_matching(
+        audio_dir,
+        isolation_parameters,
+        manual_id="template",
+        normalized_sample_rate=44100):
+    """
+
+
+    audio_dir (string)
+            - Path to directory with audio files.
+
+        isolation_parameters (dict)
+            - Python Dictionary that controls the various label creation
+              techniques. 
+
+        manual_id (string)
+            - controls the name of the class written to the pandas dataframe.
+            - default: "template"
+
+        normalized_sample_rate (int)
+            - Sampling rate that the audio files should all be normalized to.
+
+    Returns:
+        Dataframe of automated labels for the audio clips in audio_dir.
+    """
+
+    logger = logging.getLogger("Template Matching Autogenerated Labels")
+    assert isinstance(audio_dir, str)
+    assert isinstance(isolation_parameters, dict)
+    assert isinstance(manual_id, str)
+    assert isinstance(normalized_sample_rate, int)
+    assert normalized_sample_rate > 0
+    bandpass = False
+    b = None
+    a = None
+    if "cutoff_freq_low" in isolation_parameters.keys() and "cutoff_freq_high" in isolation_parameters.keys():
+        bandpass = True
+        assert isinstance(isolation_parameters["cutoff_freq_low"], int)
+        assert isinstance(isolation_parameters["cutoff_freq_high"], int)
+        assert isolation_parameters["cutoff_freq_low"] > 0 and isolation_parameters["cutoff_freq_high"] > 0
+        assert isolation_parameters["cutoff_freq_high"] > isolation_parameters["cutoff_freq_low"]
+        assert isolation_parameters["cutoff_freq_high"] <= int(0.5*normalized_sample_rate)
+        
+    # initialize annotations dataframe
+    annotations = pd.DataFrame()
+
+    # processing the template clip
+    try:
+        # loading the template signal
+        TEMPLATE, SAMPLE_RATE = librosa.load(isolation_parameters["template_path"], sr=normalized_sample_rate, mono=True)
+        if bandpass:
+            b, a = butter_bandpass(isolation_parameters["cutoff_freq_low"], isolation_parameters["cutoff_freq_high"], SAMPLE_RATE)
+            TEMPLATE = filter(TEMPLATE, b, a)
+        
+        TEMPLATE_spec = generate_specgram(TEMPLATE, SAMPLE_RATE)
+        TEMPLATE_mean = np.mean(TEMPLATE_spec)
+        
+        TEMPLATE_std_dev = np.std(TEMPLATE_spec)
+        TEMPLATE_spec -= TEMPLATE_mean
+        n = TEMPLATE_spec.shape[0] * TEMPLATE_spec.shape[1]
+
+
+    except KeyboardInterrupt:
+        exit("Keyboard Interrupt")
+    except BaseException:
+        checkVerbose("Failed to load and process template " + isolation_parameters["template_path"], isolation_parameters)
+        exit("Can't do template matching without a template")
+
+    # looping through the clips to process
+    for audio_file in os.listdir(audio_dir):
+        # skip directories
+        if os.path.isdir(audio_dir + audio_file):
+            continue
+        # loading in the audio clip
+        try:
+            SIGNAL, SAMPLE_RATE = librosa.load(os.path.join(audio_dir, audio_file), sr=normalized_sample_rate, mono=True)
+            if bandpass:
+                SIGNAL = filter(SIGNAL, b, a)
+        except KeyboardInterrupt:
+            exit("Keyboard Interrupt")
+        except BaseException:
+            checkVerbose("Failed to load " + audio_file, isolation_parameters)
+            continue
+        
+        # generating local score array from clip
+        try: 
+            local_score_arr = template_matching_local_score_arr(SIGNAL, SAMPLE_RATE, TEMPLATE_spec, n, TEMPLATE_std_dev)
+        except KeyboardInterrupt:
+            exit("Keyboard Interrupt")
+        except BaseException:
+            checkVerbose("Failed to collect local score array of " + audio_file, isolation_parameters)
+            continue
+
+        # passing through isolation technique
+        try:
+            new_entry = isolate(
+                local_score_arr,
+                SIGNAL,
+                SAMPLE_RATE,
+                audio_dir,
+                audio_file,
+                isolation_parameters,
+                manual_id=manual_id,
+            )
+            if annotations.empty:
+                annotations = new_entry
+            else:
+                annotations = pd.concat([annotations, new_entry])
+        except KeyboardInterrupt:
+            exit("Keyboard Interrupt")
+        except BaseException as e:
+            checkVerbose(e, isolation_parameters)
+            checkVerbose("Error in isolating bird calls from " + audio_file, isolation_parameters)
+            continue
+
+    annotations.reset_index(inplace=True, drop=True)
+    return annotations
+
+
 def generate_automated_labels(
         audio_dir,
         isolation_parameters,
@@ -1204,7 +1473,8 @@ def generate_automated_labels(
         keys_to_delete = ['model', 'technique', 'threshold_type',
             'threshold_const', 'chunk_size']
         for key in keys_to_delete:
-            birdnet_parameters.pop(key, None)
+            if key in birdnet_parameters.keys():
+                birdnet_parameters.pop(key, None)
         annotations = generate_automated_labels_birdnet(
                         audio_dir, birdnet_parameters)
     elif(isolation_parameters['model'] == 'tweetynet'):
@@ -1215,6 +1485,20 @@ def generate_automated_labels(
                         weight_path=weight_path,
                         normalized_sample_rate=normalized_sample_rate,
                         normalize_local_scores=normalize_local_scores)
+    elif(isolation_parameters["model"]=='fg_bg_dsp_sep'):
+        annotations = generate_automated_labels_FG_BG_separation(
+           audio_dir=audio_dir,
+           isolation_parameters=isolation_parameters,
+           manual_id=manual_id,
+           normalized_sample_rate=normalized_sample_rate
+        )
+    elif (isolation_parameters["model"]=="template_matching"):
+        annotations = generate_automated_labels_template_matching(
+            audio_dir=audio_dir,
+            isolation_parameters=isolation_parameters,
+            manual_id=manual_id,
+            normalized_sample_rate=normalized_sample_rate
+        )
     else:
         # print("{model_name} model does not exist"\
         #     .format(model_name=isolation_parameters["model"]))
