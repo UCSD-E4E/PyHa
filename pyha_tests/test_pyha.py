@@ -2,7 +2,6 @@
 '''
 from pathlib import Path
 import importlib
-import os
 
 from PyHa.IsoAutio import generate_automated_labels
 
