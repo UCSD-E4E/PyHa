@@ -1103,7 +1103,7 @@ global_stats_df = global_statistics(stats_df)
 
 ![image](https://user-images.githubusercontent.com/44332326/127575798-f84540ea-5121-4e7a-83c4-4ca5ad02e9d0.png)
 
-All relevant audio from the PyHa tutorial can be found within the ["TEST" folder](https://drive.google.com/drive/u/0/folders/1lIweB8rF9JZhu6imkuTg_No0i04ClDh1).
+All relevant audio from the PyHa tutorial can be found within the ["TEST" folder]([https://drive.google.com/drive/u/0/folders/1lIweB8rF9JZhu6imkuTg_No0i04ClDh1](https://drive.google.com/drive/folders/1lIweB8rF9JZhu6imkuTg_No0i04ClDh1?usp=sharing)).
 In order to replicate the results displayed in the GitHub repository, make sure
 the audio clips are located in a folder called "TEST" in the same directory
 path as we had in the Jupyter Notebook tutorial.
