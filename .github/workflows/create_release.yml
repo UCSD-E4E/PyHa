@@ -1,4 +1,4 @@
-name: Environment Test
+name: Release Update
 
 on: push
 
