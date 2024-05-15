@@ -2,6 +2,7 @@
 '''
 from pathlib import Path
 import importlib
+import os
 
 from PyHa.IsoAutio import generate_automated_labels
 
@@ -13,8 +14,8 @@ def test_reference_data(reference_data: Path):
         reference_data (Path): Path to reference data
     """
     print(reference_data)
-    print(Path("/tmp").exists())
-    print(Path("/tmp").iterdir())
+    print(Path("/private").exists())
+    print(os.listdir("/private"))
     assert reference_data.exists()
     assert reference_data.joinpath("TEST").exists()
     for i in range(11):
