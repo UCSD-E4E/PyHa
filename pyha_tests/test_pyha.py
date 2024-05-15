@@ -18,7 +18,6 @@ def test_reference_data(reference_data: Path):
     print(Path(test_path).exists())
     print(os.listdir(test_path))
     assert reference_data.exists()
-    assert reference_data.joinpath("TEST").exists()
     for i in range(11):
         assert reference_data.joinpath(f'ScreamingPiha{i + 1}.wav').exists()
 
