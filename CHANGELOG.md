@@ -2,6 +2,17 @@
 
 
 
+## v0.1.0-rc.3 (2024-05-15)
+
+### Fix
+
+* fix: update name of release ([`54d5177`](https://github.com/UCSD-E4E/PyHa/commit/54d5177321ae009c61f13282ee2c7d46857ae89b))
+
+### Unknown
+
+* Update test.txt ([`b240f89`](https://github.com/UCSD-E4E/PyHa/commit/b240f89310372df237dc16939da7cd2aea26439f))
+
+
 ## v0.1.0-rc.2 (2024-04-13)
 
 ### Fix
