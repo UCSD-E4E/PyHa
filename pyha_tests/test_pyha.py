@@ -14,9 +14,6 @@ def test_reference_data(reference_data: Path):
         reference_data (Path): Path to reference data
     """
     test_path = reference_data.parents[0]
-    print(test_path)
-    print(Path(test_path).exists())
-    print(os.listdir(test_path))
     assert reference_data.exists()
     for i in range(11):
         assert reference_data.joinpath(f'ScreamingPiha{i + 1}.wav').exists()
