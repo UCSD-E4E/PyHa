@@ -12,6 +12,8 @@ def test_reference_data(reference_data: Path):
     Args:
         reference_data (Path): Path to reference data
     """
+    test_path = reference_data.parents[0]
+    assert reference_data.exists()
     for i in range(11):
         assert reference_data.joinpath(f'ScreamingPiha{i + 1}.wav').exists()
 

@@ -28,4 +28,4 @@ jobs:
         env:
           NAS_CREDS: ${{ secrets.NAS_CREDS }}
         run: |
-          poetry run python -m pytest pyha_tests
+          poetry run python -m pytest pyha_tests -rP
