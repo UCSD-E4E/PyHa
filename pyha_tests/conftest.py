@@ -22,12 +22,13 @@ def create_creds() -> Dict[str, str]:
         with open('credentials.json', 'r', encoding='ascii') as handle:
             return json.load(handle)
     else:
-        value = os.environ['NAS_CREDS'].splitlines()
-        assert len(value) == 2
-        return {
-            'username': value[0],
-            'password': value[1]
-        }
+        return json.loads(os.environ['NAS_CREDS_JSON'])
+        # value = os.environ['NAS_CREDS'].splitlines()
+        # assert len(value) == 2
+        # return {
+        #     'username': value[0],
+        #     'password': value[1]
+        # }
 
 
 @pytest.fixture(name='reference_data', scope='session')
