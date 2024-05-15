@@ -1,6 +1,9 @@
-name: Release Update
+name: Release
 
-on: push
+on: 
+  push:
+    branches:
+      - main
 
 jobs:
   test-gh:
