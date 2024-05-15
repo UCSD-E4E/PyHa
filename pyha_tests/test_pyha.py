@@ -13,7 +13,8 @@ def test_reference_data(reference_data: Path):
         reference_data (Path): Path to reference data
     """
     print(reference_data)
-    print(list(reference_data.iterdir()))
+    print(Path("/tmp").exists())
+    print(Path("/tmp").iterdir())
     assert reference_data.exists()
     assert reference_data.joinpath("TEST").exists()
     for i in range(11):

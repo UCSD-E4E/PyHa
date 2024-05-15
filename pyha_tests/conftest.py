@@ -45,6 +45,7 @@ def create_reference_data(creds) -> Path:
     """
     with TemporaryDirectory() as tmp_dir:
         path = Path(tmp_dir).resolve()
+        print(Path('TEST').is_dir())
         if not Path('TEST').is_dir():
             nas_unzip(
                 network_path='smb://e4e-nas.ucsd.edu:6021/temp/github_actions/pyha/pyha_test.zip',
