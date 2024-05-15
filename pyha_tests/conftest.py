@@ -52,7 +52,7 @@ def create_reference_data(creds) -> Path:
                 username=creds['username'],
                 password=creds['password']
             )
-            yield path.joinpath('pyha_test')
+            yield path.joinpath('TEST')
         else:
-            shutil.copytree(Path('TEST'), path, dirs_exist_ok=True)
-            yield path
+            #shutil.copytree(Path('TEST'), path, dirs_exist_ok=True)
+            yield path.joinpath('TEST')
