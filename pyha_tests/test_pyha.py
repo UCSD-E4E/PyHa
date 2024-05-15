@@ -13,7 +13,7 @@ def test_reference_data(reference_data: Path):
     Args:
         reference_data (Path): Path to reference data
     """
-    test_path = "/" + "/".join(reference_data.split("/")[:-1])
+    test_path = reference_data.parents[0]
     print(test_path)
     print(Path(test_path).exists())
     print(os.listdir(test_path))
