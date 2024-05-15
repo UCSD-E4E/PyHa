@@ -14,8 +14,8 @@ def test_reference_data(reference_data: Path):
         reference_data (Path): Path to reference data
     """
     print(reference_data)
-    print(Path("/private").exists())
-    print(os.listdir("/private"))
+    print(Path("/tmp").exists())
+    print(os.listdir("/tmp"))
     assert reference_data.exists()
     assert reference_data.joinpath("TEST").exists()
     for i in range(11):
