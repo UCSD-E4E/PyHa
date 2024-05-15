@@ -22,7 +22,7 @@ def create_creds() -> Dict[str, str]:
         with open('credentials.json', 'r', encoding='ascii') as handle:
             return json.load(handle)
     else:
-        return json.loads(os.environ['NAS_CREDS_JSON'])
+        return json.loads(os.environ['NAS_CREDS'])
         # value = os.environ['NAS_CREDS'].splitlines()
         # assert len(value) == 2
         # return {
