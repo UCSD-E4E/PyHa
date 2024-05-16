@@ -25,7 +25,6 @@ jobs:
       id: release
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        root_options: "-vv"
     outputs:
       release: ${{ steps.release.outputs.released }}
 
