@@ -2,15 +2,113 @@
 
 
 
+## v0.1.0-rc.4 (2024-05-16)
+
+### Fix
+
+* fix: remove build command ([`f652e07`](https://github.com/UCSD-E4E/PyHa/commit/f652e07ae0eefba9a4d204fa27b00fa8962158b0))
+
+* fix: change ref ([`2c21723`](https://github.com/UCSD-E4E/PyHa/commit/2c217230c5ae5fd9e5578e682b895bf5aa686e82))
+
+* fix: remake github actions to mirror e4e deduplicate action ([`e11a0d3`](https://github.com/UCSD-E4E/PyHa/commit/e11a0d3647b8c0f43da2ebd63901432c03b28569))
+
+* fix: test why python 3.12 keeps being activated ([`038a66c`](https://github.com/UCSD-E4E/PyHa/commit/038a66ca4d4db3751a25e7e724e5d56be5655ca7))
+
+* fix: fix python version again ([`37ff6c5`](https://github.com/UCSD-E4E/PyHa/commit/37ff6c5a985ee8197bc4f911bbfc389a8413fc6c))
+
+* fix: update matrix to stay within project supported versions ([`7263317`](https://github.com/UCSD-E4E/PyHa/commit/726331785e6b250291a8d7b84532d40435051a69))
+
+* fix: address changes to actions and pyproject.toml ([`00ad77d`](https://github.com/UCSD-E4E/PyHa/commit/00ad77d6a8473a7a3a9d20bc0aa3dc40803db6bb))
+
+* fix: run only on main ([`16b09a9`](https://github.com/UCSD-E4E/PyHa/commit/16b09a90c8ca41aff0239deec3bcbc348f941bed))
+
+### Unknown
+
+* Update create_release.yml ([`7cbe33f`](https://github.com/UCSD-E4E/PyHa/commit/7cbe33fb6a7eb3d01747c7af45bb9627cb467669))
+
+* Update create_release.yml ([`a5cc246`](https://github.com/UCSD-E4E/PyHa/commit/a5cc246d6a0a0c90a936e984c0301813d87e5fee))
+
+* Update pyproject.toml ([`39eb298`](https://github.com/UCSD-E4E/PyHa/commit/39eb298617f21182576e07680f7f820527320607))
+
+* Merge branch &#39;main&#39; into test-python-package-prep ([`d10aedd`](https://github.com/UCSD-E4E/PyHa/commit/d10aeddbc8a34d5dfdca783780be5897b96d54be))
+
+* Bump idna from 3.4 to 3.7 (#193)
+
+Bumps [idna](https://github.com/kjd/idna) from 3.4 to 3.7.
+- [Release notes](https://github.com/kjd/idna/releases)
+- [Changelog](https://github.com/kjd/idna/blob/master/HISTORY.rst)
+- [Commits](https://github.com/kjd/idna/compare/v3.4...v3.7)
+
+---
+updated-dependencies:
+- dependency-name: idna
+  dependency-type: indirect
+...
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+Co-authored-by: dependabot[bot] &lt;49699333+dependabot[bot]@users.noreply.github.com&gt;
+Co-authored-by: Sean Perry &lt;sean.hyatt.perry@gmail.com&gt; ([`355e93f`](https://github.com/UCSD-E4E/PyHa/commit/355e93fdf9691806ebefc452c62856ee29d5fba8))
+
+* Fix: fixed test file paths (#197)
+
+Changes where we tell the tests where the audio files are to be correct
+
+namely from /temp/pyha_test to /temp/TEST ([`5e6a2bc`](https://github.com/UCSD-E4E/PyHa/commit/5e6a2bca1114db706b2b7f3c16c899d59b01a833))
+
+
 ## v0.1.0-rc.3 (2024-05-15)
+
+### Feature
+
+* feat: Updated documentation for template matching and FG-BG util.py files
+
+Added descriptions of the util.py files for template matching and BirdNET FG-BG Separation ([`8300796`](https://github.com/UCSD-E4E/PyHa/commit/8300796b743ad4847c527374879208832f2a70b2))
+
+* feat: Updated documentation for IsoAutio.py and isolation_parameters
+
+Added descriptions of isolation parameters for template matching and FG-BG
+Updated IsoAutio.py documentation with descriptions of write_confidence and template matching/FG-BG functions ([`1d6ac39`](https://github.com/UCSD-E4E/PyHa/commit/1d6ac397839a56a4f06d0cddc1a9c9b6c3a14c9d))
 
 ### Fix
 
 * fix: update name of release ([`54d5177`](https://github.com/UCSD-E4E/PyHa/commit/54d5177321ae009c61f13282ee2c7d46857ae89b))
 
+* fix: Reset tutorial to microfaune, updated env_test with changes from main
+
+- Set the default isolation_parameters in the tutorial notebook to microfaune parameters
+- Updated environment test yaml file based on most recent changes from main ([`b05a555`](https://github.com/UCSD-E4E/PyHa/commit/b05a555a9e0116d2dc47d8f34e13b67497bde12a))
+
 ### Unknown
 
+* test new message ([`d3f4ca8`](https://github.com/UCSD-E4E/PyHa/commit/d3f4ca801ecf8221e24617b9388bf4c12b1950a4))
+
+* Bump jupyter-lsp from 2.2.0 to 2.2.2 (#180)
+
+Bumps [jupyter-lsp](https://github.com/jupyter-lsp/jupyterlab-lsp) from 2.2.0 to 2.2.2.
+- [Release notes](https://github.com/jupyter-lsp/jupyterlab-lsp/releases)
+- [Changelog](https://github.com/jupyter-lsp/jupyterlab-lsp/blob/main/CHANGELOG.md)
+- [Commits](https://github.com/jupyter-lsp/jupyterlab-lsp/commits)
+
+---
+updated-dependencies:
+- dependency-name: jupyter-lsp
+  dependency-type: indirect
+...
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+Co-authored-by: dependabot[bot] &lt;49699333+dependabot[bot]@users.noreply.github.com&gt; ([`adaf991`](https://github.com/UCSD-E4E/PyHa/commit/adaf99105bbd31d5a6b965abd5b82c2d73120dad))
+
 * Update test.txt ([`b240f89`](https://github.com/UCSD-E4E/PyHa/commit/b240f89310372df237dc16939da7cd2aea26439f))
+
+* Update README.md for New Google Storage (#188) ([`2900fa2`](https://github.com/UCSD-E4E/PyHa/commit/2900fa2cba70de3f2a6468d3c32694f9f31ff8f6))
+
+* Merge pull request #192 from UCSD-E4E/template-matching
+
+Template Matching and FG-BG Separation added as new WTS pipelines. Furthermore, added in a &#34;CONFIDENCE&#34; column option. Small bug fixes related to logging were added as well. ([`5d1fae8`](https://github.com/UCSD-E4E/PyHa/commit/5d1fae8b6b8b76331df0085258bf0f02cbb20b90))
+
+* Merge pull request #191 from UCSD-E4E/local_score_confidene
+
+First pass of confidence column from max local score array values ([`510aa0b`](https://github.com/UCSD-E4E/PyHa/commit/510aa0bdccca1aa6202ffc52722614a3337f2ed2))
 
 
 ## v0.1.0-rc.2 (2024-04-13)
@@ -20,6 +118,8 @@
 * fix: add wheel to build ([`2d828e0`](https://github.com/UCSD-E4E/PyHa/commit/2d828e0b13c21dbe1afc282e7d769e2249c440ea))
 
 ### Unknown
+
+* test new message ([`d4357aa`](https://github.com/UCSD-E4E/PyHa/commit/d4357aaa3f98e794024db51d4b316eb67a1807ae))
 
 * Merge branch &#39;test-python-package-prep&#39; of https://github.com/UCSD-E4E/PyHa into test-python-package-prep ([`c532a1b`](https://github.com/UCSD-E4E/PyHa/commit/c532a1bf124fbb2183c4c75c1858527534512121))
 
@@ -41,6 +141,8 @@
 * fix: test semantic versioning on test branch ([`6c87605`](https://github.com/UCSD-E4E/PyHa/commit/6c87605d22cfc7e8bd39f93b4f14c4eb3731dfad))
 
 ### Unknown
+
+* test new message ([`ac4bfbd`](https://github.com/UCSD-E4E/PyHa/commit/ac4bfbd5bf85ca820382af0f9b62cd2623d8e8bf))
 
 * fix: ([`1a0924f`](https://github.com/UCSD-E4E/PyHa/commit/1a0924fb9c91a19c1013018f00ef0de21afd1227))
 
@@ -77,6 +179,30 @@ feat(package): add semantic verisioning ([`19616c5`](https://github.com/UCSD-E4E
 * test auto create issue ([`55dcf9a`](https://github.com/UCSD-E4E/PyHa/commit/55dcf9a6711c01bdac36ccc7aa359580990d0f29))
 
 * test build a wheel ([`8722227`](https://github.com/UCSD-E4E/PyHa/commit/8722227b78e6b06fa8bbaea70b4483948939c22d))
+
+* First pass of confidence column from max local score array values
+- Demonstrated in tutorial notebook
+- added into IsoAutio
+- Handled in annotation_chunker() ([`cec1213`](https://github.com/UCSD-E4E/PyHa/commit/cec1213ae5ef6d65fd0e12fdcd1bbe561923c800))
+
+* Fixed order of operations on mean and standard deviation calculations on template spectrogram ([`42da684`](https://github.com/UCSD-E4E/PyHa/commit/42da68483df33d4576b2ff78b27cd584bc428e55))
+
+* Bug Fixes
+- addressed threshold min handling when key isn&#39;t used by user
+- Added back in try-catch block when generating local score arrays ([`5b43c74`](https://github.com/UCSD-E4E/PyHa/commit/5b43c7412763b4bdd219168c871d2f8a9a461411))
+
+* Added in template matching pipeline
+- Fixed a threshold min bug in steinberg isolate
+- still need to do docstrings on added functions
+- will need to change the PyHa tutorial back to Microfaune
+- will need to update the readme
+- will need to run all of the other techniques again to verify I didn&#39;t break anything ([`a6686e0`](https://github.com/UCSD-E4E/PyHa/commit/a6686e0ee661240558ea4053c2ef088a36561a88))
+
+* Added in first draft of BirdNET Foreground-Background Separation Local Score Generation technique
+- Added in some additional bug fixes related to threshold mins in some of the isolation techniques
+- Added a modification to the Jupyter notebook tutorial to include the new technique, make sure to change it back before pushing to main ([`dc38e79`](https://github.com/UCSD-E4E/PyHa/commit/dc38e79015e4e8d125f8576446938ae6a8f37cb7))
+
+* Added in new folder with helper functions for foreground-background separation ([`ee8f529`](https://github.com/UCSD-E4E/PyHa/commit/ee8f5294a38326e6dc300d4c63e48fd835142f87))
 
 * Poetry Environment (#159)
 
