@@ -31,7 +31,7 @@ jobs:
       run: |
         echo "release: ${{ steps.release.outputs.released }}"
     outputs:
-      release: ${{ steps.release.outputs.released }}
+      release: steps.release.outputs.released
 
   build_wheels:
     name: Build wheels on ${{ matrix.python-version }}
