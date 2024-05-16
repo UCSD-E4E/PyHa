@@ -18,7 +18,7 @@ jobs:
           uses: actions/checkout@v4
           with:
             fetch-depth: 0
-        - uses: actions/setup-python@v5
+        - uses: actions/setup-python@v4
           with:
             python-version: ${{ matrix.python-version }}
         # - name: Create wheel
@@ -27,6 +27,9 @@ jobs:
         #     poetry install
         #     poetry build
         #     ls
+        - name: check python verision
+          run: |
+            python -V -V
         - name: Python Semantic Release
           uses: python-semantic-release/python-semantic-release@master
           with:
