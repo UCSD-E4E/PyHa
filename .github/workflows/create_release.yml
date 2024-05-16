@@ -22,7 +22,6 @@ jobs:
 
     - name: Python Semantic Release
       uses: python-semantic-release/python-semantic-release@master
-      id: release
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
     outputs:
