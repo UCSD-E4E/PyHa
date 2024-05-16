@@ -7,39 +7,119 @@ on:
   #     - main
 
 jobs:
-  create_release:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        submodules: recursive
+        ref: master
+
+    - name: Python Semantic Release
+      uses: python-semantic-release/python-semantic-release@master
+      id: release
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        root_options: "-vv"
+    outputs:
+      release: ${{ steps.release.outputs.released }}
+
+  build_wheels:
+    if: needs.release.outputs.release == 'true'
+    name: Build wheels on ${{ matrix.python-version }}
+    needs: [release]
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: ["3.9", "3.10"]
 
     steps:
-        - name: Checkout Repository
-          uses: actions/checkout@v4
+        - uses: actions/checkout@v4
           with:
-            fetch-depth: 0
+            submodules: recursive
+            ref: master
         - uses: actions/setup-python@v4
           with:
             python-version: ${{ matrix.python-version }}
-        # - name: Create wheel
-        #   run: |
-        #     python -m pip install --upgrade pip poetry
-        #     poetry install
-        #     poetry build
-        #     ls
-        - name: check python verision
+        - name: Create wheel
           run: |
-            python -V -V
-        - name: Python Semantic Release
-          uses: python-semantic-release/python-semantic-release@master
-          with:
-            github_token: ${{ secrets.GITHUB_TOKEN }}
+            python -m pip install --upgrade pip poetry
+            poetry install
+            poetry build
         - name: understand env
           run: |
             ls dist
-        - name: Run gh CLI Command
-          if: steps.release.outputs.released == 'true'
-          env:
-            GH_TOKEN: ${{ github.token }}
-          run: |
-            gh release create test-actual-files ./dist/*
+        - uses: actions/upload-artifact@v3
+          with:
+            path: |
+              ./dist/*
+
+  publish:
+    runs-on: ubuntu-latest
+    needs: [build_wheels]
+    permissions:
+      id-token: write
+      contents: write
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        submodules: recursive
+        ref: master
+
+    - uses: actions/download-artifact@v3
+      with:
+        name: artifact
+        path: dist
+
+    - name: Check dist
+      run: ls -R dist
+
+    - name: Publish package distributions to GitHub Releases
+      id: github-release
+      uses: python-semantic-release/upload-to-gh-release@main
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+
+#  jobs:
+  # create_release:
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #     matrix:
+  #       python-version: ["3.9", "3.10"]
+
+  #   steps:
+  #       - name: Checkout Repository
+  #         uses: actions/checkout@v4
+  #         with:
+  #           fetch-depth: 0
+  #       - uses: actions/setup-python@v4
+  #         with:
+  #           python-version: ${{ matrix.python-version }}
+  #       # - name: Create wheel
+  #       #   run: |
+  #       #     python -m pip install --upgrade pip poetry
+  #       #     poetry install
+  #       #     poetry build
+  #       #     ls
+  #       - name: check python verision
+  #         run: |
+  #           python -V -V
+  #       - name: Python Semantic Release
+  #         uses: python-semantic-release/python-semantic-release@master
+  #         with:
+  #           github_token: ${{ secrets.GITHUB_TOKEN }}
+  #       - name: understand env
+  #         run: |
+  #           ls dist
+  #       - name: Run gh CLI Command
+  #         if: steps.release.outputs.released == 'true'
+  #         env:
+  #           GH_TOKEN: ${{ github.token }}
+  #         run: |
+  #           gh release create test-actual-files ./dist/*
