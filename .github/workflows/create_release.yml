@@ -24,7 +24,7 @@ jobs:
       uses: python-semantic-release/python-semantic-release@master
       with:
         # Yes I know there won't be a changelog. But I really like main as a protected branch
-        changelog: "false"
+        
         github_token: ${{ secrets.GITHUB_TOKEN }}
     
     - name: check release state
