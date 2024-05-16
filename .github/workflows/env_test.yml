@@ -12,11 +12,11 @@ jobs:
     # continue-on-error: true
     strategy:
       matrix:
-        os: [ubuntu-20.04, ubuntu-22.04, windows-latest, macos-12, macos-11]
-        python-version: ["3.8", "3.9", "3.10"]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.9", "3.10"]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
@@ -26,6 +26,6 @@ jobs:
           poetry install
       - name: Run test
         env:
-          NAS_CREDS: ${{ secrets.NAS_CREDS }}
+          NAS_CREDS: ${{ secrets.NAS_CREDS_JSON }}
         run: |
           poetry run python -m pytest pyha_tests -rP
