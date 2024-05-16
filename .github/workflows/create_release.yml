@@ -27,9 +27,9 @@ jobs:
         changelog: "false"
         github_token: ${{ secrets.GITHUB_TOKEN }}
     
-    # - name: check release state
-    #   run: |
-    #     echo "release: ${{ steps.release.outputs.released }}"
+    - name: check release state
+      run: |
+        echo "release: ${{ steps.release.outputs.released }}"
     outputs:
       release: ${{ steps.release.outputs.released }}
 
