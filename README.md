@@ -20,14 +20,15 @@ PyHa = Python + Piha (referring to a bird species of our interest known as the s
 
 1. Navigate to a desired folder and clone the repository onto your local machine. `git clone https://github.com/UCSD-E4E/PyHa.git`
 
-- If you wish to reduce the size of the repository on your local machine you can alternatively use `git clone https://github.com/UCSD-E4E/PyHa.git --depth 1` which will only install the most up-to-date version of the repo without its history.
+    - If you wish to reduce the size of the repository on your local machine you can alternatively use `git clone https://github.com/UCSD-E4E/PyHa.git --depth 1` which will only install the most up-to-date version of the repo without its history.
 
-2. Install Python 3.8, Python 3.9, or Python 3.10
+2. Install Python 3.8, Python 3.9, or Python 3.10. *Make sure you install the 64-bit version.*
+    - Install links can be found [here.](https://www.python.org/downloads/release/python-31011/)
 3. Create a `venv` by running `python3.x -m venv .venv` where `python3.x` is the appropriate python.
 4. Activate the `venv` with the following commands:
 
-- Windows: `.venv\Scripts\activate`
-- macOS/Linux: `source .venv/bin/activate`
+    - Windows: `.venv\Scripts\activate`
+    - macOS/Linux: `source .venv/bin/activate`
 
 5. Install the build tools: `python -m pip install --upgrade pip poetry`
 6. Install the environment: `poetry install`
