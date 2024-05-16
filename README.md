@@ -22,7 +22,7 @@ PyHa = Python + Piha (referring to a bird species of our interest known as the s
 
     - If you wish to reduce the size of the repository on your local machine you can alternatively use `git clone https://github.com/UCSD-E4E/PyHa.git --depth 1` which will only install the most up-to-date version of the repo without its history.
 
-2. Install Python 3.8, Python 3.9, or Python 3.10. *Make sure you install the 64-bit version.*
+2. Install Python 3.9, or Python 3.10. *Make sure you install the 64-bit version.*
 3. Create a `venv` by running `python3.x -m venv .venv` where `python3.x` is the appropriate python.
 4. Activate the `venv` with the following commands:
 
