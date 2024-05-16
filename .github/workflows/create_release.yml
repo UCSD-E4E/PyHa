@@ -29,9 +29,9 @@ jobs:
     
     - name: check release state
       run: |
-        echo "release: ${{ steps.release.outputs.released }}"
+        echo "release: ${{ steps.release.outputs.released  == 'true' }}"
     outputs:
-      release: steps.release.outputs.released
+      release: steps.release.outputs.released == 'true'
 
   build_wheels:
     name: Build wheels on ${{ matrix.python-version }}
