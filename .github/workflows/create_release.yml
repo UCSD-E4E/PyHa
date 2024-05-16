@@ -26,14 +26,18 @@ jobs:
         # Yes I know there won't be a changelog. But I really like main as a protected branch
         changelog: "false"
         github_token: ${{ secrets.GITHUB_TOKEN }}
+    
+    # - name: check release state
+    #   run: |
+    #     echo "release: ${{ steps.release.outputs.released }}"
     outputs:
       release: ${{ steps.release.outputs.released }}
 
   build_wheels:
-    if: needs.release.outputs.release == 'true'
     name: Build wheels on ${{ matrix.python-version }}
-    needs: [release]
+    needs: release
     runs-on: ubuntu-latest
+    if: needs.release.outputs.release == 'true'
     strategy:
       matrix:
         python-version: ["3.9", "3.10"]
