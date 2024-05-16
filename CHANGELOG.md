@@ -2,6 +2,17 @@
 
 
 
+## v0.1.0-rc.11 (2024-05-16)
+
+### Fix
+
+* fix: revert release change ([`8e60639`](https://github.com/UCSD-E4E/PyHa/commit/8e606399d7aa6d7cab7f4da13096e28b0dc9e53b))
+
+### Unknown
+
+* Merge branch &#39;test-python-package-prep&#39; of https://github.com/UCSD-E4E/PyHa into test-python-package-prep ([`42634d5`](https://github.com/UCSD-E4E/PyHa/commit/42634d57dce0f972d710b5973e14bc88e2ff578f))
+
+
 ## v0.1.0-rc.10 (2024-05-16)
 
 ### Fix
