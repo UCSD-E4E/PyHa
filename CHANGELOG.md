@@ -2,6 +2,70 @@
 
 
 
+## v0.1.0-rc.10 (2024-05-16)
+
+### Fix
+
+* fix: test again ([`c1814f8`](https://github.com/UCSD-E4E/PyHa/commit/c1814f8aaed5877b47f7ce5bb24743b630cb5548))
+
+### Test
+
+* test: remove changelog ([`a292215`](https://github.com/UCSD-E4E/PyHa/commit/a29221588e4fa9159924b0306be9c0ac1e5e98a8))
+
+
+## v0.1.0-rc.9 (2024-05-16)
+
+### Test
+
+* test: try out how to send data over ([`14c15ef`](https://github.com/UCSD-E4E/PyHa/commit/14c15efe4e4cc141276dd3841fea487999c0b684))
+
+
+## v0.1.0-rc.8 (2024-05-16)
+
+### Fix
+
+* fix: adjust release output ([`154f8a1`](https://github.com/UCSD-E4E/PyHa/commit/154f8a1d311b3109216b77a941ad207282e81023))
+
+
+## v0.1.0-rc.7 (2024-05-16)
+
+### Test
+
+* test: update test ([`1813498`](https://github.com/UCSD-E4E/PyHa/commit/1813498738e5fe89e21e8e13268c1ed6b99507ff))
+
+### Unknown
+
+* Update create_release.yml ([`07f547f`](https://github.com/UCSD-E4E/PyHa/commit/07f547fec5e0bc477de4174d8180d7ede53269ec))
+
+
+## v0.1.0-rc.6 (2024-05-16)
+
+### Fix
+
+* fix: update release conditions ([`026b3d6`](https://github.com/UCSD-E4E/PyHa/commit/026b3d671c1fdfa887d91c6dac9afd27c4746533))
+
+
+## v0.1.0-rc.5 (2024-05-16)
+
+### Feature
+
+* feat: TEST ([`e0c7598`](https://github.com/UCSD-E4E/PyHa/commit/e0c7598195edbffe6be52de564b3f0dec31e1698))
+
+* feat: test ([`7e0052d`](https://github.com/UCSD-E4E/PyHa/commit/7e0052da86a34abd4bc67586e140b669b3e54708))
+
+### Fix
+
+* fix: disable changelog ([`42dc8c2`](https://github.com/UCSD-E4E/PyHa/commit/42dc8c2fba871bff7247de5e681c24e2d653cdb2))
+
+* fix: remove commit message ([`5132d9c`](https://github.com/UCSD-E4E/PyHa/commit/5132d9c1b456673fde23b723dd135b345c675785))
+
+### Unknown
+
+* Create TEST.txt ([`29d1a8a`](https://github.com/UCSD-E4E/PyHa/commit/29d1a8a8993bd97db80a99a4315378fda282e25f))
+
+* Merge branch &#39;test-python-package-prep&#39; of https://github.com/UCSD-E4E/PyHa into test-python-package-prep ([`6ef7be0`](https://github.com/UCSD-E4E/PyHa/commit/6ef7be07d2f983fee02c44135816c0f2f19b4b3c))
+
+
 ## v0.1.0-rc.4 (2024-05-16)
 
 ### Fix
