@@ -1,35 +1,39 @@
 name: Release
 
 on: 
-  push:
-    branches:
-      - main
+  - push
+  # push:
+  #   branches:
+  #     - main
 
 jobs:
-  test-gh:
+  create_release:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+
     steps:
         - name: Checkout Repository
-          uses: actions/checkout@v2
+          uses: actions/checkout@v4
           with:
             fetch-depth: 0
-        - uses: actions/setup-python@v4
+        - uses: actions/setup-python@v5
           with:
             python-version: ${{ matrix.python-version }}
-        - name: Create wheel
-          run: |
-            python -m pip install --upgrade pip poetry
-            poetry install
-            poetry build
-            ls
-        - name: understand env
-          run: |
-            ls dist
+        # - name: Create wheel
+        #   run: |
+        #     python -m pip install --upgrade pip poetry
+        #     poetry install
+        #     poetry build
+        #     ls
         - name: Python Semantic Release
           uses: python-semantic-release/python-semantic-release@master
           with:
             github_token: ${{ secrets.GITHUB_TOKEN }}
-
+        - name: understand env
+          run: |
+            ls dist
         - name: Run gh CLI Command
           if: steps.release.outputs.released == 'true'
           env:
