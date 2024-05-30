@@ -11,7 +11,7 @@ on:
         - pyproject.toml
 
 jobs:
-  dependabot-check:
+  build:
     if: ${{ github.event.workflow_run.conclusion == 'success' || github.actor != 'dependabot[bot]' }}
     strategy:
       matrix:
