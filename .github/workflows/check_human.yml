@@ -1,6 +1,6 @@
 ### .github/workflows/dependabot_pr.yml
 ### This workflow doesn't have access to secrets and has a read-only token
-name: Dependabot PR Check (check if human made this)
+name: Dependabot PR Check
 on: 
   push:
     paths:
@@ -9,10 +9,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  check-dependabot:
-    runs-on: ubuntu-latest
-    if: ${{ github.actor == 'dependabot[bot]' }}
-    steps:
-      - run: echo "PR created by Dependabot"
+  manual-run:
+    if: ${{ github.actor != 'dependabot[bot]' }}
+    uses: ./.github/workflows/env_test.yml
 
   
