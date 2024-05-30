@@ -1,26 +1,37 @@
-name: Environment Test
+name: pytest
 
 on:
-  workflow_call:
+    workflow_run:
+        workflows: ["Dependabot PR Check"]
+        types:
+            - completed
+    push:
+    paths:
+      - poetry.lock
+      - pyproject.toml
 
 jobs:
-  build:
+  dependabot-check:
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.actor != 'dependabot[bot]' }}
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ["3.9", "3.10"]
+        python-version: ["3.12"]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip poetry
-          poetry install
-      - name: Run test
-        env:
-          NAS_CREDS: ${{ secrets.NAS_CREDS_JSON }}
-        run: |
-          poetry run python -m pytest pyha_tests -rP
+    - uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest
+        pip install poetry
+        poetry install
+    - name: Test
+      env:
+        NAS_CREDS: ${{ secrets.NAS_CREDS }}
+      run: |
+        python -m pytest tests/
