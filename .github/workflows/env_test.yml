@@ -1,15 +1,18 @@
-name: Environment Test
+name: pytest
 
-on: 
-  push:
-    paths:
-      - poetry.lock
-      - pyproject.toml
-  workflow_dispatch:
+on:
+    workflow_run:
+        workflows: ["Dependabot PR Check"]
+        types:
+            - completed
+    push:
+      paths:
+        - poetry.lock
+        - pyproject.toml
 
 jobs:
   build:
-    # continue-on-error: true
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.actor != 'dependabot[bot]' }}
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
