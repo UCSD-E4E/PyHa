@@ -6,9 +6,9 @@ on:
         types:
             - completed
     push:
-    paths:
-      - poetry.lock
-      - pyproject.toml
+      paths:
+        - poetry.lock
+        - pyproject.toml
 
 jobs:
   dependabot-check:
