@@ -1,16 +1,10 @@
 name: Environment Test
 
-on: 
-  push:
-    paths:
-      - poetry.lock
-      - pyproject.toml
-  workflow_dispatch:
+on:
+  workflow_call:
 
 jobs:
   build:
-    if: ${{ github.actor != 'dependabot[bot]' }}
-    # continue-on-error: true
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
