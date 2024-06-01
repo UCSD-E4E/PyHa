@@ -2,110 +2,323 @@
 
 
 
-## v0.1.0-rc.11 (2024-05-16)
-
-### Fix
-
-* fix: revert release change ([`8e60639`](https://github.com/UCSD-E4E/PyHa/commit/8e606399d7aa6d7cab7f4da13096e28b0dc9e53b))
-
-### Unknown
-
-* Merge branch &#39;test-python-package-prep&#39; of https://github.com/UCSD-E4E/PyHa into test-python-package-prep ([`42634d5`](https://github.com/UCSD-E4E/PyHa/commit/42634d57dce0f972d710b5973e14bc88e2ff578f))
-
-
-## v0.1.0-rc.10 (2024-05-16)
-
-### Fix
-
-* fix: test again ([`c1814f8`](https://github.com/UCSD-E4E/PyHa/commit/c1814f8aaed5877b47f7ce5bb24743b630cb5548))
-
-### Test
-
-* test: remove changelog ([`a292215`](https://github.com/UCSD-E4E/PyHa/commit/a29221588e4fa9159924b0306be9c0ac1e5e98a8))
-
-
-## v0.1.0-rc.9 (2024-05-16)
-
-### Test
-
-* test: try out how to send data over ([`14c15ef`](https://github.com/UCSD-E4E/PyHa/commit/14c15efe4e4cc141276dd3841fea487999c0b684))
-
-
-## v0.1.0-rc.8 (2024-05-16)
-
-### Fix
-
-* fix: adjust release output ([`154f8a1`](https://github.com/UCSD-E4E/PyHa/commit/154f8a1d311b3109216b77a941ad207282e81023))
-
-
-## v0.1.0-rc.7 (2024-05-16)
-
-### Test
-
-* test: update test ([`1813498`](https://github.com/UCSD-E4E/PyHa/commit/1813498738e5fe89e21e8e13268c1ed6b99507ff))
-
-### Unknown
-
-* Update create_release.yml ([`07f547f`](https://github.com/UCSD-E4E/PyHa/commit/07f547fec5e0bc477de4174d8180d7ede53269ec))
-
-
-## v0.1.0-rc.6 (2024-05-16)
-
-### Fix
-
-* fix: update release conditions ([`026b3d6`](https://github.com/UCSD-E4E/PyHa/commit/026b3d671c1fdfa887d91c6dac9afd27c4746533))
-
-
-## v0.1.0-rc.5 (2024-05-16)
+## v0.2.0 (2024-06-01)
 
 ### Feature
 
-* feat: TEST ([`e0c7598`](https://github.com/UCSD-E4E/PyHa/commit/e0c7598195edbffe6be52de564b3f0dec31e1698))
+* feat: fix workflow error for dependabot secrets issue (#206)
 
-* feat: test ([`7e0052d`](https://github.com/UCSD-E4E/PyHa/commit/7e0052da86a34abd4bc67586e140b669b3e54708))
+* feat: fix workflow error for dependabot secrets issue
 
-### Fix
+* fix: update them so they run on peotry.lock and pyproject.toml
 
-* fix: disable changelog ([`42dc8c2`](https://github.com/UCSD-E4E/PyHa/commit/42dc8c2fba871bff7247de5e681c24e2d653cdb2))
+* fix: adjust so human changes can work
 
-* fix: remove commit message ([`5132d9c`](https://github.com/UCSD-E4E/PyHa/commit/5132d9c1b456673fde23b723dd135b345c675785))
+* test: secret issues
 
-### Unknown
+* Update conftest.py
 
-* Create TEST.txt ([`29d1a8a`](https://github.com/UCSD-E4E/PyHa/commit/29d1a8a8993bd97db80a99a4315378fda282e25f))
+* fix: remove bad chaining
 
-* Merge branch &#39;test-python-package-prep&#39; of https://github.com/UCSD-E4E/PyHa into test-python-package-prep ([`6ef7be0`](https://github.com/UCSD-E4E/PyHa/commit/6ef7be07d2f983fee02c44135816c0f2f19b4b3c))
+* Update pyproject.toml
 
+* fix: indent error
 
-## v0.1.0-rc.4 (2024-05-16)
+* Update pyproject.toml
 
-### Fix
+* Update env_test.yml
 
-* fix: remove build command ([`f652e07`](https://github.com/UCSD-E4E/PyHa/commit/f652e07ae0eefba9a4d204fa27b00fa8962158b0))
+* Update pyproject.toml
 
-* fix: change ref ([`2c21723`](https://github.com/UCSD-E4E/PyHa/commit/2c217230c5ae5fd9e5578e682b895bf5aa686e82))
-
-* fix: remake github actions to mirror e4e deduplicate action ([`e11a0d3`](https://github.com/UCSD-E4E/PyHa/commit/e11a0d3647b8c0f43da2ebd63901432c03b28569))
-
-* fix: test why python 3.12 keeps being activated ([`038a66c`](https://github.com/UCSD-E4E/PyHa/commit/038a66ca4d4db3751a25e7e724e5d56be5655ca7))
-
-* fix: fix python version again ([`37ff6c5`](https://github.com/UCSD-E4E/PyHa/commit/37ff6c5a985ee8197bc4f911bbfc389a8413fc6c))
-
-* fix: update matrix to stay within project supported versions ([`7263317`](https://github.com/UCSD-E4E/PyHa/commit/726331785e6b250291a8d7b84532d40435051a69))
-
-* fix: address changes to actions and pyproject.toml ([`00ad77d`](https://github.com/UCSD-E4E/PyHa/commit/00ad77d6a8473a7a3a9d20bc0aa3dc40803db6bb))
-
-* fix: run only on main ([`16b09a9`](https://github.com/UCSD-E4E/PyHa/commit/16b09a90c8ca41aff0239deec3bcbc348f941bed))
+* fix: cleanup ([`c727366`](https://github.com/UCSD-E4E/PyHa/commit/c727366a06c72f4627104b9793b450656feab0ff))
 
 ### Unknown
 
-* Update create_release.yml ([`7cbe33f`](https://github.com/UCSD-E4E/PyHa/commit/7cbe33fb6a7eb3d01747c7af45bb9627cb467669))
+* Create Automatic Releases (#189)
 
-* Update create_release.yml ([`a5cc246`](https://github.com/UCSD-E4E/PyHa/commit/a5cc246d6a0a0c90a936e984c0301813d87e5fee))
+* test build a wheel
 
-* Update pyproject.toml ([`39eb298`](https://github.com/UCSD-E4E/PyHa/commit/39eb298617f21182576e07680f7f820527320607))
+* test auto create issue
 
-* Merge branch &#39;main&#39; into test-python-package-prep ([`d10aedd`](https://github.com/UCSD-E4E/PyHa/commit/d10aeddbc8a34d5dfdca783780be5897b96d54be))
+* Update test_gh_cli.yml
+
+* Update test_gh_cli.yml
+
+* Update test_gh_cli.yml
+
+* Update test_gh_cli.yml
+
+* Update test_gh_cli.yml
+
+* Update test_gh_cli.yml
+
+* Update test_gh_cli.yml
+
+* testing releases
+
+* test creating a wheel
+
+* Update create_release.yml
+
+* Update create_release.yml
+
+* Update create_release.yml
+
+* Update create_release.yml
+
+* Update pyproject.toml
+
+feat(package): add semantic verisioning
+
+* feat: added semantic releases
+
+* fix: test semantic versioning on test branch
+
+* fix: again attempt to get sv to run on test branch
+
+* fix:
+
+* test new message
+
+* fix: add wheel to build
+
+* test new message
+
+* Update test.txt
+
+* fix: update name of release
+
+* test new message
+
+* fix: run only on main
+
+* fix: address changes to actions and pyproject.toml
+
+* fix: update matrix to stay within project supported versions
+
+* fix: fix python version again
+
+* fix: test why python 3.12 keeps being activated
+
+* Update pyproject.toml
+
+* fix: remake github actions to mirror e4e deduplicate action
+
+* fix: change ref
+
+* fix: remove build command
+
+* Update create_release.yml
+
+* Update create_release.yml
+
+* 0.1.0-rc.4
+
+Automatically generated by python-semantic-release
+
+* fix: remove commit message
+
+* fix: disable changelog
+
+* Create TEST.txt
+
+* feat: test
+
+* feat: TEST
+
+* fix: update release conditions
+
+* Update create_release.yml
+
+* test: update test
+
+* fix: adjust release output
+
+* test: try out how to send data over
+
+* test: remove changelog
+
+* fix: test again
+
+* 0.1.0-rc.10
+
+Automatically generated by python-semantic-release
+
+* fix: revert release change
+
+* 0.1.0-rc.11
+
+Automatically generated by python-semantic-release
+
+* fix: return it to how it is in dedup example, and hope
+
+* fix: fix refs
+
+* doc: remove extra comments
+
+* fix: swap back to main
+
+* Delete TEST.txt
+
+---------
+
+Co-authored-by: github-actions &lt;github-actions@github.com&gt;
+Co-authored-by: semantic-release &lt;semantic-release&gt; ([`59e89ef`](https://github.com/UCSD-E4E/PyHa/commit/59e89ef508267ef71c3754c22899cf3a2438e3d4))
+
+* Bump jupyter-server from 2.10.0 to 2.11.2 (#173)
+
+Bumps [jupyter-server](https://github.com/jupyter-server/jupyter_server) from 2.10.0 to 2.11.2.
+- [Release notes](https://github.com/jupyter-server/jupyter_server/releases)
+- [Changelog](https://github.com/jupyter-server/jupyter_server/blob/main/CHANGELOG.md)
+- [Commits](https://github.com/jupyter-server/jupyter_server/compare/v2.10.0...v2.11.2)
+
+---
+updated-dependencies:
+- dependency-name: jupyter-server
+  dependency-type: indirect
+...
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+Co-authored-by: dependabot[bot] &lt;49699333+dependabot[bot]@users.noreply.github.com&gt; ([`dfc0d7e`](https://github.com/UCSD-E4E/PyHa/commit/dfc0d7e5acf5a2256dbc1dcc91f1c86932922409))
+
+* Bump requests from 2.31.0 to 2.32.2 (#207)
+
+Bumps [requests](https://github.com/psf/requests) from 2.31.0 to 2.32.2.
+- [Release notes](https://github.com/psf/requests/releases)
+- [Changelog](https://github.com/psf/requests/blob/main/HISTORY.md)
+- [Commits](https://github.com/psf/requests/compare/v2.31.0...v2.32.2)
+
+---
+updated-dependencies:
+- dependency-name: requests
+  dependency-type: indirect
+...
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+Co-authored-by: dependabot[bot] &lt;49699333+dependabot[bot]@users.noreply.github.com&gt; ([`c2915f3`](https://github.com/UCSD-E4E/PyHa/commit/c2915f38a1df9bec8cd73b3887994ade47609545))
+
+* Bump pillow from 10.1.0 to 10.3.0 (#195)
+
+Bumps [pillow](https://github.com/python-pillow/Pillow) from 10.1.0 to 10.3.0.
+- [Release notes](https://github.com/python-pillow/Pillow/releases)
+- [Changelog](https://github.com/python-pillow/Pillow/blob/main/CHANGES.rst)
+- [Commits](https://github.com/python-pillow/Pillow/compare/10.1.0...10.3.0)
+
+---
+updated-dependencies:
+- dependency-name: pillow
+  dependency-type: indirect
+...
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+Co-authored-by: dependabot[bot] &lt;49699333+dependabot[bot]@users.noreply.github.com&gt; ([`868710a`](https://github.com/UCSD-E4E/PyHa/commit/868710a092e510cd22317f24ecd0c1e288198023))
+
+* Bump jinja2 from 3.1.2 to 3.1.4 (#194)
+
+Bumps [jinja2](https://github.com/pallets/jinja) from 3.1.2 to 3.1.4.
+- [Release notes](https://github.com/pallets/jinja/releases)
+- [Changelog](https://github.com/pallets/jinja/blob/main/CHANGES.rst)
+- [Commits](https://github.com/pallets/jinja/compare/3.1.2...3.1.4)
+
+---
+updated-dependencies:
+- dependency-name: jinja2
+  dependency-type: indirect
+...
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+Co-authored-by: dependabot[bot] &lt;49699333+dependabot[bot]@users.noreply.github.com&gt; ([`d5ddc66`](https://github.com/UCSD-E4E/PyHa/commit/d5ddc6692450d11f2d03ecd272e8a4df816d588c))
+
+* Bump werkzeug from 3.0.1 to 3.0.3 (#196)
+
+Bumps [werkzeug](https://github.com/pallets/werkzeug) from 3.0.1 to 3.0.3.
+- [Release notes](https://github.com/pallets/werkzeug/releases)
+- [Changelog](https://github.com/pallets/werkzeug/blob/main/CHANGES.rst)
+- [Commits](https://github.com/pallets/werkzeug/compare/3.0.1...3.0.3)
+
+---
+updated-dependencies:
+- dependency-name: werkzeug
+  dependency-type: indirect
+...
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+Co-authored-by: dependabot[bot] &lt;49699333+dependabot[bot]@users.noreply.github.com&gt; ([`a2f104f`](https://github.com/UCSD-E4E/PyHa/commit/a2f104f56a259856d69ce9ad03735c3ba47f4c4e))
+
+* Bump jupyterlab from 4.0.8 to 4.0.11 (#182)
+
+Bumps [jupyterlab](https://github.com/jupyterlab/jupyterlab) from 4.0.8 to 4.0.11.
+- [Release notes](https://github.com/jupyterlab/jupyterlab/releases)
+- [Changelog](https://github.com/jupyterlab/jupyterlab/blob/@jupyterlab/lsp@4.0.11/CHANGELOG.md)
+- [Commits](https://github.com/jupyterlab/jupyterlab/compare/@jupyterlab/lsp@4.0.8...@jupyterlab/lsp@4.0.11)
+
+---
+updated-dependencies:
+- dependency-name: jupyterlab
+  dependency-type: indirect
+...
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+Co-authored-by: dependabot[bot] &lt;49699333+dependabot[bot]@users.noreply.github.com&gt; ([`d629418`](https://github.com/UCSD-E4E/PyHa/commit/d6294188d393355428bdcb8e959cfee1a2ee983c))
+
+* Bump notebook from 7.0.6 to 7.0.7 (#181)
+
+Bumps [notebook](https://github.com/jupyter/notebook) from 7.0.6 to 7.0.7.
+- [Release notes](https://github.com/jupyter/notebook/releases)
+- [Changelog](https://github.com/jupyter/notebook/blob/@jupyter-notebook/tree@7.0.7/CHANGELOG.md)
+- [Commits](https://github.com/jupyter/notebook/compare/@jupyter-notebook/tree@7.0.6...@jupyter-notebook/tree@7.0.7)
+
+---
+updated-dependencies:
+- dependency-name: notebook
+  dependency-type: indirect
+...
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+Co-authored-by: dependabot[bot] &lt;49699333+dependabot[bot]@users.noreply.github.com&gt; ([`ca3ed8a`](https://github.com/UCSD-E4E/PyHa/commit/ca3ed8add843f467433cff02b58531bc678c7d51))
+
+
+## v0.1.0 (2024-05-16)
+
+### Ci
+
+* ci: Updates to checkout@v4 ([`c40c196`](https://github.com/UCSD-E4E/PyHa/commit/c40c196a80cdb06012ae7c94c05bcbd68b30660b))
+
+* ci: Switches to latest OSes ([`b203185`](https://github.com/UCSD-E4E/PyHa/commit/b203185082172a9825f454c1ffe2cb14a2efe314))
+
+* ci: Fixes workflow due to limited space, switches to JSON creds ([`589be8c`](https://github.com/UCSD-E4E/PyHa/commit/589be8cf68af98688ced3cea626f7a2cee8607b1))
+
+* ci: Fixes matrix ([`2f97086`](https://github.com/UCSD-E4E/PyHa/commit/2f970864d9c85f15f644b1472ab4ba823abfde7a))
+
+* ci: Optimizes workflow ([`27533ce`](https://github.com/UCSD-E4E/PyHa/commit/27533ce52f452f2b1c621291f260837643761bf1))
+
+* ci: Fixes env test to only execute on env changes ([`8cb235d`](https://github.com/UCSD-E4E/PyHa/commit/8cb235d0f5812bee0437ba6ab937ec1422e34481))
+
+### Feature
+
+* feat: Updated documentation for template matching and FG-BG util.py files
+
+Added descriptions of the util.py files for template matching and BirdNET FG-BG Separation ([`8300796`](https://github.com/UCSD-E4E/PyHa/commit/8300796b743ad4847c527374879208832f2a70b2))
+
+* feat: Updated documentation for IsoAutio.py and isolation_parameters
+
+Added descriptions of isolation parameters for template matching and FG-BG
+Updated IsoAutio.py documentation with descriptions of write_confidence and template matching/FG-BG functions ([`1d6ac39`](https://github.com/UCSD-E4E/PyHa/commit/1d6ac397839a56a4f06d0cddc1a9c9b6c3a14c9d))
+
+### Fix
+
+* fix: Fixes env variable ([`a6b7094`](https://github.com/UCSD-E4E/PyHa/commit/a6b70949fcbc9398050cdd44ce4201e93495176c))
+
+* fix: Reset tutorial to microfaune, updated env_test with changes from main
+
+- Set the default isolation_parameters in the tutorial notebook to microfaune parameters
+- Updated environment test yaml file based on most recent changes from main ([`b05a555`](https://github.com/UCSD-E4E/PyHa/commit/b05a555a9e0116d2dc47d8f34e13b67497bde12a))
+
+### Unknown
+
+* Merge pull request #200 from UCSD-E4E/ci/optimized_workflow
+
+ci: Optimized workflow ([`dea0c07`](https://github.com/UCSD-E4E/PyHa/commit/dea0c07312611742a97b12c38b09115b14b26a38))
 
 * Bump idna from 3.4 to 3.7 (#193)
 
@@ -130,33 +343,6 @@ Changes where we tell the tests where the audio files are to be correct
 
 namely from /temp/pyha_test to /temp/TEST ([`5e6a2bc`](https://github.com/UCSD-E4E/PyHa/commit/5e6a2bca1114db706b2b7f3c16c899d59b01a833))
 
-
-## v0.1.0-rc.3 (2024-05-15)
-
-### Feature
-
-* feat: Updated documentation for template matching and FG-BG util.py files
-
-Added descriptions of the util.py files for template matching and BirdNET FG-BG Separation ([`8300796`](https://github.com/UCSD-E4E/PyHa/commit/8300796b743ad4847c527374879208832f2a70b2))
-
-* feat: Updated documentation for IsoAutio.py and isolation_parameters
-
-Added descriptions of isolation parameters for template matching and FG-BG
-Updated IsoAutio.py documentation with descriptions of write_confidence and template matching/FG-BG functions ([`1d6ac39`](https://github.com/UCSD-E4E/PyHa/commit/1d6ac397839a56a4f06d0cddc1a9c9b6c3a14c9d))
-
-### Fix
-
-* fix: update name of release ([`54d5177`](https://github.com/UCSD-E4E/PyHa/commit/54d5177321ae009c61f13282ee2c7d46857ae89b))
-
-* fix: Reset tutorial to microfaune, updated env_test with changes from main
-
-- Set the default isolation_parameters in the tutorial notebook to microfaune parameters
-- Updated environment test yaml file based on most recent changes from main ([`b05a555`](https://github.com/UCSD-E4E/PyHa/commit/b05a555a9e0116d2dc47d8f34e13b67497bde12a))
-
-### Unknown
-
-* test new message ([`d3f4ca8`](https://github.com/UCSD-E4E/PyHa/commit/d3f4ca801ecf8221e24617b9388bf4c12b1950a4))
-
 * Bump jupyter-lsp from 2.2.0 to 2.2.2 (#180)
 
 Bumps [jupyter-lsp](https://github.com/jupyter-lsp/jupyterlab-lsp) from 2.2.0 to 2.2.2.
@@ -173,8 +359,6 @@ updated-dependencies:
 Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
 Co-authored-by: dependabot[bot] &lt;49699333+dependabot[bot]@users.noreply.github.com&gt; ([`adaf991`](https://github.com/UCSD-E4E/PyHa/commit/adaf99105bbd31d5a6b965abd5b82c2d73120dad))
 
-* Update test.txt ([`b240f89`](https://github.com/UCSD-E4E/PyHa/commit/b240f89310372df237dc16939da7cd2aea26439f))
-
 * Update README.md for New Google Storage (#188) ([`2900fa2`](https://github.com/UCSD-E4E/PyHa/commit/2900fa2cba70de3f2a6468d3c32694f9f31ff8f6))
 
 * Merge pull request #192 from UCSD-E4E/template-matching
@@ -184,76 +368,6 @@ Template Matching and FG-BG Separation added as new WTS pipelines. Furthermore, 
 * Merge pull request #191 from UCSD-E4E/local_score_confidene
 
 First pass of confidence column from max local score array values ([`510aa0b`](https://github.com/UCSD-E4E/PyHa/commit/510aa0bdccca1aa6202ffc52722614a3337f2ed2))
-
-
-## v0.1.0-rc.2 (2024-04-13)
-
-### Fix
-
-* fix: add wheel to build ([`2d828e0`](https://github.com/UCSD-E4E/PyHa/commit/2d828e0b13c21dbe1afc282e7d769e2249c440ea))
-
-### Unknown
-
-* test new message ([`d4357aa`](https://github.com/UCSD-E4E/PyHa/commit/d4357aaa3f98e794024db51d4b316eb67a1807ae))
-
-* Merge branch &#39;test-python-package-prep&#39; of https://github.com/UCSD-E4E/PyHa into test-python-package-prep ([`c532a1b`](https://github.com/UCSD-E4E/PyHa/commit/c532a1bf124fbb2183c4c75c1858527534512121))
-
-
-## v0.1.0-rc.1 (2024-04-13)
-
-### Ci
-
-* ci: Fixes env test to only execute on env changes ([`8cb235d`](https://github.com/UCSD-E4E/PyHa/commit/8cb235d0f5812bee0437ba6ab937ec1422e34481))
-
-### Feature
-
-* feat: added semantic releases ([`d23038b`](https://github.com/UCSD-E4E/PyHa/commit/d23038b3fcceb400998e37ec9d328afa4f8734c0))
-
-### Fix
-
-* fix: again attempt to get sv to run on test branch ([`c397780`](https://github.com/UCSD-E4E/PyHa/commit/c3977801e096f0915da28be5dc6bfa059a9a70a8))
-
-* fix: test semantic versioning on test branch ([`6c87605`](https://github.com/UCSD-E4E/PyHa/commit/6c87605d22cfc7e8bd39f93b4f14c4eb3731dfad))
-
-### Unknown
-
-* test new message ([`ac4bfbd`](https://github.com/UCSD-E4E/PyHa/commit/ac4bfbd5bf85ca820382af0f9b62cd2623d8e8bf))
-
-* fix: ([`1a0924f`](https://github.com/UCSD-E4E/PyHa/commit/1a0924fb9c91a19c1013018f00ef0de21afd1227))
-
-* Update pyproject.toml
-
-feat(package): add semantic verisioning ([`19616c5`](https://github.com/UCSD-E4E/PyHa/commit/19616c554ea6fb60a272459b4b17ad8aa810807f))
-
-* Update create_release.yml ([`70f87fc`](https://github.com/UCSD-E4E/PyHa/commit/70f87fcb1bb9e0e57622e9bf7fffd1e6850edb41))
-
-* Update create_release.yml ([`80111ef`](https://github.com/UCSD-E4E/PyHa/commit/80111efe0284b00c875a0f2994d1a2c7a4c0dace))
-
-* Update create_release.yml ([`10aebc4`](https://github.com/UCSD-E4E/PyHa/commit/10aebc477b33a11a1da4fdca3223e7dac4055acc))
-
-* Update create_release.yml ([`63f8f03`](https://github.com/UCSD-E4E/PyHa/commit/63f8f0354c4ff5db8e085a92523c51e09fd1fda8))
-
-* test creating a wheel ([`41a959a`](https://github.com/UCSD-E4E/PyHa/commit/41a959a59d95e4eca9dc95e94f72a28bae6cfe99))
-
-* testing releases ([`12f7939`](https://github.com/UCSD-E4E/PyHa/commit/12f79390e000cdaa24b5b520a4928fa2a46344da))
-
-* Update test_gh_cli.yml ([`827db1d`](https://github.com/UCSD-E4E/PyHa/commit/827db1de16ee950af8d6070c4b26b1a11ab6a85a))
-
-* Update test_gh_cli.yml ([`51ce06e`](https://github.com/UCSD-E4E/PyHa/commit/51ce06ee68e3d3105f0e40ca430e76d81d3a2257))
-
-* Update test_gh_cli.yml ([`19cca58`](https://github.com/UCSD-E4E/PyHa/commit/19cca5836a211b09abc4b3ba6a7b3b2cdbf7889f))
-
-* Update test_gh_cli.yml ([`bab6a07`](https://github.com/UCSD-E4E/PyHa/commit/bab6a078ecdd41d73790de4db22704927006e9bb))
-
-* Update test_gh_cli.yml ([`8254e6d`](https://github.com/UCSD-E4E/PyHa/commit/8254e6d7fe9877e1ca2424c355cf7674fa38cecc))
-
-* Update test_gh_cli.yml ([`5332f21`](https://github.com/UCSD-E4E/PyHa/commit/5332f21e51edd33d7ac6fa99f4b61ce6876d7dac))
-
-* Update test_gh_cli.yml ([`aabc365`](https://github.com/UCSD-E4E/PyHa/commit/aabc365cfe35602e3a3b7f3d2dbff26b187b4f03))
-
-* test auto create issue ([`55dcf9a`](https://github.com/UCSD-E4E/PyHa/commit/55dcf9a6711c01bdac36ccc7aa359580990d0f29))
-
-* test build a wheel ([`8722227`](https://github.com/UCSD-E4E/PyHa/commit/8722227b78e6b06fa8bbaea70b4483948939c22d))
 
 * First pass of confidence column from max local score array values
 - Demonstrated in tutorial notebook
