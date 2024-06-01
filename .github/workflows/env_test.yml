@@ -32,3 +32,4 @@ jobs:
           NAS_CREDS: ${{ secrets.NAS_CREDS_JSON }}
         run: |
           poetry run python -m pytest pyha_tests -rP
+
