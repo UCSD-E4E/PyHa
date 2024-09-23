@@ -1114,3 +1114,27 @@ Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)
 
 The manual labels provided for this dataset are automatically downloaded as a .csv when
 the repository is cloned.
+
+## Testing
+Tests require E4E NAS credentials.  These must be provided as a JSON file, or as an environment variable.
+
+If provided as a JSON file, this file must be placed at `${workspaceFolder}/credentials.json`, and have the following structure:
+```
+{
+    "username": "e4e_nas_user",
+    "password": "e4e_nas_password"
+}
+```
+
+If provided as an environment variable, the variable must be named `NAS_CREDS` and must have the following structure:
+```
+{"username":"e4e_nas_user","password":"e4e_nas_password"}
+```
+
+Any account used must have read access to the following share:
+- //e4e-nas.ucsd.edu/temp
+
+Execute `pytest` as follows:
+```
+python -m pytest pyha_tests
+```
