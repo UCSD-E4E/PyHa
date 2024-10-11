@@ -1,0 +1,41 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+# TODO: add abstract, author orcids, doi + arxiv for paper
+cff-version: 1.2.0
+title: PyHa
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Jacob G.
+    family-names: Ayers
+    email: jgayers@ucsd.edu
+  - given-names: Sean H.
+    family-names: Perry
+    email: shperry@ucsd.edu
+    affiliation: University of California San Diego
+  - given-names: Samantha H.
+    family-names: Prestrelski
+    email: sprestrelski@ucsd.edu
+    affiliation: University of California San Diego
+  - given-names: Tianqi
+    family-names: Zhang
+    email: tiz019@ucsd.edu
+    affiliation: University of California San Diego
+  - given-names: Ludwig
+    name-particle: von
+    family-names: Schoenfeldt
+    email: lvonschoenfeldt@ucsd.edu
+    affiliation: University of California San Diego
+  - given-names: Mugen
+    family-names: Blue
+    email: mblue3@ucmerced.edu
+    affiliation: University of California Merced
+  - given-names: Gabriel
+    family-names: Steinberg
+    email: gsteinberg@de-mine.com
+    affiliation: Demining Research Community
+repository-code: 'https://github.com/UCSD-E4E/PyHa'
+license: CC-BY-NC-SA-4.0
