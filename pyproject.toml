@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "PyHa"
-version = "1.0.0"
+version = "1.0.1"
 description = "PyHa"
 authors = [
     "UCSD Engineers for Exploration <e4e@ucsd.edu>",
