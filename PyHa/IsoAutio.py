@@ -964,14 +964,14 @@ def generate_automated_labels_microfaune(
     # generate local scores for every bird file in chosen directory
     for audio_file in os.listdir(audio_dir):
         # skip directories
-        if os.path.isdir(audio_dir + audio_file):
+        if os.path.isdir(os.path.join(audio_dir, audio_file)):
             continue
 
         # Reading in the audio files using librosa, converting to single channeled data with original sample rate
         # Reason for the factor for the signal is explained here: https://stackoverflow.com/questions/53462062/pyaudio-bytes-data-to-librosa-floating-point-time-series
         # Librosa scales down to [-1, 1], but the models require the range [-32768, 32767]
         try:
-            SIGNAL, SAMPLE_RATE = librosa.load(audio_dir + audio_file, sr=None, mono=True)
+            SIGNAL, SAMPLE_RATE = librosa.load(os.path.join(audio_dir, audio_file), sr=None, mono=True)
             SIGNAL = SIGNAL * 32768
         except KeyboardInterrupt:
             exit("Keyboard interrupt")
@@ -1102,14 +1102,14 @@ def generate_automated_labels_tweetynet(
     # generate local scores for every bird file in chosen directory
     for audio_file in os.listdir(audio_dir):
         # skip directories
-        if os.path.isdir(audio_dir + audio_file):
+        if os.path.isdir(os.path.join(audio_dir, audio_file)):
             continue
 
         # Reading in the audio files using librosa, converting to single channeled data with original sample rate
         # Reason for the factor for the signal is explained here: https://stackoverflow.com/questions/53462062/pyaudio-bytes-data-to-librosa-floating-point-time-series
         # Librosa scales down to [-1, 1], but the models require the range [-32768, 32767], so the multiplication is required
         try:
-            SIGNAL, SAMPLE_RATE = librosa.load(audio_dir + audio_file, sr=None, mono=True)
+            SIGNAL, SAMPLE_RATE = librosa.load(os.path.join(audio_dir, audio_file), sr=None, mono=True)
             SIGNAL = SIGNAL * 32768
         except KeyboardInterrupt:
             exit("Keyboard interrupt")
@@ -1246,7 +1246,7 @@ def generate_automated_labels_FG_BG_separation(
     # looping through the folder
     for audio_file in os.listdir(audio_dir):
         # skip directories
-        if os.path.isdir(audio_dir + audio_file):
+        if os.path.isdir(os.path.join(audio_dir, audio_file)):
             continue
         # loading in the audio clip
         try:
@@ -1364,7 +1364,7 @@ def generate_automated_labels_template_matching(
     # looping through the clips to process
     for audio_file in os.listdir(audio_dir):
         # skip directories
-        if os.path.isdir(audio_dir + audio_file):
+        if os.path.isdir(os.path.join(audio_dir, audio_file)):
             continue
         # loading in the audio clip
         try:
