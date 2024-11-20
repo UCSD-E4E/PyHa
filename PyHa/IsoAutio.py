@@ -959,9 +959,9 @@ def generate_automated_labels_microfaune(
         # print("model \"{}\" does not exist".format(ml_model))
         # return None
 
-    # init labels dataframe
-    annotations = pd.DataFrame()
     # generate local scores for every bird file in chosen directory
+    # initialize list of entries to add
+    entries_to_add = []
     for audio_file in os.listdir(audio_dir):
         # skip directories
         if os.path.isdir(os.path.join(audio_dir, audio_file)):
@@ -1028,10 +1028,8 @@ def generate_automated_labels_microfaune(
                 manual_id=manual_id,
                 normalize_local_scores=normalize_local_scores)
             # print(new_entry)
-            if annotations.empty:
-                annotations = new_entry
-            else:
-                annotations = pd.concat([annotations, new_entry])
+            # append entry to list
+            entries_to_add.append(new_entry)
         except KeyboardInterrupt:
             exit("Keyboard interrupt")
         except BaseException as e:
@@ -1039,6 +1037,8 @@ def generate_automated_labels_microfaune(
             checkVerbose("Error in isolating bird calls from" + audio_file, isolation_parameters)
 
             continue
+    # Create dataframe from entries
+    annotations = pd.concat(entries_to_add)
     # Quick fix to indexing
     annotations.reset_index(inplace=True, drop=True)
     return annotations
@@ -1097,8 +1097,8 @@ def generate_automated_labels_tweetynet(
     device = torch.device('cpu')
     detector = TweetyNetModel(2, (1, 86, 86), 86, device)
 
-    # init labels dataframe
-    annotations = pd.DataFrame()
+    # init labels list
+    entries_to_add = []
     # generate local scores for every bird file in chosen directory
     for audio_file in os.listdir(audio_dir):
         # skip directories
@@ -1169,16 +1169,16 @@ def generate_automated_labels_tweetynet(
                     manual_id=manual_id,
                     normalize_local_scores=normalize_local_scores)
             # print(new_entry)
-            if annotations.empty:
-                annotations = new_entry
-            else:
-                annotations = pd.concat([annotations, new_entry])
+            # append entry to list
+            entries_to_add.append(new_entry)
         except KeyboardInterrupt:
             exit("Keyboard interrupt")
         except BaseException as e:
             checkVerbose("Error in isolating bird calls from " + audio_file, isolation_parameters)
             logger.exception(f"Error in isolating bird calls from {audio_file}")
             continue
+    # Create dataframe from entries
+    annotations = pd.concat(entries_to_add)
     # Quick fix to indexing
     annotations.reset_index(inplace=True, drop=True)
     return annotations
