@@ -10,6 +10,7 @@ from .FG_BG_sep.utils import FG_BG_local_score_arr
 from .template_matching.utils import filter, butter_bandpass, generate_specgram, template_matching_local_score_arr
 
 import os
+import glob
 import torch
 import librosa
 import pandas as pd
@@ -155,6 +156,20 @@ def write_confidence(local_score_arr, automated_labels_df):
     automated_labels_df["CONFIDENCE"] = confidences
     return automated_labels_df
 
+def get_files(root_dir, ignore=[], extension=".wav"):
+    """ Recursively searches through folders and subfolders, top-down, from the 
+    given root directory for files to process.
+
+    Args:
+        root_dir (str): path to the root directory
+        ignore (list/iterable): paths to files to ignore, e.g. a template
+        extension (str): file extension of files to look for, e.g. ".wav"
+    """
+    root_dir = os.path.abspath(root_dir)
+    audio_files = glob.glob(f"{root_dir}/**/*{extension}", recursive=True)
+    audio_files = [file for file in audio_files if file not in ignore]
+    return audio_files
+        
 
 def isolate(
         local_scores,
@@ -962,7 +977,7 @@ def generate_automated_labels_microfaune(
     # init labels dataframe
     annotations = pd.DataFrame()
     # generate local scores for every bird file in chosen directory
-    for audio_file in os.listdir(audio_dir):
+    for audio_file in get_files(audio_dir):
         # skip directories
         if os.path.isdir(os.path.join(audio_dir, audio_file)):
             continue
@@ -976,7 +991,7 @@ def generate_automated_labels_microfaune(
         except KeyboardInterrupt:
             exit("Keyboard interrupt")
         except BaseException:
-            checkVerbose("Failed to load" + audio_file, isolation_parameters)
+            checkVerbose(f"Failed to load {audio_file}", isolation_parameters)
             continue
 
         # downsample the audio if the sample rate isn't 44.1 kHz
@@ -991,7 +1006,7 @@ def generate_automated_labels_microfaune(
         except KeyboardInterrupt:
             exit("Keyboard interrupt")
         except:
-            checkVerbose("Failed to Downsample" + audio_file, isolation_parameters)
+            checkVerbose(f"Failed to Downsample {audio_file}", isolation_parameters)
             # resample produces unreadable float32 array so convert back
             # SIGNAL = np.asarray(SIGNAL, dtype=np.int16)
             
@@ -1008,7 +1023,7 @@ def generate_automated_labels_microfaune(
             exit("Keyboard interrupt")
         except BaseException as e:
             checkVerbose(e, isolation_parameters)
-            checkVerbose("Error in detection, skipping" + audio_file, isolation_parameters)
+            checkVerbose(f"Error in detection, skipping {audio_file}", isolation_parameters)
             continue
         
             
@@ -1018,13 +1033,14 @@ def generate_automated_labels_microfaune(
         try:
             # Running moment to moment algorithm and appending to a master
             # dataframe.
+            filename = os.path.split(audio_file)[-1]
             new_entry = isolate(
-                local_scores[0],
-                SIGNAL,
-                SAMPLE_RATE,
-                audio_dir,
-                audio_file,
-                isolation_parameters,
+                local_scores=local_scores[0],
+                SIGNAL=SIGNAL,
+                SAMPLE_RATE=SAMPLE_RATE,
+                audio_dir=audio_dir,
+                filename=filename,
+                isolation_parameters=isolation_parameters,
                 manual_id=manual_id,
                 normalize_local_scores=normalize_local_scores)
             # print(new_entry)
@@ -1036,7 +1052,7 @@ def generate_automated_labels_microfaune(
             exit("Keyboard interrupt")
         except BaseException as e:
             checkVerbose(e, isolation_parameters)
-            checkVerbose("Error in isolating bird calls from" + audio_file, isolation_parameters)
+            checkVerbose(f"Error in isolating bird calls from {audio_file}", isolation_parameters)
 
             continue
     # Quick fix to indexing
@@ -1100,7 +1116,7 @@ def generate_automated_labels_tweetynet(
     # init labels dataframe
     annotations = pd.DataFrame()
     # generate local scores for every bird file in chosen directory
-    for audio_file in os.listdir(audio_dir):
+    for audio_file in get_files(audio_dir):
         # skip directories
         if os.path.isdir(os.path.join(audio_dir, audio_file)):
             continue
@@ -1115,7 +1131,7 @@ def generate_automated_labels_tweetynet(
             exit("Keyboard interrupt")
         except Exception as exp:
             logger.exception(f"Failed to load {audio_file}, parameters: {isolation_parameters}")
-            checkVerbose("Failed to load " + audio_file, isolation_parameters)
+            checkVerbose(f"Failed to load {audio_file}", isolation_parameters)
             continue
             
         # Resample the audio if it isn't the normalized sample rate
@@ -1150,22 +1166,23 @@ def generate_automated_labels_tweetynet(
         try:
             # Running moment to moment algorithm and appending to a master
             # dataframe. 
+            filename = os.path.split(audio_file)[-1]
             if isolation_parameters["tweety_output"]:
                 new_entry = predictions_to_kaleidoscope(
                     predictions, 
                     SIGNAL, 
                     audio_dir, 
-                    audio_file, 
+                    filename, 
                     manual_id, 
                     SAMPLE_RATE)
             else:
                 new_entry = isolate(
-                    local_scores[0],
-                    SIGNAL,
-                    SAMPLE_RATE,
-                    audio_dir,
-                    audio_file,
-                    isolation_parameters,
+                    local_scores=local_scores[0],
+                    SIGNAL=SIGNAL,
+                    SAMPLE_RATE=SAMPLE_RATE,
+                    audio_dir=audio_dir,
+                    filename=filename,
+                    isolation_parameters=isolation_parameters,
                     manual_id=manual_id,
                     normalize_local_scores=normalize_local_scores)
             # print(new_entry)
@@ -1244,7 +1261,7 @@ def generate_automated_labels_FG_BG_separation(
     annotations = pd.DataFrame()
 
     # looping through the folder
-    for audio_file in os.listdir(audio_dir):
+    for audio_file in get_files(audio_dir):
         # skip directories
         if os.path.isdir(os.path.join(audio_dir, audio_file)):
             continue
@@ -1254,7 +1271,7 @@ def generate_automated_labels_FG_BG_separation(
         except KeyboardInterrupt:
             exit("Keyboard Interrupt")
         except BaseException:
-            checkVerbose("Failed to load " + audio_file, isolation_parameters)
+            checkVerbose(f"Failed to load {audio_file}", isolation_parameters)
             continue
         
         # generating local score array from clip
@@ -1265,17 +1282,18 @@ def generate_automated_labels_FG_BG_separation(
         except KeyboardInterrupt:
             exit("Keyboard Interrupt")
         except BaseException:
-            checkVerbose("Failed to collect local score array of " + audio_file, isolation_parameters)
+            checkVerbose(f"Failed to collect local score array of {audio_file}", isolation_parameters)
             continue
 
         # passing through isolation technique
         try:
+            filename = os.path.split(audio_file)[-1]
             new_entry = isolate(
                 local_score_arr,
                 SIGNAL,
                 SAMPLE_RATE,
                 audio_dir,
-                audio_file,
+                filename,
                 isolation_parameters,
                 manual_id=manual_id,
             )
@@ -1287,7 +1305,7 @@ def generate_automated_labels_FG_BG_separation(
             exit("Keyboard Interrupt")
         except BaseException as e:
             checkVerbose(e, isolation_parameters)
-            checkVerbose("Error in isolating bird calls from " + audio_file, isolation_parameters)
+            checkVerbose(f"Error in isolating bird calls from {audio_file}", isolation_parameters)
             continue
 
     annotations.reset_index(inplace=True, drop=True)
@@ -1358,11 +1376,13 @@ def generate_automated_labels_template_matching(
     except KeyboardInterrupt:
         exit("Keyboard Interrupt")
     except BaseException:
-        checkVerbose("Failed to load and process template " + isolation_parameters["template_path"], isolation_parameters)
+        temp_path = isolation_parameters["template_path"]
+        checkVerbose(f"Failed to load and process template {temp_path}", isolation_parameters)
         exit("Can't do template matching without a template")
 
     # looping through the clips to process
-    for audio_file in os.listdir(audio_dir):
+    ignore = [os.path.abspath(isolation_parameters["template_path"])]
+    for audio_file in get_files(audio_dir, ignore=ignore):
         # skip directories
         if os.path.isdir(os.path.join(audio_dir, audio_file)):
             continue
@@ -1374,7 +1394,7 @@ def generate_automated_labels_template_matching(
         except KeyboardInterrupt:
             exit("Keyboard Interrupt")
         except BaseException:
-            checkVerbose("Failed to load " + audio_file, isolation_parameters)
+            checkVerbose(f"Failed to load {audio_file}", isolation_parameters)
             continue
         
         # generating local score array from clip
@@ -1383,17 +1403,18 @@ def generate_automated_labels_template_matching(
         except KeyboardInterrupt:
             exit("Keyboard Interrupt")
         except BaseException:
-            checkVerbose("Failed to collect local score array of " + audio_file, isolation_parameters)
+            checkVerbose(f"Failed to collect local score array of {audio_file}", isolation_parameters)
             continue
 
         # passing through isolation technique
         try:
+            filename = os.path.split(audio_file)[-1]
             new_entry = isolate(
                 local_score_arr,
                 SIGNAL,
                 SAMPLE_RATE,
                 audio_dir,
-                audio_file,
+                filename,
                 isolation_parameters,
                 manual_id=manual_id,
             )
@@ -1405,7 +1426,7 @@ def generate_automated_labels_template_matching(
             exit("Keyboard Interrupt")
         except BaseException as e:
             checkVerbose(e, isolation_parameters)
-            checkVerbose("Error in isolating bird calls from " + audio_file, isolation_parameters)
+            checkVerbose(f"Error in isolating bird calls from {audio_file}", isolation_parameters)
             continue
 
     annotations.reset_index(inplace=True, drop=True)
@@ -1458,6 +1479,7 @@ def generate_automated_labels(
     assert isinstance(normalize_local_scores,bool)
 
     #try:
+    
     if(isolation_parameters["model"] == 'microfaune'):
         annotations = generate_automated_labels_microfaune(
                         audio_dir=audio_dir,
@@ -1502,8 +1524,9 @@ def generate_automated_labels(
     else:
         # print("{model_name} model does not exist"\
         #     .format(model_name=isolation_parameters["model"]))
-        checkVerbose("{model_name} model does not exist"\
-        .format(model_name=isolation_parameters["model"]), isolation_parameters)
+        model_type = isolation_parameters["model"]
+        checkVerbose(f"{model_type} model does not exist",
+                     isolation_parameters)
         annotations = None
     # except:
     #     print("Error. Check your isolation_parameters")
