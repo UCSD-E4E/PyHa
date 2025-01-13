@@ -193,8 +193,7 @@ def isolate(
         local_scores,
         SIGNAL,
         SAMPLE_RATE,
-        audio_dir,
-        filename,
+        filepath,
         isolation_parameters,
         manual_id="bird",
         normalize_local_scores=False):
@@ -214,11 +213,8 @@ def isolate(
         SAMPLE_RATE (int)
             - Sampling rate of the audio clip, usually 44100.
 
-        audio_dir (string)
-            - Directory of the audio clip.
-
-        filename (string)
-            - Name of the audio clip file.
+        filepath (string)
+            - path to the audio clip file.
 
         isolation_parameters (dict)
             - Python Dictionary that controls the various label creation
@@ -233,8 +229,9 @@ def isolate(
     assert isinstance(SIGNAL,np.ndarray)
     assert isinstance(SAMPLE_RATE,int)
     assert SAMPLE_RATE > 0
-    assert isinstance(audio_dir,str)
-    assert isinstance(filename,str)
+    # assert isinstance(audio_dir,str)
+    # assert isinstance(filename,str)
+    # assert isinstance(filepath,str)
     assert isinstance(isolation_parameters,dict)
     assert isinstance(manual_id,str)
     assert isinstance(normalize_local_scores,bool)
@@ -250,9 +247,10 @@ def isolate(
     # single clip
     isolation_df = pd.DataFrame()
 
-    if not os.path.isdir(audio_dir):
-        audio_dir = os.path.split(audio_dir)[0]
-    
+    # split filepath
+    filepath = os.path.abspath(filepath)
+    audio_dir, filename = os.path.split(filepath)    
+
     # deciding which isolation technique to deploy for a given clip based on
     # the technique isolation parameter
     if isolation_parameters["technique"] == "simple":
@@ -1065,13 +1063,12 @@ def generate_automated_labels_microfaune(
         try:
             # Running moment to moment algorithm and appending to a master
             # dataframe.
-            filename = os.path.split(audio_file)[-1]
+            # filename = os.path.split(audio_file)[-1]
             new_entry = isolate(
                 local_scores=local_scores[0],
                 SIGNAL=SIGNAL,
                 SAMPLE_RATE=SAMPLE_RATE,
-                audio_dir=audio_dir,
-                filename=filename,
+                filepath=audio_file,
                 isolation_parameters=isolation_parameters,
                 manual_id=manual_id,
                 normalize_local_scores=normalize_local_scores)
@@ -1206,22 +1203,22 @@ def generate_automated_labels_tweetynet(
         try:
             # Running moment to moment algorithm and appending to a master
             # dataframe. 
-            filename = os.path.split(audio_file)[-1]
             if isolation_parameters["tweety_output"]:
+                filepath = os.path.abspath(audio_file)
+                directory, filename = os.path.split(filepath)
                 new_entry = predictions_to_kaleidoscope(
-                    predictions, 
-                    SIGNAL, 
-                    audio_dir, 
-                    filename, 
-                    manual_id, 
-                    SAMPLE_RATE)
+                    predictions=predictions, 
+                    SIGNAL=SIGNAL, 
+                    audio_dir=directory, 
+                    audio_file=filename, 
+                    manual_id=manual_id, 
+                    sample_rate=SAMPLE_RATE)
             else:
                 new_entry = isolate(
                     local_scores=local_scores[0],
                     SIGNAL=SIGNAL,
                     SAMPLE_RATE=SAMPLE_RATE,
-                    audio_dir=audio_dir,
-                    filename=filename,
+                    filepath=audio_file,
                     isolation_parameters=isolation_parameters,
                     manual_id=manual_id,
                     normalize_local_scores=normalize_local_scores)
@@ -1337,12 +1334,11 @@ def generate_automated_labels_FG_BG_separation(
         try:
             filename = os.path.split(audio_file)[-1]
             new_entry = isolate(
-                local_score_arr,
-                SIGNAL,
-                SAMPLE_RATE,
-                audio_dir,
-                filename,
-                isolation_parameters,
+                local_scores=local_score_arr,
+                SIGNAL=SIGNAL,
+                SAMPLE_RATE=SAMPLE_RATE,
+                filepath=audio_file,
+                isolation_parameters=isolation_parameters,
                 manual_id=manual_id,
             )
             if annotations.empty:
@@ -1466,12 +1462,11 @@ def generate_automated_labels_template_matching(
         try:
             filename = os.path.split(audio_file)[-1]
             new_entry = isolate(
-                local_score_arr,
-                SIGNAL,
-                SAMPLE_RATE,
-                audio_dir,
-                filename,
-                isolation_parameters,
+                local_scores=local_score_arr,
+                SIGNAL=SIGNAL,
+                SAMPLE_RATE=SAMPLE_RATE,
+                filepath=audio_file,
+                isolation_parameters=isolation_parameters,
                 manual_id=manual_id,
             )
             if annotations.empty:
