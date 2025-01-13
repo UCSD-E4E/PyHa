@@ -10,7 +10,7 @@ from .FG_BG_sep.utils import FG_BG_local_score_arr
 from .template_matching.utils import filter, butter_bandpass, generate_specgram, template_matching_local_score_arr
 
 import os
-import glob
+from pathlib import Path
 import torch
 import librosa
 import pandas as pd
@@ -161,17 +161,31 @@ def get_files(root_dir, ignore=[], extension=".wav"):
     given root directory for files to process.
 
     Args:
-        root_dir (str): path to the root directory
-        ignore (list/iterable): paths to files to ignore, e.g. a template
-        extension (str): file extension of files to look for, e.g. ".wav"
+        root_dir (str): path-like to the root directory from which to draw the files
+        ignore (list/iterable): paths to files or directories to ignore/skip
+        extension (str): file extension of files to look for
     Returns:
-        generator returning absolute paths to all files with given extension.
+        generator returning PosixPath objects to all files with given extension.
     """
+    # initialize path
     root_dir = os.path.abspath(root_dir)
-    audio_files = glob.glob(f"{root_dir}/**/*{extension}", recursive=True)
+    root_dir = Path(root_dir)
+    # get all files
+    audio_files = root_dir.rglob(f"*{extension}")
     
-    ignore = set(ignore)
-    audio_files = (file for file in audio_files if file not in ignore)
+    # handle ignorance
+    ignored_files = set()
+    for root_to_ignore in ignore:
+        # initialize path
+        root_to_ignore = os.path.abspath(root_to_ignore)
+        root_to_ignore = Path(root_to_ignore)
+        # search for files
+        ignored_under_root = set(root_to_ignore.rglob(f"*{extension}"))
+        ignored_under_root.add(root_to_ignore)
+        # update running set
+        ignored_files.update(ignored_under_root)
+    
+    audio_files = (file for file in audio_files if file not in ignored_files)
     return audio_files
         
 
@@ -236,6 +250,9 @@ def isolate(
     # single clip
     isolation_df = pd.DataFrame()
 
+    if not os.path.isdir(audio_dir):
+        audio_dir = os.path.split(audio_dir)[0]
+    
     # deciding which isolation technique to deploy for a given clip based on
     # the technique isolation parameter
     if isolation_parameters["technique"] == "simple":
