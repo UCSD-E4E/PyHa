@@ -165,11 +165,13 @@ def get_files(root_dir, ignore=[], extension=".wav"):
         ignore (list/iterable): paths to files to ignore, e.g. a template
         extension (str): file extension of files to look for, e.g. ".wav"
     Returns:
-        list of absolute paths to all files with given extension.
+        generator returning absolute paths to all files with given extension.
     """
     root_dir = os.path.abspath(root_dir)
     audio_files = glob.glob(f"{root_dir}/**/*{extension}", recursive=True)
-    audio_files = [file for file in audio_files if file not in ignore]
+    
+    ignore = set(ignore)
+    audio_files = (file for file in audio_files if file not in ignore)
     return audio_files
         
 
