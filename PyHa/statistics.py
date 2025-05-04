@@ -243,13 +243,13 @@ def automated_labeling_statistics(
     clips = automated_df["IN FILE"].to_list()
     # Removing duplicates
     clips = list(dict.fromkeys(clips))
-    # Initializing the returned dataframe
-    statistics_df = pd.DataFrame()
 
     num_errors = 0
     num_processed = 0
 
     start_time = time.time()
+    # init clips list
+    stats_to_add = []
     # Looping through each audio clip
     for clip in clips:
         num_processed += 1
@@ -260,18 +260,11 @@ def automated_labeling_statistics(
             if stats_type == "general":
                 clip_stats_df = clip_general(
                     clip_automated_df, clip_manual_df)
-                if statistics_df.empty:
-                    statistics_df = clip_stats_df
-                else:
-                    statistics_df = pd.concat([statistics_df,clip_stats_df])
             elif stats_type == "IoU":
                 IoU_Matrix = clip_IoU(clip_automated_df, clip_manual_df)
                 clip_stats_df = matrix_IoU_Scores(
                     IoU_Matrix, clip_manual_df, threshold)
-                if statistics_df.empty:
-                    statistics_df = clip_stats_df
-                else:
-                    statistics_df = pd.concat([statistics_df, clip_stats_df])
+            stats_to_add.append(clip_stats_df)
         except BaseException as e:
             num_errors += 1
             #print("Something went wrong with: " + clip)
@@ -280,6 +273,8 @@ def automated_labeling_statistics(
         if num_processed % 50 == 0:
             print("Processed", num_processed, "clips in", int((time.time() - start_time) * 10) / 10.0, 'seconds')
             start_time = time.time()
+    # Create dataframe from stats
+    statistics_df = pd.concat(stats_to_add) 
     if num_errors > 0:
         checkVerbose(f"Something went wrong with {num_errors} clips out of {len(clips)} clips", verbose)
     statistics_df.reset_index(inplace=True, drop=True)
@@ -736,8 +731,8 @@ def dataset_Catch(automated_df, manual_df):
     clips = automated_df["IN FILE"].to_list()
     # Removing duplicates
     clips = list(dict.fromkeys(clips))
-    # Initializing the ouput dataframe
-    manual_df_with_Catch = pd.DataFrame()
+    # Initializing list of dfs to add
+    clips_to_add = []
     # Looping through all of the audio clips that have been labelled.
     for clip in clips:
         print(clip)
@@ -748,10 +743,10 @@ def dataset_Catch(automated_df, manual_df):
         Catch_Array = clip_catch(clip_automated_df, clip_manual_df)
         # Appending the catch values per label onto the manual dataframe
         clip_manual_df["Catch"] = Catch_Array
-        if manual_df_with_Catch.empty:
-            manual_df_with_Catch = clip_manual_df
-        else:
-            manual_df_with_Catch = pd.concat([manual_df_with_Catch,clip_manual_df])
+        # Append manual df to list
+        clips_to_add.append(clip_manual_df)
+    # Create dataframe out of list
+    manual_df_with_Catch = pd.concat(clips_to_add)
     # Resetting the indices
     manual_df_with_Catch.reset_index(inplace=True, drop=True)
     return manual_df_with_Catch
@@ -812,8 +807,8 @@ def clip_statistics(
     # Finding the intersection between the manual and automated classes
     class_list = np.intersect1d(automated_class_list,manual_class_list)
     
-    # Initializing the output dataframe
-    clip_statistics = pd.DataFrame()
+    # Initializing the list of dfs to add
+    clips_to_add = []
     # Looping through each class and comparing the automated labels to the manual labels
     for class_ in class_list:
         #print(class_)
@@ -825,7 +820,8 @@ def clip_statistics(
             clip_statistics = automated_labeling_statistics(temp_automated_class_df, temp_manual_class_df, stats_type = stats_type, threshold = threshold)
         else:
             temp_df = automated_labeling_statistics(temp_automated_class_df, temp_manual_class_df, stats_type = stats_type, threshold = threshold)
-            clip_statistics = pd.concat([clip_statistics,temp_df])
+            clips_to_add.append(temp_df)
+    clip_statistics = pd.concat(clips_to_add)
     clip_statistics.reset_index(inplace=True,drop=True)
     return clip_statistics
 
@@ -847,8 +843,8 @@ def class_statistics(clip_statistics):
     assert isinstance(clip_statistics,pd.DataFrame)
     assert "MANUAL ID" in clip_statistics.columns
 
-    # Initializing the output dataframe
-    class_statistics = pd.DataFrame()
+    # Initializing the list of dfs to add
+    stats_to_add = []
     # creating a list of the unique classes being passed in.
     class_list = clip_statistics["MANUAL ID"].to_list()
     class_list = list(dict.fromkeys(class_list))
@@ -860,6 +856,7 @@ def class_statistics(clip_statistics):
             class_statistics = global_statistics(class_df, manual_id = class_)
         else:
             temp_df = global_statistics(class_df, manual_id = class_)
-            class_statistics = pd.concat([class_statistics,temp_df])
+            stats_to_add.append(temp_df)
+    class_statistics = pd.concat(stats_to_add)
     class_statistics.reset_index(inplace=True,drop=True)
     return class_statistics

@@ -91,7 +91,8 @@ class TweetyNetModel:
             self.load_weights(os.path.join("PyHa","tweetynet_package","tweetynet","config","tweetynet_weights.h5"))
 
         test_data_loader = DataLoader(test_dataset, batch_size=batch_size)
-        predictions = pd.DataFrame()
+        # Initialize list of predictions
+        preds_to_add = []
         self.model.eval()
         local_score = []
         dataiter = iter(test_data_loader)
@@ -111,7 +112,10 @@ class TweetyNetModel:
                 bins = st_time + (int(uids[0].split("_")[0])*window_size)
                 d = {"uid": uids[0], "pred": pred, "label": labels, "time_bins": bins}
                 new_preds = pd.DataFrame(d)
-                predictions = pd.concat([predictions, new_preds])
+                # Append to list
+                preds_to_add.append(new_preds)
+            # Create df using list
+            predictions = pd.concat(preds_to_add)
 
         if norm:
             local_score = self.normalize(local_score, 0, 1)
